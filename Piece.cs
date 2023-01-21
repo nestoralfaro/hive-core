@@ -60,8 +60,9 @@ namespace GameCore
             }
         }
 
-        private bool _IsRightTurn((int, int) p1, (int, int) p2, (int, int) p3)
+        private bool _IsClockwiseTurn((int, int) p1, (int, int) p2, (int, int) p3)
         {
+            // If the area of the parallelogram is negative
             return (p2.Item1 - p1.Item1) * (p3.Item2 - p1.Item2) - (p2.Item2 - p1.Item2) * (p3.Item1 - p1.Item1) < 0;
         }
 
@@ -90,18 +91,15 @@ namespace GameCore
             // 3. Iterate through sorted points and add/remove as necessary
             foreach ((int, int) p in sortedPoints)
             {
-                while (convexHull.Count > 1 && _IsRightTurn(convexHull[convexHull.Count - 2], convexHull[convexHull.Count - 1], p))
+                while (convexHull.Count > 1 && _IsClockwiseTurn(convexHull[convexHull.Count - 2], convexHull[convexHull.Count - 1], p))
                 {
+                    // Remove the points that create a clockwise turn
                     convexHull.RemoveAt(convexHull.Count - 1);
                 }
                 convexHull.Add(p);
             }
 
             // 4. return the convexHull
-
-            /**
-                Has not been tested yet. Will require further work
-            **/
             return convexHull;
         }
 

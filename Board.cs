@@ -57,11 +57,8 @@ namespace GameCore
             // This is a regex that could still be tricked, so we may have to check for that as well:
             // For instance, it would allow `wQ2`, but there really is only 1 Queen Bee.
                                 //   Not optional piece       Optional Side       Optional Piece
-                                                           //it fails here
-            string validPattern = @"^([wb])([ABGQS])([1-3])([*|/*\|*\*=])?([wb]?)([ABGQS]?)([1-3]?)$";
-            // return Regex.IsMatch(move.ToString(), validPattern);
-
-            return true;
+            string validPattern = @"^([wb])([ABGQS])([1-3])([*][/|\\]|[/|\\][*])?([wb]?)([ABGQS]?)([1-3]?)$";
+            return Regex.IsMatch(move.ToString(), validPattern);
         }
 
         public bool IsPlacingValid(Move move)
@@ -124,11 +121,29 @@ namespace GameCore
             return _pieces.Count == 0 && _piece_coordinate.Count == 0;
         }
 
+        private void PrintAvailableMovesForThePiece(Piece piece)
+        {
+            Console.WriteLine("--------------------Available Moves--------------------");
+            foreach ((int, int) point in piece.GetMovingPositions())
+            {
+                Console.WriteLine(point);
+            }
+            Console.WriteLine("-------------------------------------------------------");
+
+            Console.WriteLine("--------------------Available Placings--------------------");
+            foreach ((int, int) point in piece.GetPlacingPositions())
+            {
+                Console.WriteLine(point);
+            }
+            Console.WriteLine("----------------------------------------------------------");
+        }
+
         public bool MakeMove(ref Player player)
         {
             Move move = player.GetMove();
             (int, int) point = GetPoint(move);
             Piece piece = new Piece(move.MovingPiece);
+            PrintAvailableMovesForThePiece(piece);
             try
             {
                 if (IsValidInput(move))
