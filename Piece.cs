@@ -16,7 +16,8 @@ namespace GameCore
 
         public Dictionary<string, (int, int)> Neighbors { get; set; }
         public Dictionary<string, (int, int)> Sides { get; set; }
-        public IEnumerable<KeyValuePair<string, (int, int)>> GetAvailableSides() { return Sides.Except(Neighbors); }
+        public List<(int, int)> GetAvailableSides() { return Sides.Except(Neighbors).Select(side => side.Value).ToList(); }
+
         public (int, int) Point { get; set; }
         public Insect Insect { get; set; }
         public Color Color { get; set; }
@@ -62,20 +63,20 @@ namespace GameCore
             return Neighbors.Count == _MANY_SIDES;
         }
 
-        public List<(int, int)> GetMovingPositions(ref Dictionary<(int, int), Piece> board)
+        public List<(int, int)> GetMovingPositions(Dictionary<(int, int), Piece> board, Dictionary<string, (int, int)>.ValueCollection sideOffset)
         {
             switch (Insect)
             {
                 case Insect.Ant:
-                    return _GetAntMovingPositions(ref board);
+                    return _GetAntMovingPositions(board, sideOffset);
                 case Insect.Beetle:
-                    return _GetBeetleMovingPositions(ref board);
+                    return _GetBeetleMovingPositions(board, sideOffset);
                 case Insect.Grasshopper:
-                    return _GetGrasshopperMovingPositions(ref board);
+                    return _GetGrasshopperMovingPositions(board, sideOffset);
                 case Insect.Spider:
-                    return _GetSpiderMovingPositions(ref board);
+                    return _GetSpiderMovingPositions(board, sideOffset);
                 case Insect.QueenBee:
-                    return _GetQueenBeeMovingPositions(ref board);
+                    return _GetQueenBeeMovingPositions(board, sideOffset);
                 default:
                     // this is an invalid position
                     return new List<(int, int)>() { (1, 2) };
@@ -88,6 +89,25 @@ namespace GameCore
             return (p2.Item1 - p1.Item1) * (p3.Item2 - p1.Item2) - (p2.Item2 - p1.Item2) * (p3.Item1 - p1.Item1) < 0;
         }
 
+        private bool _HasAtLeastOneNeighbor((int, int) point, Dictionary<(int, int), Piece> board, Dictionary<string, (int, int)>.ValueCollection sideOffset)
+        {
+            foreach ((int, int) side in sideOffset)
+            {
+                (int, int) neighborPosition = (point.Item1 + side.Item1, point.Item2 + side.Item2);
+                // If the neighbor is not myself  AND If the neighbor exists on the board
+                if (this.Point != neighborPosition && board.ContainsKey(neighborPosition))
+                {
+                    // This position has at least one neighbor connected to the other pieces,
+                    // which would not break the hive
+                    return true;
+                }
+            }
+
+            // Checked each side, and no pieces were found,
+            // therefore `point` is a position that would break the hive
+            return false;
+        }
+
         /**
         An idea of how this function could be implemented:
         Find the convex hull, then go through each point, and filter out only the valid sides–e.g., NW, W, SW, SE, E, and NE.
@@ -98,8 +118,14 @@ namespace GameCore
         For instance, given point x = (-2, 0), to know its Southwest side, just add the west side, which is (-1, -1).
         Therfore, x's Southwest side is (-2 + (-1), 0 + (-1)) = (-3, -1) (double check with the chart sent to discord)
         **/
-        private List<(int, int)> _GetAntMovingPositions(ref Dictionary<(int, int), Piece> board)
+        private List<(int, int)> _GetAntMovingPositions(Dictionary<(int, int), Piece> board, Dictionary<string, (int, int)>.ValueCollection sideOffset )
         {
+            /**
+            TODO: The convex hull needs to make sure that the moves:
+            1. do not break the hive!
+            2. It is not a gate (a position where there is only one available side for a neighbor)
+            **/
+
             // Find convex hull with Graham's Scan algorithm
             List<(int, int)> convexHull = new List<(int, int)>();
             List<(int, int)> activePoints = new List<(int, int)>(); 
@@ -108,6 +134,7 @@ namespace GameCore
             {
                 if (!activePoints.Contains(p.Key))
                     activePoints.Add(p.Key);
+                // Include also the neighboring sides for each piece
                 foreach ((int, int) side in p.Value.Sides.Values)
                 {
                     if (!activePoints.Contains(side))
@@ -139,7 +166,7 @@ namespace GameCore
             }
 
             // 4. return the convexHull
-            return convexHull;
+            return convexHull.Where(side => _HasAtLeastOneNeighbor(side, board, sideOffset)).ToList();
         }
 
         /**
@@ -164,9 +191,15 @@ namespace GameCore
             foreach (var side in sides)
                 validPositions.Add(ValidateBeetleMoves(piece_positions[piece] + side))
         **/
-        private List<(int, int)> _GetBeetleMovingPositions(ref Dictionary<(int, int), Piece> board)
+        private List<(int, int)> _GetBeetleMovingPositions(Dictionary<(int, int), Piece> board, Dictionary<string, (int, int)>.ValueCollection sideOffset)
         {
-            return new List<(int, int)>() {(0, 0)};
+            // Filter out the sides that would break the hive
+            List<(int, int)> validMoves = this.GetAvailableSides().Where(side => _HasAtLeastOneNeighbor(side, board, sideOffset)).ToList(); 
+
+            // Because it is a beetle, add its existing neighbors too, because it can get on top of them
+            validMoves.AddRange(this.Neighbors.Select(side => side.Value).ToList());
+            
+            return validMoves;
         }
 
 
@@ -182,7 +215,7 @@ namespace GameCore
                     potentialPosition + side
                 validPositions.Add(potentialPosition)
         **/
-        private List<(int, int)> _GetGrasshopperMovingPositions(ref Dictionary<(int, int), Piece> board)
+        private List<(int, int)> _GetGrasshopperMovingPositions(Dictionary<(int, int), Piece> board, Dictionary<string, (int, int)>.ValueCollection sideOffset)
         {
             return new List<(int, int)>() {(0, 0)};
         }
@@ -195,7 +228,7 @@ namespace GameCore
             foreach (var side in sides)
                 positions.Add(ValidateQueenBeePosition(piece_positions[piece]));
         **/
-        private List<(int, int)> _GetQueenBeeMovingPositions(ref Dictionary<(int, int), Piece> board)
+        private List<(int, int)> _GetQueenBeeMovingPositions(Dictionary<(int, int), Piece> board, Dictionary<string, (int, int)>.ValueCollection sideOffset)
         {
             return new List<(int, int)>() {(0, 0)};
         }
@@ -208,7 +241,7 @@ namespace GameCore
             foreach (var side in sides)
                 positions.Add(ValidateSpiderPosition(DFS(piece_positions[piece])));
         **/
-        private List<(int, int)> _GetSpiderMovingPositions(ref Dictionary<(int, int), Piece> board)
+        private List<(int, int)> _GetSpiderMovingPositions(Dictionary<(int, int), Piece> board, Dictionary<string, (int, int)>.ValueCollection sideOffset)
         {
             return new List<(int, int)>() {(0, 0)};
         }
@@ -238,12 +271,14 @@ namespace GameCore
             foreach (Piece piece in color_pieces[this.Color])
             {
                 // iterate through this piece's available sides
-                foreach (KeyValuePair<string, (int, int)> side in piece.GetAvailableSides())
+                foreach ((int, int) side in piece.GetAvailableSides())
                 {
                     // if it does not neighbor with an opponent's piece
-                    if (!_HasOpponentNeighbor(side.Value, sideOffsets, board))
-                        // it is a valid placing position
-                        positions.Add(side.Value);
+                    if (!_HasOpponentNeighbor(side, sideOffsets, board))
+                        // If it is not already there
+                        if (!positions.Contains(side))
+                            // It is a valid placing position, so add it
+                            positions.Add(side);
                 }
             }
 

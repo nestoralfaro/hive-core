@@ -140,7 +140,7 @@ namespace GameCore
         private void PrintAvailableMovesForThePiece(Piece piece)
         {
             Console.WriteLine("--------------------Available Moves--------------------");
-            foreach ((int, int) point in piece.GetMovingPositions(ref _pieces))
+            foreach ((int, int) point in piece.GetMovingPositions(_pieces, _sides_offset.Values))
             {
                 Console.WriteLine(point);
             }
