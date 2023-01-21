@@ -86,7 +86,7 @@ dotnet run
 - Make sure you review [this video](https://www.youtube.com/watch?v=HQmbAdjuB88&t=495s) to install the right packages and test it on VS Code.
 - See its [assertions](https://textbooks.cs.ksu.edu/cis400/1-object-orientation/04-testing/05-xunit-assertions/)
 - Write your tests in `Tests.cs`.
-- To run
+- To run, do:
 ```
 dotnet test
 ```
