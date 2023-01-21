@@ -18,9 +18,9 @@ namespace GameCore
         }
 
         [Fact]
-        public void AddingPieceToBoardTest()
+        public void AddingFirstBlackAnt()
         {
-            string piece = "wB1";
+            string piece = "bA1";
             using (var input = new StringReader(piece))
             {
                 Console.SetIn(input);
