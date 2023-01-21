@@ -13,6 +13,7 @@ namespace GameCore
         private Dictionary<(int, int), Piece> _pieces;
         private Dictionary<string, (int, int)> _piece_coordinate;
         private Dictionary<Color, List<Piece> > _color_coordinate;
+        public static bool Test = true;
 
         public Dictionary<string, (int, int)> _sides_offset = new Dictionary<string, (int, int)>()
         {
