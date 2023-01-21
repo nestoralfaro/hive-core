@@ -14,8 +14,13 @@ namespace GameCore
         private Dictionary<string, (int, int)> _piece_coordinate;
         private Dictionary<Color, List<Piece> > _color_coordinate;
 
+        // *******************************************
+        // For testing
         public Dictionary<(int, int), Piece> GetAllPieces() { return _pieces; }
-        public static bool Test = true;
+        public Dictionary<string, (int, int)> GetPiecePoint() { return _piece_coordinate; }
+        public Dictionary<Color, List<Piece>> GetColorPieces() { return _color_coordinate; }
+        // For testing
+        // *******************************************
 
         public Dictionary<string, (int, int)> _sides_offset = new Dictionary<string, (int, int)>()
         {
@@ -100,8 +105,8 @@ namespace GameCore
             if (String.IsNullOrEmpty(move.DestinationSide)) return (0, 0);
             else
             {
-                (int, int) referencePiece = _piece_coordinate[move.DestinationPiece];
-                (int, int) delta = _sides_offset[move.DestinationSide];
+                (int, int) referencePiece = this._piece_coordinate[move.DestinationPiece];
+                (int, int) delta = this._sides_offset[move.DestinationSide];
                 return (referencePiece.Item1 + delta.Item1, referencePiece.Item2 + delta.Item2);
             }
         }

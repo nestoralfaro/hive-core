@@ -77,9 +77,9 @@ dotnet run
         }
     ```
 
-    Another interesting property of this approach is that for any `point` if `(point % side == (0, 0))`, then it is a valid side of the piece. If necessary, you may consider a validation as
+    Another interesting property of this approach is that for any `point` if `(point % side_offset == (0, 0))`, then it is a valid side of the piece. If necessary, you may validate a point this way
     ```
-        bool IsNeighbour = (point % side == (0, 0));
+        bool IsSide = (point % side_offset == (0, 0));
     ``` 
 
 ## Unit Tests with xUnit
