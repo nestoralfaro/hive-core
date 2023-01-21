@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace GameCore
 {
@@ -53,7 +54,8 @@ namespace GameCore
 
         public Move (string input)
         {
-            _move = input;
+            // Make sure the input has no whitespaces whatsoever
+            _move = Regex.Replace(input, @"\s+", "");
             MovingPiece = _move.Substring(0, 3);
             if (_move.Length > 3)
             {

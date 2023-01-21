@@ -12,6 +12,7 @@ namespace GameCore
         /// </summary>
         private Dictionary<(int, int), Piece> _pieces;
         private Dictionary<string, (int, int)> _piece_coordinate;
+        private Dictionary<Color, List<Piece> > _color_coordinate;
 
         public Dictionary<string, (int, int)> _sides_offset = new Dictionary<string, (int, int)>()
         {
@@ -26,8 +27,21 @@ namespace GameCore
 
         public Board()
         {
+            // Ensuring capacities so that each time an element is added
+            // there is no need to dynamically allocate more memory.
+            // This is an approach that should help performance
             _pieces = new Dictionary<(int, int), Piece>();
+            _pieces.EnsureCapacity(22);
+            
             _piece_coordinate = new Dictionary<string, (int, int)>();
+            _piece_coordinate.EnsureCapacity(22);
+
+            _color_coordinate = new Dictionary< Color, List<Piece> >()
+            {
+                {Color.Black, new List<Piece>()},
+                {Color.White, new List<Piece>()},
+            };
+            _color_coordinate.EnsureCapacity(2);
         }
 
         private void _PrintWarning(string warning)
@@ -43,13 +57,15 @@ namespace GameCore
         {
             _pieces.Add(point, piece);
             _piece_coordinate.Add(piece.ToString(), point);
+            _color_coordinate[piece.Color].Add(piece);
         }
 
-        public void RemovePiece((int x, int y) point, string piece)
+        public void RemovePiece((int x, int y) point, Piece piece)
         {
-            (int, int) piecePointToRemove = _piece_coordinate[piece];
+            (int, int) piecePointToRemove = _piece_coordinate[piece.ToString()];
             _pieces.Remove(piecePointToRemove);
-            _piece_coordinate.Remove(piece);
+            _piece_coordinate.Remove(piece.ToString());
+            _color_coordinate[piece.Color].Remove(piece);
         }
 
         public bool IsValidInput(Move move)
@@ -57,7 +73,7 @@ namespace GameCore
             // This is a regex that could still be tricked, so we may have to check for that as well:
             // For instance, it would allow `wQ2`, but there really is only 1 Queen Bee.
                                 //   Not optional piece       Optional Side       Optional Piece
-            string validPattern = @"^([wb])([ABGQS])([1-3])([*][/|\\]|[/|\\][*])?([wb]?)([ABGQS]?)([1-3]?)$";
+            string validPattern = @"^([wb])([ABGQS])([1-3])([*][/|\\]|[=/|\\][*])?([wb]?)([ABGQS]?)([1-3]?)$";
             return Regex.IsMatch(move.ToString(), validPattern);
         }
 
@@ -131,7 +147,7 @@ namespace GameCore
             Console.WriteLine("-------------------------------------------------------");
 
             Console.WriteLine("--------------------Available Placings--------------------");
-            foreach ((int, int) point in piece.GetPlacingPositions(ref _pieces))
+            foreach ((int, int) point in piece.GetPlacingPositions(_color_coordinate, _pieces, _sides_offset.Values))
             {
                 Console.WriteLine(point);
             }
@@ -174,7 +190,7 @@ namespace GameCore
                             {
                                 // Move such existing piece
                                 // remove piece
-                                RemovePiece(point, piece.ToString());
+                                RemovePiece(point, piece);
                                 // re-add it
                                 AddPiece(point, piece);
                                 UpdateAllNeighbors();

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+#nullable enable
 
 namespace GameCore
 {
@@ -12,8 +13,10 @@ namespace GameCore
         private const int _QUEENBEE_MAX_STEP_COUNT = 1;
         private const int _GRASSHOPPER_MAX_STEP_COUNT = 1;
         private const int _BEETLE_MAX_STEP_COUNT = 1;
+
         public Dictionary<string, (int, int)> Neighbors { get; set; }
         public Dictionary<string, (int, int)> Sides { get; set; }
+        public IEnumerable<KeyValuePair<string, (int, int)>> GetAvailableSides() { return Sides.Except(Neighbors); }
         public (int, int) Point { get; set; }
         public Insect Insect { get; set; }
         public Color Color { get; set; }
@@ -210,42 +213,40 @@ namespace GameCore
             return new List<(int, int)>() {(0, 0)};
         }
 
-        private bool _HasOpponentNeighbor(Dictionary<string, (int, int)>.ValueCollection sides, Dictionary<(int, int), Piece> board)
+        private bool _HasOpponentNeighbor((int, int) point, Dictionary<string, (int, int)>.ValueCollection sideOffset, Dictionary<(int, int), Piece> board)
         {
-            foreach ((int, int) side in sides)
+            foreach ((int, int) side in sideOffset)
             {
-                // (int, int) potentialOpponentNeighborPosition = (point.Item1 + neighborPosition.Item1, point.Item2 + neighborPosition.Item2);
-                // If piece is on the board    AND is not the same color as the piece that is about to be placed
-                if (board.ContainsKey(side) && board[side].Color != this.Color)
+                (int, int) potentialOpponentNeighborPosition = (point.Item1 + side.Item1, point.Item2 + side.Item2);
+                // If piece is on the board                             AND is not the same color as the piece that is about to be placed
+                if (board.ContainsKey(potentialOpponentNeighborPosition) && board[potentialOpponentNeighborPosition].Color != this.Color)
                 {
                     // Has an opponent neighbor
                     return true;
                 }
             }
+
+            // Checked each side, and no opponent's pieces were found
             return false;
         }
 
-        // Has not been tested yet.
-        public List<(int, int)> GetPlacingPositions(ref Dictionary<(int, int), Piece> board)
+        public List<(int, int)> GetPlacingPositions(Dictionary<Color, List<Piece> > color_pieces, Dictionary<(int, int), Piece> board, Dictionary<string, (int, int)>.ValueCollection sideOffsets)
         {
             List<(int, int)> positions = new List<(int, int)>();
-            // Go through each piece on the board
-            foreach (KeyValuePair<(int, int), Piece> piece in board)
+
+            // iterate through the current player's color's pieces
+            foreach (Piece piece in color_pieces[this.Color])
             {
-                // Go through each of its sides
-                foreach ((int, int) side in piece.Value.Sides.Values)
+                // iterate through this piece's available sides
+                foreach (KeyValuePair<string, (int, int)> side in piece.GetAvailableSides())
                 {
-                    // Get this side's coordinate
-                    // (int, int) potentialPosition = (piece.Key.Item1 + side.Item1, piece.Key.Item2 + side.Item2);
-                        // If it's Available                                    AND  DOES NOT have an opponent neighbor 
-                    if (!piece.Value.Neighbors.ContainsValue(side) && !_HasOpponentNeighbor(piece.Value.Sides.Values, board))
-                    {
-                        // It is a valid placing position, and it is not repeated, add it
-                        if (!positions.Contains(side))
-                            positions.Add(side);
-                    }
+                    // if it does not neighbor with an opponent's piece
+                    if (!_HasOpponentNeighbor(side.Value, sideOffsets, board))
+                        // it is a valid placing position
+                        positions.Add(side.Value);
                 }
             }
+
             return positions;
         }
 
