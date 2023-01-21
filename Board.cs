@@ -13,7 +13,7 @@ namespace GameCore
         private Dictionary<(int, int), Piece> _pieces;
         private Dictionary<string, (int, int)> _piece_coordinate;
 
-        public Dictionary<string, (int, int)> _sides = new Dictionary<string, (int, int)>()
+        public Dictionary<string, (int, int)> _sides_offset = new Dictionary<string, (int, int)>()
         {
             // Notice how each side is only valid if it adds up to an even number
             { "*/", (-1, 1) },   // [0] Northwest
@@ -70,7 +70,7 @@ namespace GameCore
         {
             return (
                 _piece_coordinate.ContainsKey(move.MovingPiece)
-                && _sides.ContainsKey(move.DestinationSide)
+                && _sides_offset.ContainsKey(move.DestinationSide)
                 && _piece_coordinate.ContainsKey(move.DestinationPiece)
             );
         }
@@ -82,31 +82,31 @@ namespace GameCore
             else
             {
                 (int, int) referencePiece = _piece_coordinate[move.DestinationPiece];
-                (int, int) delta = _sides[move.DestinationSide];
+                (int, int) delta = _sides_offset[move.DestinationSide];
                 return (referencePiece.Item1 + delta.Item1, referencePiece.Item2 + delta.Item2);
             }
         }
 
-        private void PopulateNeighborsFrom((int x, int y) point)
+        private void PopulateNeighborsFor(KeyValuePair<(int, int), Piece> piece)
         {
-            _pieces[point].Neighbors.Clear();
-            foreach (KeyValuePair<string, (int, int)> side in _sides)  
+            piece.Value.Neighbors.Clear();
+            foreach (KeyValuePair<string, (int, int)> side in piece.Value.Sides)  
             {
                 // bool IsNeighbour = (point % side == (0, 0));
-                (int, int) neighborPoint = (point.x + side.Value.Item1, point.y + side.Value.Item2);
-                bool neighbourExists = _pieces.ContainsKey(neighborPoint);
+                // (int, int) neighborPoint = (point.x + side.Value.Item1, point.y + side.Value.Item2);
+                bool neighbourExists = _pieces.ContainsKey(side.Value);
                 if (neighbourExists)
                 {
-                    _pieces[point].Neighbors[side.Key] = neighborPoint;
+                    piece.Value.Neighbors[side.Key] = side.Value;
                 }
             }
         }
 
         private void UpdateAllNeighbors()
         {
-            foreach (var entry in _pieces)
+            foreach (KeyValuePair<(int, int), Piece> piece in _pieces)
             {
-                PopulateNeighborsFrom(entry.Key);
+                PopulateNeighborsFor(piece);
             }
         }
 
@@ -124,14 +124,14 @@ namespace GameCore
         private void PrintAvailableMovesForThePiece(Piece piece)
         {
             Console.WriteLine("--------------------Available Moves--------------------");
-            foreach ((int, int) point in piece.GetMovingPositions())
+            foreach ((int, int) point in piece.GetMovingPositions(ref _pieces))
             {
                 Console.WriteLine(point);
             }
             Console.WriteLine("-------------------------------------------------------");
 
             Console.WriteLine("--------------------Available Placings--------------------");
-            foreach ((int, int) point in piece.GetPlacingPositions())
+            foreach ((int, int) point in piece.GetPlacingPositions(ref _pieces))
             {
                 Console.WriteLine(point);
             }
@@ -142,8 +142,7 @@ namespace GameCore
         {
             Move move = player.GetMove();
             (int, int) point = GetPoint(move);
-            Piece piece = new Piece(move.MovingPiece);
-            PrintAvailableMovesForThePiece(piece);
+            Piece piece = new Piece(move.MovingPiece, point);
             try
             {
                 if (IsValidInput(move))
@@ -160,6 +159,8 @@ namespace GameCore
                                 // Remove it from the player
                                 player.Pieces.Remove(move.MovingPiece);
                                 UpdateAllNeighbors();
+
+                                PrintAvailableMovesForThePiece(piece);
                             }
                             else
                             {
@@ -177,6 +178,8 @@ namespace GameCore
                                 // re-add it
                                 AddPiece(point, piece);
                                 UpdateAllNeighbors();
+
+                                PrintAvailableMovesForThePiece(piece);
                             }
                             else
                             {
@@ -192,6 +195,8 @@ namespace GameCore
                             AddPiece(point, piece);
                             // Does not remove on the first turn
                             player.Pieces.Remove(move.MovingPiece);
+
+                            PrintAvailableMovesForThePiece(piece);
                         }
                         else
                         {
@@ -231,7 +236,7 @@ namespace GameCore
             Console.WriteLine("Current board state:");
             foreach (var entry in _pieces)
             {
-                Console.WriteLine($"{entry.Key}: {entry.Value.Insect} {entry.Value.Number}");
+                Console.WriteLine($"{entry.Key}: {entry.Value.Insect} {entry.Value.Number} {entry.Value.Color}");
                 //Print the neighbours
                 foreach (var neighbour in entry.Value.Neighbors)
                 {
