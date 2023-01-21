@@ -43,6 +43,23 @@ namespace GameCore
             return Neighbors.Count == _MANY_SIDES;
         }
 
+        public List<(int, int)> GetMovingPositions(string piece, Dictionary<string, (int, int)> piece_positions, Dictionary<(int, int), Piece> Board)
+        {
+            switch (Insect)
+            {
+                case Insect.Ant:
+                    return GetAntMovingPositions();
+                case Insect.Beetle:
+                    return GetBeetleMovingPositions();
+                case Insect.Grasshopper:
+                    return GetGrasshopperMovingPositions();
+                case Insect.Spider:
+                    return GetSpiderMovingPositions();
+                case Insect.QueenBee:
+                    return GetQueenBeeMovingPositions();
+            }
+        }
+
         private bool _IsRightTurn((int, int) p1, (int, int) p2, (int, int) p3)
         {
             return (p2.Item1 - p1.Item1) * (p3.Item2 - p1.Item2) - (p2.Item2 - p1.Item2) * (p3.Item1 - p1.Item1) < 0;
