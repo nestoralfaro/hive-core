@@ -48,15 +48,15 @@ namespace GameCore
             switch (Insect)
             {
                 case Insect.Ant:
-                    return GetAntMovingPositions();
+                    return _GetAntMovingPositions();
                 case Insect.Beetle:
-                    return GetBeetleMovingPositions();
+                    return _GetBeetleMovingPositions();
                 case Insect.Grasshopper:
-                    return GetGrasshopperMovingPositions();
+                    return _GetGrasshopperMovingPositions();
                 case Insect.Spider:
-                    return GetSpiderMovingPositions();
+                    return _GetSpiderMovingPositions();
                 case Insect.QueenBee:
-                    return GetQueenBeeMovingPositions();
+                    return _GetQueenBeeMovingPositions();
             }
         }
 
@@ -75,7 +75,7 @@ namespace GameCore
         For instance, given point x = (-2, 0), to know its Southwest side, just add the west side, which is (-1, -1).
         Therfore, x's Southwest side is (-2 + (-1), 0 + (-1)) = (-3, -1) (double check with the chart sent to discord)
         **/
-        public List<(int, int)> GetAntMovingPositions(string piece, Dictionary<string, (int, int)> piece_positions, Dictionary<(int, int), Piece> board)
+        private List<(int, int)> _GetAntMovingPositions(string piece, Dictionary<string, (int, int)> piece_positions, Dictionary<(int, int), Piece> board)
         {
             // Find convex hull with Graham's Scan algorithm
             List<(int, int)> convexHull = new List<(int, int)>();
@@ -127,7 +127,7 @@ namespace GameCore
             foreach (var side in sides)
                 validPositions.Add(ValidateBeetleMoves(piece_positions[piece] + side))
         **/
-        public List<(int, int)> GetBeetleMovingPositions(string piece, Dictionary<string, (int, int)> piece_positions, Dictionary<(int, int), Piece> board)
+        private List<(int, int)> _GetBeetleMovingPositions(string piece, Dictionary<string, (int, int)> piece_positions, Dictionary<(int, int), Piece> board)
         {
             return new List<(int, int)>() {(0, 0)};
         }
@@ -145,7 +145,7 @@ namespace GameCore
                     potentialPosition + side
                 validPositions.Add(potentialPosition)
         **/
-        public List<(int, int)> GetGrasshopperMovingPositions(string piece, Dictionary<string, (int, int)> piece_positions, Dictionary<(int, int), Piece> board)
+        private List<(int, int)> _GetGrasshopperMovingPositions(string piece, Dictionary<string, (int, int)> piece_positions, Dictionary<(int, int), Piece> board)
         {
             return new List<(int, int)>() {(0, 0)};
         }
@@ -158,7 +158,7 @@ namespace GameCore
             foreach (var side in sides)
                 positions.Add(ValidateQueenBeePosition(piece_positions[piece]));
         **/
-        public List<(int, int)> GetQueenBeeMovingPositions(string piece, Dictionary<string, (int, int)> piece_positions, Dictionary<(int, int), Piece> board)
+        private List<(int, int)> _GetQueenBeeMovingPositions(string piece, Dictionary<string, (int, int)> piece_positions, Dictionary<(int, int), Piece> board)
         {
             return new List<(int, int)>() {(0, 0)};
         }
@@ -171,7 +171,7 @@ namespace GameCore
             foreach (var side in sides)
                 positions.Add(ValidateSpiderPosition(DFS(piece_positions[piece])));
         **/
-        public List<(int, int)> GetSpiderMovingPositions(string piece, Dictionary<string, (int, int)> piece_positions, Dictionary<(int, int), Piece> board)
+        private List<(int, int)> _GetSpiderMovingPositions(string piece, Dictionary<string, (int, int)> piece_positions, Dictionary<(int, int), Piece> board)
         {
             return new List<(int, int)>() {(0, 0)};
         }
