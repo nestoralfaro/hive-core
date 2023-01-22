@@ -5,6 +5,10 @@ using System.Collections.Generic;
 
 namespace GameCore
 {
+    // Because the board is used to often, we should consider either 
+    // inheriting from "Board" or making it publicly available.
+    // Maybe it should be just called game_state.
+    // Similarly with _sides_offset. Given that it is a constant, it should be global instead
     public class Piece
     {
         private const int _MANY_SIDES = 6;
@@ -18,7 +22,7 @@ namespace GameCore
         public Dictionary<string, (int, int)> Sides { get; set; }
         public List<(int, int)> GetAvailableSides() { return Sides.Except(Neighbors).Select(side => side.Value).ToList(); }
 
-        public (int, int) Point { get; set; }
+        public (int x, int y) Point { get; set; }
         public Insect Insect { get; set; }
         public Color Color { get; set; }
         public int Number { get; set; }
@@ -63,20 +67,49 @@ namespace GameCore
             return Neighbors.Count == _MANY_SIDES;
         }
 
-        public List<(int, int)> GetMovingPositions(Dictionary<(int, int), Piece> board, Dictionary<string, (int, int)>.ValueCollection sideOffset)
+        private bool HasOneNeighborOnly((int x, int y) spot, Dictionary<(int, int), Piece> board)
+        {
+            int neighborCount = 0;
+            foreach (var side in board._sides_offset)
+            {
+                if (board.GetAllPieces().ContainsKey(spot))
+                    ++neighborCount;
+                    if (neighborCount > 1)
+                        return false;
+            }
+            return true;
+        }
+
+        private bool _BreaksTheHive((int x, int y) point, Dictionary<(int, int), Piece> board, Dictionary<string, (int, int)>.ValueCollection sideOffsets)
+        {
+            // If it does not even have one neighbor, then that'd break the hive
+            return !HasOneNeighborOnly(spot, board, sideOffsets);
+        }
+
+        private bool _IsGate((int x, int y) point, Dictionary<(int, int), Piece> board, Dictionary<string, (int, int)>.ValueCollection sideOffsets)
+        {
+            return HasOneNeighborOnly(spot, board, sideOffsets);
+        }
+
+        private bool _IsValidPosition ((int x, int y) point, Dictionary<(int, int), Piece> board, Dictionary<string, (int, int)>.ValueCollection sideOffsets)
+        {
+            return !_BreaksTheHive(point, board, sideOffsets) && !_IsGate(point, board, sideOffsets);
+        }
+
+        public List<(int, int)> GetMovingPositions(Dictionary<(int, int), Piece> board, Dictionary<string, (int, int)>.ValueCollection sideOffsets)
         {
             switch (Insect)
             {
                 case Insect.Ant:
-                    return _GetAntMovingPositions(board, sideOffset);
+                    return _GetAntMovingPositions(board, sideOffsets).Where(pos => _IsValidPosition(pos, board, sideOffsets)).ToList();
                 case Insect.Beetle:
-                    return _GetBeetleMovingPositions(board, sideOffset);
+                    return _GetBeetleMovingPositions(board, sideOffsets).Where(pos => _IsValidPosition(pos, board, sideOffsets)).ToList();
                 case Insect.Grasshopper:
-                    return _GetGrasshopperMovingPositions(board, sideOffset);
+                    return _GetGrasshopperMovingPositions(board, sideOffsets).Where(pos => _IsValidPosition(pos, board, sideOffsets)).ToList();
                 case Insect.Spider:
-                    return _GetSpiderMovingPositions(board, sideOffset);
+                    return _GetSpiderMovingPositions(board, sideOffsets).Where(pos => _IsValidPosition(pos, board, sideOffsets)).ToList();
                 case Insect.QueenBee:
-                    return _GetQueenBeeMovingPositions(board, sideOffset);
+                    return _GetQueenBeeMovingPositions(board, sideOffsets).Where(pos => _IsValidPosition(pos, board, sideOffsets)).ToList();
                 default:
                     // this is an invalid position
                     return new List<(int, int)>() { (1, 2) };
@@ -89,11 +122,11 @@ namespace GameCore
             return (p2.Item1 - p1.Item1) * (p3.Item2 - p1.Item2) - (p2.Item2 - p1.Item2) * (p3.Item1 - p1.Item1) < 0;
         }
 
-        private bool _HasAtLeastOneNeighbor((int, int) point, Dictionary<(int, int), Piece> board, Dictionary<string, (int, int)>.ValueCollection sideOffset)
+        private bool _HasAtLeastOneNeighbor((int x, int y) point, Dictionary<(int, int), Piece> board, Dictionary<string, (int, int)>.ValueCollection sideOffset)
         {
-            foreach ((int, int) side in sideOffset)
+            foreach ((int x, int y) side in sideOffset)
             {
-                (int, int) neighborPosition = (point.Item1 + side.Item1, point.Item2 + side.Item2);
+                (int x, int y) neighborPosition = (point.x + side.x, point.y + side.y);
                 // If the neighbor is not myself  AND If the neighbor exists on the board
                 if (this.Point != neighborPosition && board.ContainsKey(neighborPosition))
                 {
@@ -120,12 +153,6 @@ namespace GameCore
         **/
         private List<(int, int)> _GetAntMovingPositions(Dictionary<(int, int), Piece> board, Dictionary<string, (int, int)>.ValueCollection sideOffset )
         {
-            /**
-            TODO: The convex hull needs to make sure that the moves:
-            1. do not break the hive!
-            2. It is not a gate (a position where there is only one available side for a neighbor)
-            **/
-
             // Find convex hull with Graham's Scan algorithm
             List<(int, int)> convexHull = new List<(int, int)>();
             List<(int, int)> activePoints = new List<(int, int)>(); 
@@ -198,7 +225,7 @@ namespace GameCore
 
             // Because it is a beetle, add its existing neighbors too, because it can get on top of them
             validMoves.AddRange(this.Neighbors.Select(side => side.Value).ToList());
-            
+
             return validMoves;
         }
 
@@ -215,35 +242,59 @@ namespace GameCore
                     potentialPosition + side
                 validPositions.Add(potentialPosition)
         **/
-        private List<(int, int)> _GetGrasshopperMovingPositions(Dictionary<(int, int), Piece> board, Dictionary<string, (int, int)>.ValueCollection sideOffset)
+        private List<(int, int)> _GetGrasshopperMovingPositions(Dictionary<(int, int), Piece> board, Dictionary<string, (int, int)>.ValueCollection sideOffsets)
         {
-            return new List<(int, int)>() {(0, 0)};
+            List<(int x, int y)> positions = new List<(int x, int y)>();
+            foreach ((int x, int y) sideOffset in sideOffsets)
+            {
+                (int x, int y) nextSpot = (this.Point.x + sideOffset.x, this.Point.y + sideOffset.y);
+
+                // Keep hopping over pieces
+                while (board.ContainsKey(nextSpot))
+                {
+                    nextSpot = (nextSpot.x + sideOffset.x, nextSpot.y + sideOffset.y);
+                }
+
+                // until you find a spot
+                positions.Add(nextSpot);
+            }
+            return positions;
         }
 
-        /**
-        An idea of how this function could be implemented:
-        Similar to the beetle, just return the sides by adding once to each of them.
-        Something like:
-            positions = []
-            foreach (var side in sides)
-                positions.Add(ValidateQueenBeePosition(piece_positions[piece]));
-        **/
         private List<(int, int)> _GetQueenBeeMovingPositions(Dictionary<(int, int), Piece> board, Dictionary<string, (int, int)>.ValueCollection sideOffset)
         {
-            return new List<(int, int)>() {(0, 0)};
+            return this.GetAvailableSides();
         }
 
-        /**
-        An idea of how this function could be implemented:
-        Maybe doing DFS on its sides and validating each of them?
-        Something like:
-            positions = []
-            foreach (var side in sides)
-                positions.Add(ValidateSpiderPosition(DFS(piece_positions[piece])));
-        **/
-        private List<(int, int)> _GetSpiderMovingPositions(Dictionary<(int, int), Piece> board, Dictionary<string, (int, int)>.ValueCollection sideOffset)
+        private void _DFS(out List<(int x, int y)> positions, Dictionary<(int x, int y), Piece> board, out Dictionary<(int x, int y), bool> visited, (int x, int y) spot, Dictionary<string, (int, int)>.ValueCollection sideOffsets, int curDepth, int maxDepth)
         {
-            return new List<(int, int)>() {(0, 0)};
+            if (curDepth == maxDepth)
+                // It is an open spot
+                if (!board.ContainsKey)
+                    positions.Add(spot);
+                return;
+            
+            visited[spot] = true;
+
+            foreach ((int x, int y) offset in sideOffsets)
+            {
+                (int x, int y) nextSpot = (spot.x + offset.x, spot.y + offset.y);
+                if (!visited[nextSpot])
+                    _DFS(out positions, board, out visited, nextSpot, sideOffsets, curDepth + 1, maxDepth);
+            }
+        }
+
+        private List<(int, int)> _GetSpiderMovingPositions(Dictionary<(int, int), Piece> board, Dictionary<string, (int, int)>.ValueCollection sideOffsets)
+        {
+            List<(int x, int y)> positions = new List<(int x, int y)>();
+            Dictionary<(int x, int y), bool> visited = new Dictionary<(int x, int y), bool>();
+            foreach ((int x, int y) sideOffset in sideOffsets)
+            {
+                (int x, int y) side = (sideOffset.x + this.Point.x, sideOffset.y + this.Point.y);
+                if (!visited[side])
+                    _DFS(out positions, board, out visited, side, sideOffsets, 1, _SPIDER_MAX_STEP_COUNT);
+            }
+            return positions;
         }
 
         private bool _HasOpponentNeighbor((int, int) point, Dictionary<string, (int, int)>.ValueCollection sideOffset, Dictionary<(int, int), Piece> board)

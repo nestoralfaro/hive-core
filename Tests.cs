@@ -18,9 +18,74 @@ namespace GameCore
         }
 
         [Fact]
-        public void AddingbA1()
+        public void PlacingOnABusySpot()
         {
-            string piece = "bA1";
+            _FirstMove("bA1");
+            _BlackMove("bA2*|bA1");
+            int piecesOnTheBoard = board.GetAllPieces().Count;
+            try
+            {
+                _BlackMove("bA3|*bA2");
+                Assert.True(false, "Expected exception was not thrown.");
+            }
+            catch (Exception)
+            {
+                Assert.True(true);
+            }
+
+            // Since it threw the exception, it should have not added it
+            Assert.Equal(piecesOnTheBoard, board.GetAllPieces().Count);
+            _BlackMove("bB1*|bA2");
+        }
+
+        #region Helper Methods
+        private bool _IsAntMovingSpot((int x, int y) ant, (int x, int y) spot)
+        {
+            return true;
+        }
+        private bool _IsBeetleMovingSpot((int x, int y) beetle, (int x, int y) spot)
+        {
+            return true;
+        }
+        private bool _IsGrasshopperMovingSpot((int x, int y) grasshopper,(int x, int y) spot)
+        {
+            return true;
+        }
+        private bool _IsSpiderMovingSpot((int x, int y) spider, (int x, int y) spot)
+        {
+            return true;
+        }
+        private bool _IsQueenBeeMovingSpot((int x, int y) queenBee, (int x, int y) spot)
+        {
+            return true;
+        }
+
+        private bool HasOneNeighborOnly((int x, int y) spot)
+        {
+            int neighborCount = 0;
+            foreach (var side in board._sides_offset)
+            {
+                if (board.GetAllPieces().ContainsKey(spot))
+                    ++neighborCount;
+                    if (neighborCount > 1)
+                        return false;
+            }
+            return true;
+        }
+
+        private bool _BreaksTheHive((int x, int y) spot)
+        {
+            // If it does not even have one neighbor, then that'd break the hive
+            return !HasOneNeighborOnly(spot);
+        }
+
+        private bool _IsGate((int x, int y) spot)
+        {
+            return HasOneNeighborOnly(spot);
+        }
+
+        private void _FirstMove(string piece)
+        {
             using (var input = new StringReader(piece))
             {
                 Console.SetIn(input);
@@ -61,10 +126,14 @@ namespace GameCore
             // Evaluate Sides – i.e., make sure it is a valid side according to the offset
             foreach (var side in piece.Sides)
             {
+                (int x, int y) point1 = (side.Value.Item1, side.Value.Item2); 
+                (int x, int y) point2 = (board._sides_offset[side.Key].Item1, board._sides_offset[side.Key].Item1); 
                 Assert.True(
                     // point % side_offset == 0
-                    (side.Value.Item1 % board._sides_offset[side.Key].Item1) == 0
-                    && (side.Value.Item2 % board._sides_offset[side.Key].Item2) == 0
+                    // (side.Value.Item1 % board._sides_offset[side.Key].Item1) == 0
+                    // && (side.Value.Item2 % board._sides_offset[side.Key].Item2) == 0
+                    (point2.x > 0 ? point1.x % point2.x : 0) == 0
+                    && (point2.y > 0 ? point1.y % point2.y : 0) == 0
                 );
             }
 
@@ -91,12 +160,30 @@ namespace GameCore
                 }
             }
 
-            // // Had this piece been moved, what would its available spots be?
-            // foreach (var spot in piece.GetMovingPositions())
-            // {
-            //     Assert.False(BreaksTheHive(spot));
-            //     Assert.False(IsGate(spot));
-            // }
+            // Had this piece been moved, what would its available spots be?
+            foreach (var spot in piece.GetMovingPositions(board.GetAllPieces(), board._sides_offset.Values))
+            {
+                switch (piece.Insect)
+                {
+                    case Insect.Ant:
+                        Assert.True(_IsAntMovingSpot(piece.Point, spot));
+                        break;
+                    case Insect.Beetle:
+                        Assert.True(_IsBeetleMovingSpot(piece.Point, spot));
+                        break;
+                    case Insect.Grasshopper:
+                        Assert.True(_IsGrasshopperMovingSpot(piece.Point ,spot));
+                        break;
+                    case Insect.Spider:
+                        Assert.True(_IsSpiderMovingSpot(piece.Point, spot));
+                        break;
+                    case Insect.QueenBee:
+                        Assert.True(_IsQueenBeeMovingSpot(piece.Point, spot));
+                        break;
+                }
+                Assert.False(_BreaksTheHive(spot));
+                Assert.False(_IsGate(spot));
+            }
         }
 
         private void _BlackMove(string moveStr)
@@ -122,11 +209,6 @@ namespace GameCore
                 _AssertPiece(move.DestinationPiece);
             }
         }
-
-        [Fact]
-        public void TestingMoves()
-        {
-            _BlackMove("bA2*|bA1");
-        }
+        #endregion
     }
 }
