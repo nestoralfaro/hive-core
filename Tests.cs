@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Xunit;
+using static GameCore.Utils;
 
 namespace GameCore
 {
@@ -63,7 +64,7 @@ namespace GameCore
         private bool HasOneNeighborOnly((int x, int y) spot)
         {
             int neighborCount = 0;
-            foreach (var side in board._sides_offset)
+            foreach (var side in SIDE_OFFSETS)
             {
                 if (board.GetAllPieces().ContainsKey(spot))
                     ++neighborCount;
@@ -98,7 +99,7 @@ namespace GameCore
 
         private bool _HasOpponentNeighbor((int, int) point, Color playingColor)
         {
-            foreach ((int, int) side in board._sides_offset.Values)
+            foreach ((int, int) side in SIDE_OFFSETS.Values)
             {
                 (int, int) potentialOpponentNeighborPosition = (point.Item1 + side.Item1, point.Item2 + side.Item2);
                 // If piece is on the board                             AND is not the same color as the piece that is about to be placed
@@ -127,7 +128,7 @@ namespace GameCore
             foreach (var side in piece.Sides)
             {
                 (int x, int y) point1 = (side.Value.Item1, side.Value.Item2); 
-                (int x, int y) point2 = (board._sides_offset[side.Key].Item1, board._sides_offset[side.Key].Item1); 
+                (int x, int y) point2 = (SIDE_OFFSETS[side.Key].Item1, SIDE_OFFSETS[side.Key].Item1); 
                 Assert.True(
                     // point % side_offset == 0
                     // (side.Value.Item1 % board._sides_offset[side.Key].Item1) == 0
@@ -150,10 +151,10 @@ namespace GameCore
             }
 
             // Had this piece not been played, what would its available spots be? 
-            foreach (var spot in piece.GetPlacingPositions(board.GetColorPieces(), board.GetAllPieces(), board.GetPiecePoint().Values))
+            foreach (var spot in piece.GetPlacingPositions(board.GetColorPieces(), board.GetAllPieces()))
             {
                 // Make there is no adjacent opponent 
-                foreach (var offset in board._sides_offset.Values)
+                foreach (var offset in SIDE_OFFSETS.Values)
                 {
                     var side = (spot.Item1 + offset.Item1, spot.Item2 + offset.Item2);
                     Assert.False(_HasOpponentNeighbor(side, color));
@@ -161,7 +162,7 @@ namespace GameCore
             }
 
             // Had this piece been moved, what would its available spots be?
-            foreach (var spot in piece.GetMovingPositions(board.GetAllPieces(), board._sides_offset.Values))
+            foreach (var spot in piece.GetMovingPositions(board.GetAllPieces()))
             {
                 switch (piece.Insect)
                 {

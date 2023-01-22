@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using static GameCore.Utils;
 
 namespace GameCore
 {
@@ -21,17 +22,6 @@ namespace GameCore
         public Dictionary<Color, List<Piece>> GetColorPieces() { return _color_coordinate; }
         // For testing
         // *******************************************
-
-        public Dictionary<string, (int, int)> _sides_offset = new Dictionary<string, (int, int)>()
-        {
-            // Notice how each side is only valid if it adds up to an even number
-            { "*/", (-1, 1) },   // [0] Northwest
-            { "*|", (-2, 0) },   // [1] West
-            { "*\\", (-1, -1) }, // [2] Southwest
-            { "/*", (1, -1) },   // [3] Southeast
-            { "|*", (2, 0) },    // [4] East
-            { "\\*", (1, 1) },   // [5] Northeast
-        };
 
         public Board()
         {
@@ -94,7 +84,7 @@ namespace GameCore
         {
             return (
                 _piece_coordinate.ContainsKey(move.MovingPiece)
-                && _sides_offset.ContainsKey(move.DestinationSide)
+                && SIDE_OFFSETS.ContainsKey(move.DestinationSide)
                 && _piece_coordinate.ContainsKey(move.DestinationPiece)
             );
         }
@@ -106,7 +96,7 @@ namespace GameCore
             else
             {
                 (int, int) referencePiece = this._piece_coordinate[move.DestinationPiece];
-                (int, int) delta = this._sides_offset[move.DestinationSide];
+                (int, int) delta = SIDE_OFFSETS[move.DestinationSide];
                 return (referencePiece.Item1 + delta.Item1, referencePiece.Item2 + delta.Item2);
             }
         }
@@ -148,14 +138,14 @@ namespace GameCore
         private void PrintAvailableMovesForThePiece(Piece piece)
         {
             Console.WriteLine("--------------------Available Moves--------------------");
-            foreach ((int, int) point in piece.GetMovingPositions(_pieces, _sides_offset.Values))
+            foreach ((int, int) point in piece.GetMovingPositions(_pieces))
             {
                 Console.WriteLine(point);
             }
             Console.WriteLine("-------------------------------------------------------");
 
             Console.WriteLine("--------------------Available Placings--------------------");
-            foreach ((int, int) point in piece.GetPlacingPositions(_color_coordinate, _pieces, _sides_offset.Values))
+            foreach ((int, int) point in piece.GetPlacingPositions(_color_coordinate, _pieces))
             {
                 Console.WriteLine(point);
             }
