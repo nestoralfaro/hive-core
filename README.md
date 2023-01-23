@@ -1,15 +1,16 @@
 # First iteration of our Game Core for Hive
 Todo:
-- Unit tests.
-- Implement GetAntMovingPositions
-- Implement GetBeetleMovingPositions
-- Implement GetGrasshopperMovingPositions
-- Implement GetQueenBeeMovingPositions
-- Implement GetSpiderMovingPositions
-- Managing turns and keeping track of pieces.
-- Validating movements and enforcing the rules of the game–e.g., Fix Regex tha validates inputs
-- Refactor–e.g., remove unnecessary variables, data types, etc. Just improve the overall implementation not only in speed, but also in readability.
+- Create more tests.
+- Fix GetAntMovingPositions – it's missing positions 
+- Fix GetBeetleMovingPositions - has **not** been tested
+- Fix GetQueenBeeMovingPositions - has **not** been tested
+- Fix GetSpiderMovingPositions - has been tested *once*
+- Fix GetGrasshopperMovingPositions - has been tested *once*
 - Make sure that the player moves only THEIR pieces and not their opponent's.
+- Managing turns and keeping track of pieces.
+- Validating movements and displaying appropriate messages/exceptions.
+- Refactor–e.g., remove unnecessary variables, data types, etc. Just improve the overall implementation not only in speed, but also in readability.
+- Look into running `GetMovingPositions` and `GetAvailablePosition` concurrently (parallel programming).
 
 If you have .NET on your machine, just run it with:
 ```
