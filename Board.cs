@@ -71,8 +71,9 @@ namespace GameCore
             // This is a regex that could still be tricked, so we may have to check for that as well:
             // For instance, it would allow `wQ2`, but there really is only 1 Queen Bee.
                                 //   Not optional piece       Optional Side       Optional Piece
-            string validPattern = @"^([wb])([ABGQS])([1-3])([*][/|\\]|[=/|\\][*])?([wb]?)([ABGQS]?)([1-3]?)$";
+            string validPattern = @"^([wb])([ABGQS])([1-3])([NS])?([TWE])?([wb]?)([ABGQS]?)([1-3]?)$";
             return Regex.IsMatch(move.ToString(), validPattern);
+            // return true;
         }
 
         public bool IsPlacingValid(Move move)
@@ -216,7 +217,7 @@ namespace GameCore
                         }
                         else
                         {
-                            throw new ArgumentException("Invalid Move: Make sure you include your side and reference piece–e.g., wQ1*/bB1");
+                            throw new ArgumentException("Invalid Move: Make sure you include your side and reference piece–e.g., wQ1NWbB1");
                         }
                     }
                 }

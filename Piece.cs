@@ -52,12 +52,12 @@ namespace GameCore
             {
                 // These values may not need to be hardcoded.
                 // However, hardcoding them may make them more efficient
-                { "*/", (piecePoint.Item1 + (-1), piecePoint.Item2 + (1))},     // [0] Northwest
-                { "*|", (piecePoint.Item1 + (-2), piecePoint.Item2 + (0))},     // [1] West
-                { "*\\", (piecePoint.Item1 + (-1), piecePoint.Item2 + (-1))},   // [2] Southwest
-                { "/*", (piecePoint.Item1 + (1), piecePoint.Item2 + (-1))},     // [3] Southeast
-                { "|*", (piecePoint.Item1 + (2), piecePoint.Item2 + (0))},      // [4] East
-                { "\\*", (piecePoint.Item1 + (1), piecePoint.Item2 + (1))},     // [5] Northeast
+                { "NT", (piecePoint.Item1 + (1), piecePoint.Item2 + (1)) },    // [0] North
+                { "NW", (piecePoint.Item1 + (-1), piecePoint.Item2 + (1)) },   // [1] Northwest
+                { "SW", (piecePoint.Item1 + (-2), piecePoint.Item2 + (0)) },   // [2] Southwest
+                { "ST", (piecePoint.Item1 + (-1), piecePoint.Item2 + (-1)) },  // [3] South
+                { "SE", (piecePoint.Item1 + (1), piecePoint.Item2 + (-1)) },   // [4] Southeast
+                { "NE", (piecePoint.Item1 + (2), piecePoint.Item2 + (0)) },    // [5] Northeast
             };
         }
 

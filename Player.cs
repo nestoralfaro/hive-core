@@ -70,7 +70,7 @@ namespace GameCore
 
         public bool IsMoveWithDestination()
         {
-            return _move.Contains("*");
+            return _move.Length > 3;
         }
     }
 

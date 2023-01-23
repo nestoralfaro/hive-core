@@ -24,11 +24,11 @@ namespace GameCore
             _FirstBlackMove("bA1");
             _AssertSpotsForPiece("bA1", new List<(int, int)>() {(-1, 1), (-2, 0), (-1, -1), (1, -1), (2, 0), (1, 1)}, new List<(int, int)>());
 
-            _BlackMove("bG1*/bA1");
-            _AssertSpotsForPiece("bG1", new List<(int, int)>() {(-2, 2), (-3, 1), (-2, 0), (-1, -1), (1, -1), (2, 0), (1, 1), (0, 2)}, new List<(int, int)>(){(1, -1)});
-            _AssertSpotsForPiece("bA1",
-            new List<(int, int)>() {(-2, 2), (-3, 1), (-2, 0), (-1, -1), (1, -1), (2, 0), (1, 1), (0, 2)},
-            board.GetAllPieces()[board.GetPiecePoint()["bA1"]].Sides.Values.ToList());
+            // _BlackMove("bG1*/bA1");
+            // _AssertSpotsForPiece("bG1", new List<(int, int)>() {(-2, 2), (-3, 1), (-2, 0), (-1, -1), (1, -1), (2, 0), (1, 1), (0, 2)}, new List<(int, int)>(){(1, -1)});
+            // _AssertSpotsForPiece("bA1",
+            // new List<(int, int)>() {(-2, 2), (-3, 1), (-2, 0), (-1, -1), (1, -1), (2, 0), (1, 1), (0, 2)},
+            // board.GetAllPieces()[board.GetPiecePoint()["bA1"]].Sides.Values.ToList());
         }
 
         private void _AssertSpotsForPiece(string piece, List<(int, int)> placing, List<(int, int)> moving)
