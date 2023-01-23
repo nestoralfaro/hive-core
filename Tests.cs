@@ -2,14 +2,15 @@ using System;
 using System.IO;
 using Xunit;
 using static GameCore.Utils;
+#pragma warning disable IDE1006 // Private members naming style
 
 namespace GameCore
 {
     public class Tests
     {
-        Board board = new Board();
-        Player _blackPlayer = new Player('b');
-        Player _whitePlayer = new Player('w');
+        readonly Board board = new();
+        Player _blackPlayer = new('b');
+        Player _whitePlayer = new('w');
 
         [Fact]
         public void NewBoardIsEmptyTest()
@@ -20,75 +21,47 @@ namespace GameCore
         [Fact]
         public void AssertingPieces()
         {
+            _FirstBlackMove("bA1");
+            _AssertSpotsForPiece("bA1", new List<(int, int)>() {(-1, 1), (-2, 0), (-1, -1), (1, -1), (2, 0), (1, 1)}, new List<(int, int)>());
 
+            _BlackMove("bG1*/bA1");
+            _AssertSpotsForPiece("bG1", new List<(int, int)>() {(-2, 2), (-3, 1), (-2, 0), (-1, -1), (1, -1), (2, 0), (1, 1), (0, 2)}, new List<(int, int)>(){(1, -1)});
+            _AssertSpotsForPiece("bA1",
+            new List<(int, int)>() {(-2, 2), (-3, 1), (-2, 0), (-1, -1), (1, -1), (2, 0), (1, 1), (0, 2)},
+            board.GetAllPieces()[board.GetPiecePoint()["bA1"]].Sides.Values.ToList());
         }
 
-        // [Fact]
-        // public void PlacingOnABusySpot()
-        // {
-        //     _FirstMove("bA1");
-        //     _BlackMove("bA2*|bA1");
-        //     int piecesOnTheBoard = board.GetAllPieces().Count;
-        //     try
-        //     {
-        //         _BlackMove("bA3|*bA2");
-        //         Assert.True(false, "Expected exception was not thrown.");
-        //     }
-        //     catch (Exception)
-        //     {
-        //         Assert.True(true);
-        //     }
+        private void _AssertSpotsForPiece(string piece, List<(int, int)> placing, List<(int, int)> moving)
+        {
+            var point = board.GetPiecePoint()[piece];
+            Assert.True(board.GetAllPieces().Count == board.GetPiecePoint().Count);
+            Assert.True(board.GetAllPieces().Count == board.GetColorPieces()[piece[0] == 'b' ? Color.Black : Color.White].Count);
+            Assert.True(board.GetAllPieces()[point].ToString() == piece);
 
-        //     // Since it threw the exception, it should have not added it
-        //     Assert.Equal(piecesOnTheBoard, board.GetAllPieces().Count);
-        //     _BlackMove("bB1*|bA2");
-        // }
+            // If you were able to put the same piece again
+            _AssertPlacingSpots(piece, placing);
+            _AssertMovingSpots(piece, moving);
+        }
 
-        // #region Helper Methods
-        // private bool _IsAntMovingSpot((int x, int y) ant, (int x, int y) spot)
-        // {
-        //     return true;
-        // }
-        // private bool _IsBeetleMovingSpot((int x, int y) beetle, (int x, int y) spot)
-        // {
-        //     return true;
-        // }
-        // private bool _IsGrasshopperMovingSpot((int x, int y) grasshopper,(int x, int y) spot)
-        // {
-        //     return true;
-        // }
-        // private bool _IsSpiderMovingSpot((int x, int y) spider, (int x, int y) spot)
-        // {
-        //     return true;
-        // }
-        // private bool _IsQueenBeeMovingSpot((int x, int y) queenBee, (int x, int y) spot)
-        // {
-        //     return true;
-        // }
+        private void _AssertPlacingSpots(string piece, List<(int, int)> spots)
+        {
+            var returnedSpots = board.GetAllPieces()[board.GetPiecePoint()[piece]].GetPlacingPositions(board.GetColorPieces(), board.GetAllPieces());
+            Assert.True(spots.Count == returnedSpots.Count);
+            foreach (var spot in spots)
+            {
+                Assert.Contains(spot, returnedSpots);
+            }
+        }
 
-        // private bool HasOneNeighborOnly((int x, int y) spot)
-        // {
-        //     int neighborCount = 0;
-        //     foreach (var side in SIDE_OFFSETS)
-        //     {
-        //         if (board.GetAllPieces().ContainsKey(spot))
-        //             ++neighborCount;
-        //             if (neighborCount > 1)
-        //                 return false;
-        //     }
-        //     return true;
-        // }
-
-        // private bool _BreaksTheHive((int x, int y) spot)
-        // {
-        //     // If it does not even have one neighbor, then that'd break the hive
-        //     return !HasOneNeighborOnly(spot);
-        // }
-
-        // private bool _IsGate((int x, int y) spot)
-        // {
-        //     return HasOneNeighborOnly(spot);
-        // }
+        private void _AssertMovingSpots(string piece, List<(int, int)> spots)
+        {
+            var returnedSpots = board.GetAllPieces()[board.GetPiecePoint()[piece]].GetMovingPositions(board.GetAllPieces());
+            Assert.True(spots.Count == returnedSpots.Count);
+            foreach (var spot in spots)
+            {
+                Assert.Contains(spot, returnedSpots);
+            }
+        }
 
         private void _FirstBlackMove(string piece)
         {
@@ -114,99 +87,6 @@ namespace GameCore
             }
         }
 
-        // private bool _HasOpponentNeighbor((int, int) point, Color playingColor)
-        // {
-        //     foreach ((int, int) side in SIDE_OFFSETS.Values)
-        //     {
-        //         (int, int) potentialOpponentNeighborPosition = (point.Item1 + side.Item1, point.Item2 + side.Item2);
-        //         // If piece is on the board                             AND is not the same color as the piece that is about to be placed
-        //         if (board.GetAllPieces().ContainsKey(potentialOpponentNeighborPosition) && board.GetAllPieces()[potentialOpponentNeighborPosition].Color != playingColor)
-        //         {
-        //             // Has an opponent neighbor
-        //             return true;
-        //         }
-        //     }
-
-        //     // Checked each side, and no opponent's pieces were found
-        //     return false;
-        // }
-
-        // /*********************************************************/
-        // // Make these hardcoded positions that we know are right
-
-        // private void _AssertPiece(string pieceStr)
-        // {
-        //     var movingPiecePoint = board.GetPiecePoint()[pieceStr];
-        //     Piece piece = board.GetAllPieces()[movingPiecePoint];
-        //     Color color = pieceStr[0] == 'b' ? Color.Black : Color.White;
-
-        //     // Check the hashmaps
-        //     Assert.True(board.GetAllPieces()[movingPiecePoint].ToString() == pieceStr);
-        //     Assert.True(board.GetColorPieces()[color].Contains(piece));
-
-        //     // Evaluate Sides – i.e., make sure it is a valid side according to the offset
-        //     foreach (var side in piece.Sides)
-        //     {
-        //         (int x, int y) point1 = (side.Value.Item1, side.Value.Item2); 
-        //         (int x, int y) point2 = (SIDE_OFFSETS[side.Key].Item1, SIDE_OFFSETS[side.Key].Item1); 
-        //         Assert.True(
-        //             // point % side_offset == 0
-        //             // (side.Value.Item1 % board._sides_offset[side.Key].Item1) == 0
-        //             // && (side.Value.Item2 % board._sides_offset[side.Key].Item2) == 0
-        //             (point2.x > 0 ? point1.x % point2.x : 0) == 0
-        //             && (point2.y > 0 ? point1.y % point2.y : 0) == 0
-        //         );
-        //     }
-
-        //     // Evaluate Neighbors – i.e., make sure neighbors do exist on the board
-        //     foreach (var neighbor in piece.Neighbors)
-        //     {
-        //         Assert.True(board.GetAllPieces().ContainsKey(neighbor.Value));
-        //     }
-
-        //     // Evaluate Available Spot – i.e., each side spot should not exist on the placed pieces
-        //     foreach (var avalSide in piece.GetAvailableSides())
-        //     {
-        //         Assert.False(board.GetAllPieces().ContainsKey(avalSide));
-        //     }
-
-        //     // If this piece were played again, what would its available placing spots be? 
-        //     foreach (var spot in piece.GetPlacingPositions(board.GetColorPieces(), board.GetAllPieces()))
-        //     {
-        //         // Make there is no adjacent opponent 
-        //         foreach (var offset in SIDE_OFFSETS.Values)
-        //         {
-        //             var side = (spot.Item1 + offset.Item1, spot.Item2 + offset.Item2);
-        //             Assert.False(_HasOpponentNeighbor(side, color));
-        //         }
-        //     }
-
-        //     // If this piece were played again, what would its available moving spots be?
-        //     foreach (var spot in piece.GetMovingPositions(board.GetAllPieces()))
-        //     {
-        //         switch (piece.Insect)
-        //         {
-        //             case Insect.Ant:
-        //                 Assert.True(_IsAntMovingSpot(piece.Point, spot));
-        //                 break;
-        //             case Insect.Beetle:
-        //                 Assert.True(_IsBeetleMovingSpot(piece.Point, spot));
-        //                 break;
-        //             case Insect.Grasshopper:
-        //                 Assert.True(_IsGrasshopperMovingSpot(piece.Point ,spot));
-        //                 break;
-        //             case Insect.Spider:
-        //                 Assert.True(_IsSpiderMovingSpot(piece.Point, spot));
-        //                 break;
-        //             case Insect.QueenBee:
-        //                 Assert.True(_IsQueenBeeMovingSpot(piece.Point, spot));
-        //                 break;
-        //         }
-        //         Assert.False(_BreaksTheHive(spot));
-        //         Assert.False(_IsGate(spot));
-        //     }
-        // }
-
         private void _BlackMove(string moveStr)
         {
             Move move = new Move(moveStr);
@@ -214,8 +94,6 @@ namespace GameCore
             {
                 Console.SetIn(input);
                 board.MakeMove(ref _blackPlayer);
-                // _AssertPiece(move.MovingPiece);
-                // _AssertPiece(move.DestinationPiece);
             }
         }
 
@@ -226,10 +104,7 @@ namespace GameCore
             {
                 Console.SetIn(input);
                 board.MakeMove(ref _whitePlayer);
-                // _AssertPiece(move.MovingPiece);
-                // _AssertPiece(move.DestinationPiece);
             }
         }
-        // #endregion
     }
 }

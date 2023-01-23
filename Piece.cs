@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using static GameCore.Utils;
-#nullable enable
+#pragma warning disable IDE1006 // Private members naming style
 
 
 namespace GameCore
@@ -73,11 +73,11 @@ namespace GameCore
             (int x, int y) leftOffset = index == 0 ? SIDE_OFFSETS_LIST[5] : SIDE_OFFSETS_LIST[index - 1];
             (int x, int y) rightOffset = index == 5 ? SIDE_OFFSETS_LIST[0] : SIDE_OFFSETS_LIST[index + 1];
 
-            (int x, int y) leftAdjacentSpot = (curSpot.x + leftOffset.x, curSpot.y + leftOffset.y);  
-            (int x, int y) rightAdjacentSpot = (curSpot.x + rightOffset.x, curSpot.y + rightOffset.y);
+            (int x, int y) peripheralLeftSpot = (curSpot.x + leftOffset.x, curSpot.y + leftOffset.y);  
+            (int x, int y) peripheralRightSpot = (curSpot.x + rightOffset.x, curSpot.y + rightOffset.y);
 
-            bool eitherAdjacentSpotIsNotItself = (leftAdjacentSpot.x != Point.x || leftAdjacentSpot.y != Point.y) && (rightAdjacentSpot.x != Point.x || rightAdjacentSpot.y != Point.y);
-            bool onlyOneSpotIsOpen = (board.ContainsKey(leftAdjacentSpot) && !board.ContainsKey(rightAdjacentSpot)) || (!board.ContainsKey(leftAdjacentSpot) && board.ContainsKey(rightAdjacentSpot));
+            bool eitherAdjacentSpotIsNotItself = (peripheralLeftSpot.x != Point.x || peripheralLeftSpot.y != Point.y) && (peripheralRightSpot.x != Point.x || peripheralRightSpot.y != Point.y);
+            bool onlyOneSpotIsOpen = (board.ContainsKey(peripheralLeftSpot) && !board.ContainsKey(peripheralRightSpot)) || (!board.ContainsKey(peripheralLeftSpot) && board.ContainsKey(peripheralRightSpot));
 
             return eitherAdjacentSpotIsNotItself && onlyOneSpotIsOpen;
         }
@@ -159,7 +159,7 @@ namespace GameCore
             (int, int) start = activePoints.OrderBy(p => p.Item2).First();
             convexHull.Add(start);
 
-            // 2. Sort the other points by angle relative to the x-axis
+            // 2. Sort the other points by the angle with respect to the lowest y-point
             IOrderedEnumerable<(int, int)> sortedPoints = activePoints.Where(p => p != start).OrderBy(p => Math.Atan2(p.Item2 - start.Item2, p.Item1 - start.Item1));
 
             // 3. Iterate through sorted points and add/remove as necessary
@@ -171,7 +171,6 @@ namespace GameCore
                     // Validate each position
                     // Each position must have at least one neighbor–i.e., one piece in one of its sides, that way the hive does not break
                     // That is, before removing this particular point, see if it has neighbors, if it does, then it is possible still valid
-
                     // Remove the points that create a clockwise turn
                     convexHull.RemoveAt(convexHull.Count - 1);
                 }
@@ -180,6 +179,7 @@ namespace GameCore
 
             // 4. return the convexHull
             return convexHull.Where(side => _HasAtLeastOneNeighbor(side, board)).ToList();
+            // return convexHull;
         }
 
         /**
@@ -234,15 +234,20 @@ namespace GameCore
             foreach ((int x, int y) sideOffset in SIDE_OFFSETS.Values)
             {
                 (int x, int y) nextSpot = (this.Point.x + sideOffset.x, this.Point.y + sideOffset.y);
+                bool firstIsValid = false;
 
                 // Keep hopping over pieces
                 while (board.ContainsKey(nextSpot))
                 {
                     nextSpot = (nextSpot.x + sideOffset.x, nextSpot.y + sideOffset.y);
+                    firstIsValid = true;
                 }
 
-                // until you find a spot
-                positions.Add(nextSpot);
+                if (firstIsValid)
+                {
+                    // until you find a spot
+                    positions.Add(nextSpot);
+                }
             }
             return positions;
         }

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+#pragma warning disable IDE1006 // Private members naming style
 
 namespace GameCore
 {

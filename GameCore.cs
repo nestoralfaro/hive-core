@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+#pragma warning disable IDE1006 // Private members naming style
 
 namespace GameCore
 {
