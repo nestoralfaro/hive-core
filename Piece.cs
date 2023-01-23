@@ -110,6 +110,10 @@ namespace GameCore
 
         private bool _HasAtLeastOneNeighbor((int x, int y) point, Dictionary<(int, int), Piece> board)
         {
+            // This point cannot be itself
+            if (point.x == Point.x && point.y == Point.y)
+                return false;
+
             foreach ((int x, int y) side in SIDE_OFFSETS.Values)
             {
                 (int x, int y) neighborPosition = (point.x + side.x, point.y + side.y);
