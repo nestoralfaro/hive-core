@@ -1,7 +1,7 @@
 # First iteration of our Game Core for Hive
 Todo:
 - Create more tests.
-- Fix GetAntMovingPositions – it's missing positions 
+- Fix GetAntMovingPositions – still adds itself as a valid moving position
 - Fix GetBeetleMovingPositions - has **not** been tested
 - Fix GetQueenBeeMovingPositions - has **not** been tested
 - Fix GetSpiderMovingPositions - has been tested *once*
