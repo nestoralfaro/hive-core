@@ -31,6 +31,9 @@ namespace GameCore
         {
             Console.WriteLine("Enter move");
             string input = Console.ReadLine();
+
+            // temporary for debugging
+            // string input = "bS1";
             Move move = new Move(input);
             return move;
         }

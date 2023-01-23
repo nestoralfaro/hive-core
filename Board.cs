@@ -137,6 +137,8 @@ namespace GameCore
 
         private void PrintAvailableMovesForThePiece(Piece piece)
         {
+            // Improvement idea:
+            // Parallelized both of these in the background (MovingPositions, PlacingPositions)
             Console.WriteLine("--------------------Available Moves--------------------");
             foreach ((int, int) point in piece.GetMovingPositions(_pieces))
             {

@@ -50,9 +50,7 @@ namespace GameCore
             Point = piecePoint;
             Sides = new Dictionary<string, (int, int)>()
             {
-                // These values may not need to be hardcoded. Maybe if the
-                // sides_offsets were passed to the constructor, that way
-                // if we ever need to change, we only need to do it from one place.
+                // These values may not need to be hardcoded.
                 // However, hardcoding them may make them more efficient
                 { "*/", (piecePoint.Item1 + (-1), piecePoint.Item2 + (1))},     // [0] Northwest
                 { "*|", (piecePoint.Item1 + (-2), piecePoint.Item2 + (0))},     // [1] West
@@ -65,37 +63,23 @@ namespace GameCore
 
         public bool IsSurrounded()
         {
-            // TODO: Maybe validate such piece?
             return Neighbors.Count == _MANY_SIDES;
         }
 
-        private bool HasOneNeighborOnly((int x, int y) spot, Dictionary<(int, int), Piece> board)
+        private bool _IsValidPosition((int x, int y) curSpot, (int x, int y) nextSpot, Dictionary<(int, int), Piece> board)
         {
-            int neighborCount = 0;
-            foreach (var side in SIDE_OFFSETS)
-            {
-                if (board.ContainsKey(spot))
-                    ++neighborCount;
-                    if (neighborCount > 1)
-                        return false;
-            }
-            return true;
-        }
+            (int x, int y) offset = (nextSpot.x - curSpot.x, nextSpot.y - curSpot.y);
+            int index = SIDE_OFFSETS_LIST.IndexOf(offset); // direction we're going
+            (int x, int y) leftOffset = index == 0 ? SIDE_OFFSETS_LIST[5] : SIDE_OFFSETS_LIST[index - 1];
+            (int x, int y) rightOffset = index == 5 ? SIDE_OFFSETS_LIST[0] : SIDE_OFFSETS_LIST[index + 1];
 
-        private bool _BreaksTheHive((int x, int y) spot, Dictionary<(int, int), Piece> board)
-        {
-            // If it does not even have one neighbor, then that'd break the hive
-            return !HasOneNeighborOnly(spot, board);
-        }
+            (int x, int y) leftAdjacentSpot = (curSpot.x + leftOffset.x, curSpot.y + leftOffset.y);  
+            (int x, int y) rightAdjacentSpot = (curSpot.x + rightOffset.x, curSpot.y + rightOffset.y);
 
-        private bool _IsGate((int x, int y) spot, Dictionary<(int, int), Piece> board)
-        {
-            return HasOneNeighborOnly(spot, board);
-        }
+            bool eitherAdjacentSpotIsNotItself = (leftAdjacentSpot.x != Point.x || leftAdjacentSpot.y != Point.y) && (rightAdjacentSpot.x != Point.x || rightAdjacentSpot.y != Point.y);
+            bool onlyOneSpotIsOpen = (board.ContainsKey(leftAdjacentSpot) && !board.ContainsKey(rightAdjacentSpot)) || (!board.ContainsKey(leftAdjacentSpot) && board.ContainsKey(rightAdjacentSpot));
 
-        private bool _IsValidPosition ((int x, int y) point, Dictionary<(int, int), Piece> board)
-        {
-            return !_BreaksTheHive(point, board) && !_IsGate(point, board);
+            return eitherAdjacentSpotIsNotItself && onlyOneSpotIsOpen;
         }
 
         public List<(int, int)> GetMovingPositions(Dictionary<(int, int), Piece> board)
@@ -103,15 +87,15 @@ namespace GameCore
             switch (Insect)
             {
                 case Insect.Ant:
-                    return _GetAntMovingPositions(board).Where(pos => _IsValidPosition(pos, board)).ToList();
+                    return _GetAntMovingPositions(board);
                 case Insect.Beetle:
-                    return _GetBeetleMovingPositions(board).Where(pos => _IsValidPosition(pos, board)).ToList();
+                    return _GetBeetleMovingPositions(board);
                 case Insect.Grasshopper:
-                    return _GetGrasshopperMovingPositions(board).Where(pos => _IsValidPosition(pos, board)).ToList();
+                    return _GetGrasshopperMovingPositions(board);
                 case Insect.Spider:
-                    return _GetSpiderMovingPositions(board).Where(pos => _IsValidPosition(pos, board)).ToList();
+                    return _GetSpiderMovingPositions(board);
                 case Insect.QueenBee:
-                    return _GetQueenBeeMovingPositions(board).Where(pos => _IsValidPosition(pos, board)).ToList();
+                    return _GetQueenBeeMovingPositions(board);
                 default:
                     // this is an invalid position
                     return new List<(int, int)>() { (1, 2) };
@@ -162,7 +146,7 @@ namespace GameCore
             foreach (KeyValuePair<(int, int), Piece> p in board)
             {
                 if (!activePoints.Contains(p.Key))
-                    activePoints.Add(p.Key);
+                        activePoints.Add(p.Key);
                 // Include also the neighboring sides for each piece
                 foreach ((int, int) side in p.Value.Sides.Values)
                 {
@@ -268,21 +252,30 @@ namespace GameCore
             return this.GetAvailableSides();
         }
 
-        private void _DFS(ref List<(int x, int y)> positions, Dictionary<(int x, int y), Piece> board, ref Dictionary<(int x, int y), bool> visited, (int x, int y) spot, int curDepth, int maxDepth)
+        private void _DFS(ref List<(int x, int y)> positions, Dictionary<(int x, int y), Piece> board, ref Dictionary<(int x, int y), bool> visited, (int x, int y) curSpot, int curDepth, int maxDepth)
         {
             if (curDepth == maxDepth)
-                // It is an open spot
-                if (!board.ContainsKey(spot))
-                    positions.Add(spot);
+            {
+                // No one is at that position
+                if (!board.ContainsKey(curSpot))
+                {
+                    visited[curSpot] = true;
+                    positions.Add(curSpot);
+                }
                 return;
+            }
             
-            visited[spot] = true;
+            visited[curSpot] = true;
 
             foreach ((int x, int y) offset in SIDE_OFFSETS.Values)
             {
-                (int x, int y) nextSpot = (spot.x + offset.x, spot.y + offset.y);
-                if (!visited.ContainsKey(nextSpot) || !visited[nextSpot])
-                    _DFS(ref positions, board, ref visited, nextSpot, curDepth + 1, maxDepth);
+                (int x, int y) nextSpot = (curSpot.x + offset.x, curSpot.y + offset.y);
+                //  If no one is blocking the path and it (does not break the hive and it is not a gate position)
+                if (!board.ContainsKey(nextSpot) && _IsValidPosition(curSpot, nextSpot, board))
+                {
+                    if (!visited.ContainsKey(nextSpot) || (visited.ContainsKey(nextSpot) && !visited[nextSpot]))
+                        _DFS(ref positions, board, ref visited, nextSpot, curDepth + 1, maxDepth);
+                }
             }
         }
 
@@ -292,9 +285,14 @@ namespace GameCore
             Dictionary<(int x, int y), bool> visited = new Dictionary<(int x, int y), bool>();
             foreach ((int x, int y) sideOffset in SIDE_OFFSETS.Values)
             {
-                (int x, int y) side = (sideOffset.x + this.Point.x, sideOffset.y + this.Point.y);
-                if (!visited.ContainsKey(side) || !visited[side])
-                    _DFS(ref positions, board, ref visited, side, 1, _SPIDER_MAX_STEP_COUNT);
+                (int x, int y) side = (sideOffset.x + Point.x, sideOffset.y + Point.y);
+                //  If no one is blocking the path and it (does not break the hive and it is not a gate position)
+                if (!board.ContainsKey(side) && _IsValidPosition(Point, side, board))
+                {
+                    // Keep track of it being visited
+                    if (!visited.ContainsKey(side) || (visited.ContainsKey(side) && !visited[side]))
+                        _DFS(ref positions, board, ref visited, side, 1, _SPIDER_MAX_STEP_COUNT);
+                }
             }
             return positions;
         }
