@@ -113,8 +113,8 @@ namespace GameCore
             foreach ((int x, int y) side in SIDE_OFFSETS.Values)
             {
                 (int x, int y) neighborPosition = (point.x + side.x, point.y + side.y);
-                // If the neighbor is not myself  AND If the neighbor exists on the board
-                if (this.Point != neighborPosition && board.ContainsKey(neighborPosition))
+                // If the neighbor is not myself                                               AND If the neighbor exists on the board
+                if ((this.Point.x != neighborPosition.x || this.Point.y != neighborPosition.y) && board.ContainsKey(neighborPosition))
                 {
                     // This position has at least one neighbor connected to the other pieces,
                     // which would not break the hive
@@ -155,14 +155,16 @@ namespace GameCore
                 }
             }
 
-            // 1. Find point with lowest y-coordinate–i.e., the bottom most point
+            List<(int, int)> spotsInsideConvexHull = new List<(int, int)>();
+
+            // Find point with lowest y-coordinate–i.e., the bottom most point
             (int, int) start = activePoints.OrderBy(p => p.Item2).First();
             convexHull.Add(start);
 
-            // 2. Sort the other points by the angle with respect to the lowest y-point
+            // Sort the other points by the angle with respect to the lowest y-point
             IOrderedEnumerable<(int, int)> sortedPoints = activePoints.Where(p => p != start).OrderBy(p => Math.Atan2(p.Item2 - start.Item2, p.Item1 - start.Item1));
 
-            // 3. Iterate through sorted points and add/remove as necessary
+            // Iterate through sorted points and add/remove as necessary
             foreach ((int, int) p in sortedPoints)
             {
                 while (convexHull.Count > 1 && _IsClockwiseTurn(convexHull[convexHull.Count - 2], convexHull[convexHull.Count - 1], p))
@@ -172,14 +174,22 @@ namespace GameCore
                     // Each position must have at least one neighbor–i.e., one piece in one of its sides, that way the hive does not break
                     // That is, before removing this particular point, see if it has neighbors, if it does, then it is possible still valid
                     // Remove the points that create a clockwise turn
+
+                    (int, int) spotInsideConvexHull = convexHull[convexHull.Count - 1];
+                    if (!spotsInsideConvexHull.Contains(spotInsideConvexHull) && _HasAtLeastOneNeighbor(spotInsideConvexHull, board))
+                    {
+                        spotsInsideConvexHull.Add(spotInsideConvexHull);
+                    }
                     convexHull.RemoveAt(convexHull.Count - 1);
                 }
                 convexHull.Add(p);
             }
 
-            // 4. return the convexHull
+            // Add the missing points
+            convexHull.AddRange(spotsInsideConvexHull);
+
+            // Filter out invalid points
             return convexHull.Where(side => _HasAtLeastOneNeighbor(side, board)).ToList();
-            // return convexHull;
         }
 
         /**
