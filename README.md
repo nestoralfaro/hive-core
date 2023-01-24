@@ -1,11 +1,12 @@
 # First iteration of our Game Core for Hive
 Todo:
 - Create more tests.
-- Fix GetAntMovingPositions – still adds itself as a valid moving position
-- Fix GetBeetleMovingPositions - has **not** been tested
-- Fix GetQueenBeeMovingPositions - has **not** been tested
-- Fix GetSpiderMovingPositions - has been tested *once*
-- Fix GetGrasshopperMovingPositions - has been tested *once*
+- Fix `_IsValidPath` – make sure the spot is not itself, blocked, and it does not break the hive.
+- Fix `GetAntMovingSpots` – still adds itself as a valid moving position
+- Fix `GetBeetleMovingSpots` - has **not** been tested
+- Fix `GetQueenBeeMovingSpots` - has **not** been tested
+- Fix `GetSpiderMovingSpots` - has been tested *once*
+- Fix `GetGrasshopperMovingSpots` - has been tested *once*
 - Make sure that the player moves only THEIR pieces and not their opponent's.
 - Managing turns and keeping track of pieces.
 - Validating movements and displaying appropriate messages/exceptions.
