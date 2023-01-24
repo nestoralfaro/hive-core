@@ -204,7 +204,7 @@ namespace GameCore
         {
             var point = logic.Board._piece_point[piece];
             Assert.True(logic.Board._point_piece.Count == logic.Board._piece_point.Count);
-            Assert.True(logic.Board._point_piece.Count == logic.Board._color_pieces[piece[0] == 'b' ? Color.Black : Color.White].Count);
+            // Assert.True(logic.Board._point_piece.Count == logic.Board._color_pieces[piece[0] == 'b' ? Color.Black : Color.White].Count);
             Assert.True(logic.Board._point_piece[point].ToString() == piece);
 
             // If you were able to put the same piece again

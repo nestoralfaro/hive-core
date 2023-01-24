@@ -279,19 +279,24 @@ namespace GameCore
         private bool _DoesNotBreakHive((int x, int y) from, (int x, int y) to)
         {
             // ********************* Checking for broken hive ********************* 
-            // _board.AddPiece(to, this);
-            // if (!_board.IsAllConnected())
-            // {
-            //     _board.RemovePiece(this);
-            //     _board.AddPiece(this.Point, this);
+            Piece oldPieceSpot = new Piece(ToString(), Point);
+            Piece newPieceSpot = new Piece(ToString(), to);
+            _board.RemovePiece(this);
+            _board.AddPiece(to, newPieceSpot);
+            if (!_board.IsAllConnected())
+            {
+                // Put it back
+                _board.RemovePiece(newPieceSpot);
+                _board.AddPiece(oldPieceSpot.Point, oldPieceSpot);
 
-            //     // it breaks the hive
-            //     return false;
-            // }
-            // _board.RemovePiece(this);
-            // _board.AddPiece(this.Point, this);
-            // ********************* Checking for broken hive ********************* 
+                // it breaks the hive
+                return false;
+            }
+            // Put it back
+            _board.RemovePiece(newPieceSpot);
+            _board.AddPiece(oldPieceSpot.Point, oldPieceSpot);
             return true;
+            // ********************* Checking for broken hive ********************* 
         }
 
         private bool _IsValidPath((int x, int y) from, (int x, int y) to, bool isBeetle = false)
@@ -325,8 +330,8 @@ namespace GameCore
             //     return false;
             // }
             // ********************* Checking for blocked path ********************* 
-
             return _DoesNotBreakHive(from, to) && _PhysicallyFits(from, to);
+            // return true;
         }
 
         private void _DFS(ref List<(int x, int y)> positions, ref Dictionary<(int x, int y), bool> visited, (int x, int y) curSpot, int curDepth, int maxDepth)

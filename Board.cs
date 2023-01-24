@@ -90,5 +90,12 @@ namespace GameCore
 
             return visited.Count == _point_piece.Count;
         }
+
+        // public bool _DoesNotBreakHive(Piece piece, (int x, int y) from, (int x, int y) to)
+        // {
+        //     RemovePiece(piece);
+        //     AddPiece();
+        //     return true;
+        // }
     }
 }
