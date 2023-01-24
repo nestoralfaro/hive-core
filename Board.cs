@@ -76,7 +76,7 @@ namespace GameCore
             Piece curPiece = _point_piece[piecePoint];
             foreach ((int, int) neighbor in curPiece.Neighbors.Values)
             {
-                if ((!visited.ContainsKey(neighbor) || (!visited.ContainsKey(neighbor) && !visited[neighbor])) && _point_piece.ContainsKey(neighbor))
+                if ((!visited.ContainsKey(neighbor) || (visited.ContainsKey(neighbor) && !visited[neighbor])) && _point_piece.ContainsKey(neighbor))
                     _DFS(ref visited, neighbor);
             }
         }

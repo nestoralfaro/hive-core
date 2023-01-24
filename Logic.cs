@@ -187,10 +187,11 @@ namespace GameCore
             // Check if the game is over based on the game's rules
             // For example, check if a player has no more valid moves,
             // or if a player's queen bee has been surrounded
-            return (
-                (_piece_point.ContainsKey("wQ1") && _point_piece[_piece_point["wQ1"]].IsSurrounded())
-                || (_piece_point.ContainsKey("bQ1") && _point_piece[_piece_point["wQ1"]].IsSurrounded())
-            );
+            // return (
+            //     (_piece_point.ContainsKey("wQ1") && _point_piece[_piece_point["wQ1"]].IsSurrounded())
+            //     || (_piece_point.ContainsKey("bQ1") && _point_piece[_piece_point["wQ1"]].IsSurrounded())
+            // );
+            return false;
         }
 
         public void Print()

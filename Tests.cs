@@ -87,7 +87,10 @@ namespace GameCore
             blackPlacingSpots,  // placing
             new List<(int, int)>(){(-1, -1), (-1, 3)}     // moving
             );
-
+            // bG1
+            // bA1NWbG1
+            // bS1NEbA1
+            // bQ1NTbA1
             /////////////////////////////////////////////////// BlackMove 5 ///////////////////////////////////////////////////
             _BlackMove("bB1NTbS1");
             _AssertPiecePoint("bG1", (0, 0));
@@ -215,6 +218,13 @@ namespace GameCore
         private void _AssertPlacingSpots(string piece, List<(int, int)> spots)
         {
             var returnedSpots = logic.Board._point_piece[logic.Board._piece_point[piece]].GetPlacingSpots(logic.Board);
+
+            Console.WriteLine($"////////////////Actual Placing Spots For {piece}////////////////");
+            foreach (var s in returnedSpots)
+            {
+                Console.WriteLine(s);
+            }
+
             Assert.True(spots.Count == returnedSpots.Count);
             foreach (var spot in spots)
             {

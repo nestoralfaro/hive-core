@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using static GameCore.Utils;
 #pragma warning disable IDE1006 // Private members naming style
-
+#nullable enable
 
 namespace GameCore
 {
@@ -353,11 +353,14 @@ namespace GameCore
             {
                 (int x, int y) nextSpot = (curSpot.x + offset.x, curSpot.y + offset.y);
                 //  If no one is blocking the path and it (does not break the hive and it is not a gate position)
-                if (!_point_piece.ContainsKey(nextSpot) && _IsValidPath(curSpot, nextSpot))
-                // if (_IsValidPath(Point, nextSpot))
+                bool hasNotBeenVisited = !visited.ContainsKey(nextSpot) || (visited.ContainsKey(nextSpot) && !visited[nextSpot]);
+                if (hasNotBeenVisited && !_point_piece.ContainsKey(nextSpot) && _IsValidPath(curSpot, nextSpot))
                 {
-                    if (!visited.ContainsKey(nextSpot) || (visited.ContainsKey(nextSpot) && !visited[nextSpot]))
-                        _DFS(ref positions, ref visited, nextSpot, curDepth + 1, maxDepth);
+                    _DFS(ref positions, ref visited, nextSpot, curDepth + 1, maxDepth);
+                }
+                else
+                {
+                    visited[nextSpot] = true;
                 }
             }
         }
@@ -369,13 +372,15 @@ namespace GameCore
             foreach ((int x, int y) sideOffset in SIDE_OFFSETS.Values)
             {
                 (int x, int y) side = (sideOffset.x + Point.x, sideOffset.y + Point.y);
-                //  If no one is blocking the path and it (does not break the hive and it is not a gate position)
-                if (!_point_piece.ContainsKey(side) && _IsValidPath(Point, side))
-                // if (_IsValidPath(Point, side))
+
+                bool hasNotBeenVisited = !visited.ContainsKey(side) || (visited.ContainsKey(side) && !visited[side]);
+                if (hasNotBeenVisited && !_point_piece.ContainsKey(side) && _IsValidPath(Point, side))
                 {
-                    // Keep track of it being visited
-                    if (!visited.ContainsKey(side) || (visited.ContainsKey(side) && !visited[side]))
-                        _DFS(ref positions, ref visited, side, 1, _SPIDER_MAX_STEP_COUNT);
+                    _DFS(ref positions, ref visited, side, 1, _SPIDER_MAX_STEP_COUNT);
+                }
+                else
+                {
+                    visited[side] = true;
                 }
             }
             return positions;
@@ -400,20 +405,24 @@ namespace GameCore
 
         public List<(int, int)> GetPlacingSpots(Board board)
         {
+            _board = board;
+            _point_piece = board._point_piece;
+            _piece_point = board._piece_point;
+            _color_pieces = board._color_pieces;
+
             List<(int, int)> positions = new List<(int, int)>();
 
             // iterate through the current player's color's pieces
             foreach (Piece piece in board._color_pieces[this.Color])
             {
                 // iterate through this piece's available sides
-                foreach ((int, int) side in piece.SpotsAround)
+                foreach ((int, int) spot in piece.SpotsAround)
                 {
-                    // if it does not neighbor with an opponent's piece
-                    if (!_HasOpponentNeighbor(side))
-                        // If it is not already there
-                        if (!positions.Contains(side))
-                            // It is a valid placing position, so add it
-                            positions.Add(side);
+                    //      Not been visited            No one is there                   Does not have neighbor opponent
+                    if (!positions.Contains(spot) && !_point_piece.ContainsKey(spot) && !_HasOpponentNeighbor(spot))
+                    {
+                            positions.Add(spot);
+                    }
                 }
             }
 
