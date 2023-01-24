@@ -10,14 +10,14 @@ namespace GameCore
         private Player _blackPlayer;
         private Player _whitePlayer;
         private bool IsBlackPlayerTurn;
-        private Board _board;
+        private Logic _board;
 
         // getter used for testing
-        public Board Board { get { return _board; } }
+        public Logic Board { get { return _board; } }
 
         public GameCore()
         {
-            _board = new Board();
+            _board = new Logic();
             _blackPlayer = new Player('b');
             _whitePlayer = new Player('w');
             IsBlackPlayerTurn = true;
