@@ -12,14 +12,14 @@ namespace GameCore
         /// Hashmap { hashedPiece: piece }
         /// </summary>
         public Board Board; 
-        private Dictionary<(int, int), Piece> _point_piece { get { return Board._point_piece; } }
+        private Dictionary<(int, int), Stack<Piece>> _point_stack { get { return Board._point_stack; } }
         private Dictionary<string, (int, int)> _piece_point { get { return Board._piece_point; } }
         private Dictionary<Color, List<Piece> > _color_pieces { get { return Board._color_pieces; } }
 
 
         // *******************************************
         // For testing
-        public Dictionary<(int, int), Piece> GetAllPieces() { return _point_piece; }
+        public Dictionary<(int, int), Stack<Piece>> GetAllPieces() { return _point_stack; }
         public Dictionary<string, (int, int)> GetPiecePoint() { return _piece_point; }
         public Dictionary<Color, List<Piece>> GetColorPieces() { return _color_pieces; }
         // For testing
@@ -83,7 +83,7 @@ namespace GameCore
         private bool IsFirstMove()
         {
             // No thing has been played
-            return _point_piece.Count == 0 && _piece_point.Count == 0;
+            return _point_stack.Count == 0 && _piece_point.Count == 0;
         }
 
         private void PrintAvailableMovesForThePiece(Piece piece)
@@ -199,11 +199,11 @@ namespace GameCore
             // Print the board
             Console.WriteLine("/*********************************/");
             Console.WriteLine("Current board state:");
-            foreach (var entry in _point_piece)
+            foreach (var entry in _point_stack)
             {
-                Console.WriteLine($"{entry.Key}: {entry.Value.Insect} {entry.Value.Number} {entry.Value.Color}");
+                Console.WriteLine($"{entry.Key}: {entry.Value.Peek().Number} {entry.Value.Peek().Color} {entry.Value.Peek().Insect}");
                 //Print the neighbours
-                foreach (var neighbour in entry.Value.Neighbors)
+                foreach (var neighbour in entry.Value.Peek().Neighbors)
                 {
                     Console.WriteLine($"{neighbour.Key}: {neighbour.Value}");
                 }
@@ -217,10 +217,10 @@ namespace GameCore
             List<string> hexagons = new List<string>();
 
             // Iterate through each key-value pair in the dictionary
-            foreach (KeyValuePair<(int, int), Piece> kvp in _point_piece) {
+            foreach (KeyValuePair<(int, int), Stack<Piece>> kvp in _point_stack) {
                 // Get the current hexagon and its neighbors
                 (int, int) currentHex = kvp.Key;
-                Piece currentPiece = kvp.Value;
+                Piece currentPiece = kvp.Value.Peek();
                 Dictionary<string, (int, int)> neighbors = currentPiece.Neighbors;
 
                 // Create a string to store the current hexagon's output

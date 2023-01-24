@@ -31,8 +31,8 @@ namespace GameCore
 
         private Board _board;
 
-        private Dictionary<(int, int), Piece> _point_piece { get; set; }
         private Dictionary<string, (int, int)> _piece_point { get; set; }
+        private Dictionary<(int, int), Stack<Piece>> _point_stack { get; set; }
         private Dictionary<Color, List<Piece> > _color_pieces { get; set; }
 
         private Board _state;
@@ -80,7 +80,7 @@ namespace GameCore
         public List<(int, int)> GetMovingSpots(Board board)
         {
             _board = board;
-            _point_piece = board._point_piece;
+            _point_stack = board._point_stack;
             _piece_point = board._piece_point;
             _color_pieces = board._color_pieces;
 
@@ -118,7 +118,7 @@ namespace GameCore
             {
                 (int x, int y) neighborPosition = (point.x + side.x, point.y + side.y);
                 // If the neighbor is not myself                                               AND If the neighbor exists on the board
-                if ((this.Point.x != neighborPosition.x || this.Point.y != neighborPosition.y) && _point_piece.ContainsKey(neighborPosition))
+                if ((this.Point.x != neighborPosition.x || this.Point.y != neighborPosition.y) && _point_stack.ContainsKey(neighborPosition))
                 {
                     // This position has at least one neighbor connected to the other pieces,
                     // which would not break the hive
@@ -137,12 +137,12 @@ namespace GameCore
             List<(int, int)> convexHull = new List<(int, int)>();
             List<(int, int)> activePoints = new List<(int, int)>(); 
 
-            foreach (KeyValuePair<(int, int), Piece> p in _point_piece)
+            foreach (KeyValuePair<(int, int), Stack<Piece>> p in _point_stack)
             {
                 if (!activePoints.Contains(p.Key))
                         activePoints.Add(p.Key);
                 // Include also the neighboring sides for each piece
-                foreach ((int, int) side in p.Value.Sides.Values)
+                foreach ((int, int) side in p.Value.Peek().Sides.Values)
                 {
                     if (!activePoints.Contains(side))
                         activePoints.Add(side);
@@ -170,7 +170,7 @@ namespace GameCore
                     // Remove the points that create a clockwise turn
 
                     (int, int) spotInsideConvexHull = convexHull[convexHull.Count - 1];
-                    if (!spotsInsideConvexHull.Contains(spotInsideConvexHull) && _HasAtLeastOneNeighbor(spotInsideConvexHull) && !_point_piece.ContainsKey(spotInsideConvexHull))
+                    if (!spotsInsideConvexHull.Contains(spotInsideConvexHull) && _HasAtLeastOneNeighbor(spotInsideConvexHull) && !_point_stack.ContainsKey(spotInsideConvexHull))
                     {
                         spotsInsideConvexHull.Add(spotInsideConvexHull);
                     }
@@ -217,7 +217,7 @@ namespace GameCore
             foreach (var offset in SIDE_OFFSETS_LIST)
             {
                 var side =(offset.Item1 + Point.x, offset.Item2 + Point.y);
-                if (_IsValidPath(this.Point, side, true))
+                if (_IsValidPath(this.Point, side))
                 {
                     validMoves.Add(side);
                 }
@@ -237,7 +237,7 @@ namespace GameCore
                 bool firstIsValid = false;
 
                 // Keep hopping over pieces
-                while (_point_piece.ContainsKey(nextSpot))
+                while (_point_stack.ContainsKey(nextSpot))
                 {
                     nextSpot = (nextSpot.x + sideOffset.x, nextSpot.y + sideOffset.y);
                     firstIsValid = true;
@@ -269,7 +269,7 @@ namespace GameCore
             (int x, int y) peripheralRightSpot = (from.x + rightOffset.x, from.y + rightOffset.y);
 
             bool eitherPeripheralSpotIsNotItself = (peripheralLeftSpot.x != Point.x || peripheralLeftSpot.y != Point.y) && (peripheralRightSpot.x != Point.x || peripheralRightSpot.y != Point.y);
-            bool onlyOneSpotIsOpen = (_point_piece.ContainsKey(peripheralLeftSpot) && !_point_piece.ContainsKey(peripheralRightSpot)) || (!_point_piece.ContainsKey(peripheralLeftSpot) && _point_piece.ContainsKey(peripheralRightSpot));
+            bool onlyOneSpotIsOpen = (_point_stack.ContainsKey(peripheralLeftSpot) && !_point_stack.ContainsKey(peripheralRightSpot)) || (!_point_stack.ContainsKey(peripheralLeftSpot) && _point_stack.ContainsKey(peripheralRightSpot));
 
             // the piece is physically able to move to such spot
             return eitherPeripheralSpotIsNotItself && onlyOneSpotIsOpen;
@@ -299,7 +299,7 @@ namespace GameCore
             // ********************* Checking for broken hive ********************* 
         }
 
-        private bool _IsValidPath((int x, int y) from, (int x, int y) to, bool isBeetle = false)
+        private bool _IsValidPath((int x, int y) from, (int x, int y) to)
         {
 
             // Needs fixing. Does not Pass BlackMove 7 from test
@@ -339,7 +339,7 @@ namespace GameCore
             if (curDepth == maxDepth)
             {
                 // No one is at that position
-                if (!_point_piece.ContainsKey(curSpot))
+                if (!_point_stack.ContainsKey(curSpot))
                 {
                     visited[curSpot] = true;
                     positions.Add(curSpot);
@@ -354,7 +354,7 @@ namespace GameCore
                 (int x, int y) nextSpot = (curSpot.x + offset.x, curSpot.y + offset.y);
                 //  If no one is blocking the path and it (does not break the hive and it is not a gate position)
                 bool hasNotBeenVisited = !visited.ContainsKey(nextSpot) || (visited.ContainsKey(nextSpot) && !visited[nextSpot]);
-                if (hasNotBeenVisited && !_point_piece.ContainsKey(nextSpot) && _IsValidPath(curSpot, nextSpot))
+                if (hasNotBeenVisited && !_point_stack.ContainsKey(nextSpot) && _IsValidPath(curSpot, nextSpot))
                 {
                     _DFS(ref positions, ref visited, nextSpot, curDepth + 1, maxDepth);
                 }
@@ -374,7 +374,7 @@ namespace GameCore
                 (int x, int y) side = (sideOffset.x + Point.x, sideOffset.y + Point.y);
 
                 bool hasNotBeenVisited = !visited.ContainsKey(side) || (visited.ContainsKey(side) && !visited[side]);
-                if (hasNotBeenVisited && !_point_piece.ContainsKey(side) && _IsValidPath(Point, side))
+                if (hasNotBeenVisited && !_point_stack.ContainsKey(side) && _IsValidPath(Point, side))
                 {
                     _DFS(ref positions, ref visited, side, 1, _SPIDER_MAX_STEP_COUNT);
                 }
@@ -392,7 +392,7 @@ namespace GameCore
             {
                 (int, int) potentialOpponentNeighborPosition = (point.Item1 + side.Item1, point.Item2 + side.Item2);
                 // If piece is on the board                             AND is not the same color as the piece that is about to be placed
-                if (_point_piece.ContainsKey(potentialOpponentNeighborPosition) && _point_piece[potentialOpponentNeighborPosition].Color != this.Color)
+                if (_point_stack.ContainsKey(potentialOpponentNeighborPosition) && _point_stack[potentialOpponentNeighborPosition].Peek().Color != this.Color)
                 {
                     // Has an opponent neighbor
                     return true;
@@ -406,7 +406,7 @@ namespace GameCore
         public List<(int, int)> GetPlacingSpots(Board board)
         {
             _board = board;
-            _point_piece = board._point_piece;
+            _point_stack = board._point_stack;
             _piece_point = board._piece_point;
             _color_pieces = board._color_pieces;
 
@@ -419,7 +419,7 @@ namespace GameCore
                 foreach ((int, int) spot in piece.SpotsAround)
                 {
                     //      Not been visited            No one is there                   Does not have neighbor opponent
-                    if (!positions.Contains(spot) && !_point_piece.ContainsKey(spot) && !_HasOpponentNeighbor(spot))
+                    if (!positions.Contains(spot) && !_point_stack.ContainsKey(spot) && !_HasOpponentNeighbor(spot))
                     {
                             positions.Add(spot);
                     }
