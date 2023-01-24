@@ -254,7 +254,16 @@ namespace GameCore
 
         private List<(int, int)> _GetQueenMovingSpots()
         {
-            return this.SpotsAround;
+            List<(int, int)> spots = new List<(int, int)>();
+            foreach ((int, int) spot in SpotsAround)
+            {
+                // It is not busy and is valid
+                if (!_point_stack.ContainsKey(spot) && _IsValidPath(Point, spot))
+                {
+                    spots.Add(spot);
+                }
+            }
+            return spots;
         }
 
         private bool _PhysicallyFits ((int x, int y) from, (int x, int y) to)

@@ -87,11 +87,17 @@ namespace GameCore
             blackPlacingSpots,  // placing
             new List<(int, int)>(){(-1, -1), (-1, 3)}     // moving
             );
+
+            _AssertSpotsForPiece("bQ1",
+            blackPlacingSpots,  // placing
+            new List<(int, int)>(){(2, 2), (-2, 2)}     // moving
+            );
+
             // bG1
             // bA1NWbG1
             // bS1NEbA1
             // bQ1NTbA1
-            /////////////////////////////////////////////////// BlackMove 5 ///////////////////////////////////////////////////
+            ///////////////////////////////////////////////// BlackMove 5 ///////////////////////////////////////////////////
             // _BlackMove("bB1NTbS1");
             // _AssertPiecePoint("bG1", (0, 0));
             // _AssertPiecePoint("bA1", (-1, 1));
