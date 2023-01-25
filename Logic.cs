@@ -92,10 +92,10 @@ namespace GameCore
             // Parallelized both of these in the background (MovingPositions, PlacingPositions)
 
             // Only for debugging spider
-            if (Board._piece_point.ContainsKey("bS1"))
+            if (Board._piece_point.ContainsKey("bA2"))
             {
                 Console.WriteLine("--------------------Available Moves--------------------");
-                foreach ((int, int) point in Board._point_stack[Board._piece_point["bS1"]].Peek().GetMovingSpots(Board))
+                foreach ((int, int) point in Board._point_stack[Board._piece_point["bA2"]].Peek().GetMovingSpots(Board))
                 {
                     Console.WriteLine(point);
                 }

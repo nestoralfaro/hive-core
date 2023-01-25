@@ -130,57 +130,32 @@ namespace GameCore
 
         private List<(int, int)> _GetAntMovingSpots()
         {
-            // Find convex hull with Graham's Scan algorithm
-            List<(int, int)> convexHull = new List<(int, int)>();
-            List<(int, int)> activePoints = new List<(int, int)>(); 
+            List<(int, int)> spots = new List<(int, int)>(); 
+            List<(int, int)> results = new List<(int, int)>(); 
 
             foreach (KeyValuePair<(int, int), Stack<Piece>> p in _point_stack)
             {
-                if (!activePoints.Contains(p.Key))
-                        activePoints.Add(p.Key);
-                // Include also the neighboring sides for each piece
-                foreach ((int, int) side in p.Value.Peek().Sides.Values)
+                foreach ((int, int) spot in p.Value.Peek().SpotsAround)
                 {
-                    if (!activePoints.Contains(side))
-                        activePoints.Add(side);
-                }
-            }
-
-            List<(int, int)> spotsInsideConvexHull = new List<(int, int)>();
-
-            // Find point with lowest y-coordinate–i.e., the bottom most point
-            (int, int) start = activePoints.OrderBy(p => p.Item2).First();
-            convexHull.Add(start);
-
-            // Sort the other points by the angle with respect to the lowest y-point
-            IOrderedEnumerable<(int, int)> sortedPoints = activePoints.Where(p => p != start).OrderBy(p => Math.Atan2(p.Item2 - start.Item2, p.Item1 - start.Item1));
-
-            // Iterate through sorted points and add/remove as necessary
-            foreach ((int, int) p in sortedPoints)
-            {
-                while (convexHull.Count > 1 && _IsClockwiseTurn(convexHull[convexHull.Count - 2], convexHull[convexHull.Count - 1], p))
-                {
-
-                    // Validate each position
-                    // Each position must have at least one neighbor–i.e., one piece in one of its sides, that way the hive does not break
-                    // That is, before removing this particular point, see if it has neighbors, if it does, then it is possible still valid
-                    // Remove the points that create a clockwise turn
-
-                    (int, int) spotInsideConvexHull = convexHull[convexHull.Count - 1];
-                    if (!spotsInsideConvexHull.Contains(spotInsideConvexHull) && _HasAtLeastOneNeighbor(spotInsideConvexHull) && !_point_stack.ContainsKey(spotInsideConvexHull))
+                    if (!spots.Contains(spot))
                     {
-                        spotsInsideConvexHull.Add(spotInsideConvexHull);
+                        spots.Add(spot);
                     }
-                    convexHull.RemoveAt(convexHull.Count - 1);
                 }
-                convexHull.Add(p);
             }
 
-            // Add the missing points
-            convexHull.AddRange(spotsInsideConvexHull);
-
-            // Filter out invalid points
-            return convexHull.Where(side => _HasAtLeastOneNeighbor(side)).ToList();
+            foreach((int x, int y) spot in spots)
+            {
+                foreach((int x, int y) sideOffset in SIDE_OFFSETS_LIST)
+                {
+                    (int, int) adjacentSpot = (spot.x + sideOffset.x, spot.y + sideOffset.y);
+                    if (!results.Contains(adjacentSpot) && spots.Contains(adjacentSpot) && _IsFreedomOfMovement(spot, adjacentSpot))
+                    {
+                        results.Add(adjacentSpot);
+                    }
+                }
+            }
+            return results;
         }
 
         private List<(int, int)> _GetBeetleMovingSpots()
@@ -215,7 +190,10 @@ namespace GameCore
                 if (firstIsValid)
                 {
                     // until you find a spot
-                    positions.Add(nextSpot);
+                    if (_DoesNotBreakHive(Point, nextSpot))
+                    {
+                        positions.Add(nextSpot);
+                    }
                 }
             }
             return positions;
@@ -235,7 +213,7 @@ namespace GameCore
             return spots;
         }
 
-        private bool _IsFreedomOfMovement ((int x, int y) from, (int x, int y) to)
+        private bool _IsFreedomOfMovement((int x, int y) from, (int x, int y) to, bool isBeetle = false)
         {
             (int x, int y) offset = (to.x - from.x, to.y - from.y);
             int index = SIDE_OFFSETS_LIST.IndexOf(offset); // direction we're going
@@ -249,8 +227,8 @@ namespace GameCore
             bool eitherPeripheralSpotIsNotItself = (peripheralLeftSpot.x != Point.x || peripheralLeftSpot.y != Point.y) && (peripheralRightSpot.x != Point.x || peripheralRightSpot.y != Point.y);
             bool onlyOneSpotIsOpen = (_point_stack.ContainsKey(peripheralLeftSpot) && !_point_stack.ContainsKey(peripheralRightSpot)) || (!_point_stack.ContainsKey(peripheralLeftSpot) && _point_stack.ContainsKey(peripheralRightSpot));
 
-            // the piece is physically able to move to such spot
-            return eitherPeripheralSpotIsNotItself && onlyOneSpotIsOpen;
+            //     Either side is not itself      AND   If it is a beetle, check it can crawl     OR Treat it as a normal piece                            
+            return eitherPeripheralSpotIsNotItself && ((isBeetle && _point_stack.ContainsKey(to)) || onlyOneSpotIsOpen);
         }
 
         // Needs fixing
@@ -286,7 +264,7 @@ namespace GameCore
         private bool _IsValidPath((int x, int y) from, (int x, int y) to, bool isBeetle = false)
         {
             //      Only beetle can crawl on top of                 One Hive Rule                       Physically Fits
-            return (isBeetle || !_point_stack.ContainsKey(to)) && _DoesNotBreakHive(from, to) && _IsFreedomOfMovement(from, to);
+            return (isBeetle || !_point_stack.ContainsKey(to)) && _DoesNotBreakHive(from, to) && _IsFreedomOfMovement(from, to, isBeetle);
         }
 
         private void _DFS(ref List<(int x, int y)> positions, ref Dictionary<(int x, int y), bool> visited, (int x, int y) curSpot, int curDepth, int maxDepth)
