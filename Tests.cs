@@ -311,7 +311,7 @@ namespace GameCore
             );
         }
 
-        // Will test that the Ant does not violate the freedom of movement 
+        // Will test that the Ant does not violate the freedom of movement by moving inside the ring or donut 
         [Fact]
         public void RingCase2()
         {
@@ -462,13 +462,6 @@ namespace GameCore
             blackPlacingSpots,
             new List<(int, int)>(){(1, 3), (0, 2), (1, 1)}
             );
-// bQ1
-// bS1SWbQ1
-// bG1NTbS1
-// bA1NWbG1
-// bS2NTbG1
-// bB1NEbS2
-// bA2SEbB1
             /////////////////////////////////////////////////// BlackMove 7 ///////////////////////////////////////////////////
             _BlackMove("bA2SEbB1");
             _AssertPiecePoint("bQ1", (0, 0));

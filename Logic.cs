@@ -15,6 +15,9 @@ namespace GameCore
         private Dictionary<(int, int), Stack<Piece>> _point_stack { get { return Board._point_stack; } }
         private Dictionary<string, (int, int)> _piece_point { get { return Board._piece_point; } }
         private Dictionary<Color, List<Piece> > _color_pieces { get { return Board._color_pieces; } }
+        // private Dictionary<(int, int), Stack<Piece>> _point_stack;
+        // private Dictionary<string, (int, int)> _piece_point;
+        // private Dictionary<Color, List<Piece> > _color_pieces;
 
 
         // *******************************************
@@ -27,7 +30,7 @@ namespace GameCore
 
         public Logic()
         {
-            Board = new Board();
+            Board = new();
         }
 
         private void _PrintWarning(string warning)
@@ -66,7 +69,10 @@ namespace GameCore
         private (int, int) GetPoint(Move move)
         {
             // It is the first piece being placed
-            if (String.IsNullOrEmpty(move.DestinationSide)) return (0, 0);
+            if (String.IsNullOrEmpty(move.DestinationSide))
+            {
+                return (0, 0);
+            }
             else
             {
                 (int, int) referencePiece = this._piece_point[move.DestinationPiece];
@@ -82,26 +88,20 @@ namespace GameCore
 
         private bool IsFirstMove()
         {
-            // No thing has been played
-            return _point_stack.Count == 0 && _piece_point.Count == 0;
+            // Nothing has been played
+            return Board._point_stack.Count == 0 && Board._piece_point.Count == 0;
         }
 
         private void PrintAvailableMovesForThePiece(Piece piece)
         {
             // Improvement idea:
             // Parallelized both of these in the background (MovingPositions, PlacingPositions)
-
-            // Only for debugging spider
-            if (Board._piece_point.ContainsKey("bA2"))
+            Console.WriteLine("--------------------Available Moves--------------------");
+            foreach ((int, int) point in piece.GetMovingSpots(Board))
             {
-                Console.WriteLine("--------------------Available Moves--------------------");
-                foreach ((int, int) point in Board._point_stack[Board._piece_point["bA2"]].Peek().GetMovingSpots(Board))
-                {
-                    Console.WriteLine(point);
-                }
-                Console.WriteLine("-------------------------------------------------------");
+                Console.WriteLine(point);
             }
-
+            Console.WriteLine("-------------------------------------------------------");
 
             Console.WriteLine("--------------------Available Placings--------------------");
             foreach ((int, int) point in piece.GetPlacingSpots(Board))
@@ -193,12 +193,12 @@ namespace GameCore
             // Check if the game is over based on the game's rules
             // For example, check if a player has no more valid moves,
             // or if a player's queen bee has been surrounded
-            // return (
-            //     (_piece_point.ContainsKey("wQ1") && _point_piece[_piece_point["wQ1"]].IsSurrounded())
-            //     || (_piece_point.ContainsKey("bQ1") && _point_piece[_piece_point["wQ1"]].IsSurrounded())
-            // );
-            return false;
+            return (
+                (_piece_point.ContainsKey("wQ1") && _point_stack.ContainsKey(_piece_point["wQ1"]) && _point_stack[_piece_point["wQ1"]].Peek().IsSurrounded())
+                || (_piece_point.ContainsKey("bQ1") && _point_stack.ContainsKey(_piece_point["bQ1"]) && _point_stack[_piece_point["bQ1"]].Peek().IsSurrounded())
+            );
         }
+
 
         public void Print()
         {
