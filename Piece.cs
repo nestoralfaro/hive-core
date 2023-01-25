@@ -29,15 +29,15 @@ namespace GameCore
             _piece = piece;
             Color = piece[0] == 'b' ? Color.Black : Color.White;
             Insect = piece[1] == 'Q'
-                        ? Insect.QueenBee
-                        : piece[1] == 'B'
-                        ? Insect.Beetle
-                        : piece[1] == 'G'
-                        ? Insect.Grasshopper
-                        : piece[1] == 'S'
-                        ? Insect.Spider
-                        // piece[1] == 'A'
-                        : Insect.Ant;
+            ? Insect.QueenBee
+            : piece[1] == 'B'
+            ? Insect.Beetle
+            : piece[1] == 'G'
+            ? Insect.Grasshopper
+            : piece[1] == 'S'
+            ? Insect.Spider
+            // piece[1] == 'A'
+            : Insect.Ant;
             Number = piece[2] - '0';
             Neighbors = new Dictionary<string, (int, int)>();
             Point = piecePoint;
@@ -87,7 +87,6 @@ namespace GameCore
             }
             return positions;
         }
-
 
         private List<(int, int)> _GetAntMovingSpots()
         {

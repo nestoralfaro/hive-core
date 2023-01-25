@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace GameCore
 {
@@ -9,7 +6,7 @@ namespace GameCore
     {
         public static void Main()
         {
-            GameCore gameCore = new GameCore();
+            GameCore gameCore = new();
             while (!gameCore.IsGameOver())
             {
                 Stopwatch stopwatch = new Stopwatch();

@@ -1,6 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
 #pragma warning disable IDE1006 // Private members naming style
 
@@ -32,45 +29,62 @@ namespace GameCore
         {
             Console.WriteLine("Enter move");
             string input = Console.ReadLine();
-
             // temporary for debugging
             // string input = "bS1";
-            Move move = new Move(input);
-            return move;
+            return new Move(input!);
         }
     }
 
     public class Move
     {
-        private string movingPiece;
-        private string destinationSide;
-        private string destinationPiece;
-        private string _move;
-
+        private readonly string _move;
         public string MovingPiece { get; set; }
         public string DestinationSide { get; set; }
         public string DestinationPiece { get; set; }
 
-        public string ToString()
+        public override string ToString()
         {
             return _move;
         }
 
+        private static string _formatPieceString(string piece)
+        {
+            char[] pieceAsChars = piece.ToCharArray();
+            pieceAsChars[0] = char.ToLower(pieceAsChars[0]);
+            pieceAsChars[1] = char.ToUpper(pieceAsChars[1]);
+            return new string(pieceAsChars);
+        }
+
         public Move (string input)
         {
-            // Make sure the input has no whitespaces whatsoever
-            _move = Regex.Replace(input, @"\s+", "");
-            MovingPiece = _move.Substring(0, 3);
-            if (_move.Length > 3)
+            // Remove whitespaces
+            input = Regex.Replace(input, @"\s+", "");
+            const string validPattern = "^([wbWB])([ABGQSabgqs])([1-3])([NSns])?([TWEtwe])?([wbWB]?)([ABGQSabgqs]?)([1-3]?)$";
+            if (input.Equals("quit", StringComparison.OrdinalIgnoreCase))
             {
-                DestinationSide = _move.Substring(3, 2);
-                DestinationPiece = _move.Substring(5);
+                _move = input.ToLower();
+            }
+            //  Case insensitive Not optional piece       Optional Side       Optional Piece
+            else if (Regex.IsMatch(input, validPattern))
+            {
+                MovingPiece = _formatPieceString(input[..3]);
+                if (input.Length > 3)
+                {
+                    DestinationSide = input.Substring(3, 2).ToUpper();
+                    DestinationPiece = _formatPieceString(input[5..]);
+                }
+                _move = input;
+            }
+            else
+            {
+                _move = "invalid";
             }
         }
 
         public bool IsMoveWithDestination()
         {
-            return _move.Length > 3;
+            const string validPattern = "^([wbWB])([ABGQSabgqs])([1-3])([NSns])([TWEtwe])([wbWB])([ABGQSabgqs])([1-3])$";
+            return Regex.IsMatch(_move, validPattern);
         }
     }
 

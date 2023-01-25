@@ -1,8 +1,6 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using static GameCore.Utils;
+#pragma warning disable IDE1006 // Private members naming style
 
 namespace GameCore
 {
@@ -15,10 +13,6 @@ namespace GameCore
         private Dictionary<(int, int), Stack<Piece>> _point_stack { get { return Board._point_stack; } }
         private Dictionary<string, (int, int)> _piece_point { get { return Board._piece_point; } }
         private Dictionary<Color, List<Piece> > _color_pieces { get { return Board._color_pieces; } }
-        // private Dictionary<(int, int), Stack<Piece>> _point_stack;
-        // private Dictionary<string, (int, int)> _piece_point;
-        // private Dictionary<Color, List<Piece> > _color_pieces;
-
 
         // *******************************************
         // For testing
@@ -33,7 +27,7 @@ namespace GameCore
             Board = new();
         }
 
-        private void _PrintWarning(string warning)
+        private static void _PrintWarning(string warning)
         {
             Console.BackgroundColor = ConsoleColor.Yellow;
             Console.ForegroundColor = ConsoleColor.Black;
@@ -42,14 +36,9 @@ namespace GameCore
             Console.WriteLine();
         }
 
-        public bool IsValidInput(Move move)
+        public static bool IsValidInput(Move move)
         {
-            // This is a regex that could still be tricked, so we may have to check for that as well:
-            // For instance, it would allow `wQ2`, but there really is only 1 Queen Bee.
-                    //  Case insensitive Not optional piece       Optional Side       Optional Piece
-            string validPattern = @"^([wb])([ABGQS])([1-3])([NS])?([TWE])?([wb]?)([ABGQS]?)([1-3]?)$";
-            return Regex.IsMatch(move.ToString(), validPattern);
-            // return true;
+            return !move.ToString().Equals("invalid");
         }
 
         public bool IsPlacingValid(Move move)
@@ -113,13 +102,13 @@ namespace GameCore
 
         public bool MakeMove(ref Player player)
         {
-            Move move = player.GetMove();
-            (int, int) point = GetPoint(move);
-            Piece piece = new Piece(move.MovingPiece, point);
             try
             {
+                Move move = player.GetMove();
                 if (IsValidInput(move))
                 {
+                    (int, int) point = GetPoint(move);
+                    Piece piece = new(move.MovingPiece, point);
                     if (move.IsMoveWithDestination())
                     {
                         if (IsPlacingMove(move))
@@ -176,7 +165,7 @@ namespace GameCore
                 }
                 else
                 {
-                    throw new ArgumentException("Invalid Move: Make sure you follow the appropriate notation-e.g., wQ1, and it is an existing piece");
+                    throw new ArgumentException("Invalid Move: Make sure you follow the appropriate notation, and it is an existing piece-e.g., wQ1");
                 }
             }
             catch (ArgumentException ex)

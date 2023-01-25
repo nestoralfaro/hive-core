@@ -1,6 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 #pragma warning disable IDE1006 // Private members naming style
 
 namespace GameCore
@@ -9,21 +6,18 @@ namespace GameCore
     {
         private Player _blackPlayer;
         private Player _whitePlayer;
-        private bool IsBlackPlayerTurn;
-        private Logic _board;
+        private bool _isBlackPlayerTurn;
 
-        // getter used for testing
-        public Logic Board { get { return _board; } }
-
+        public Logic Board { get; }
         public GameCore()
         {
-            _board = new Logic();
+            Board = new Logic();
             _blackPlayer = new Player('b');
             _whitePlayer = new Player('w');
-            IsBlackPlayerTurn = true;
+            _isBlackPlayerTurn = true;
         }
 
-        private void _PrintRemainingPieces(Player player)
+        private static void _PrintRemainingPieces(Player player)
         {
             string Output = "";
             foreach (string piece in player.Pieces)
@@ -36,7 +30,7 @@ namespace GameCore
 
         private void _PrintPlayerState()
         {
-            if (IsBlackPlayerTurn)
+            if (_isBlackPlayerTurn)
             {
                 Console.BackgroundColor = ConsoleColor.Blue;
                 Console.ForegroundColor = ConsoleColor.White;
@@ -59,23 +53,23 @@ namespace GameCore
         public void Play()
         {
             _PrintPlayerState();
-            if (IsBlackPlayerTurn)
+            if (_isBlackPlayerTurn)
             {
                 // if it is a valid move
-                if (_board.MakeMove(ref _blackPlayer))
-                    IsBlackPlayerTurn = false;
+                if (Board.MakeMove(ref _blackPlayer))
+                    _isBlackPlayerTurn = false;
             }
             else
             {
-                if (_board.MakeMove(ref _whitePlayer))
-                    IsBlackPlayerTurn = true;
+                if (Board.MakeMove(ref _whitePlayer))
+                    _isBlackPlayerTurn = true;
             }
-            _board.Print();
+            Board.Print();
         }
 
         public bool IsGameOver()
         {
-            return _board.IsGameOver();
+            return Board.IsGameOver();
         }
     }
 }
