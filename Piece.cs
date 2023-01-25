@@ -34,9 +34,6 @@ namespace GameCore
         private Dictionary<string, (int, int)> _piece_point { get; set; }
         private Dictionary<(int, int), Stack<Piece>> _point_stack { get; set; }
         private Dictionary<Color, List<Piece> > _color_pieces { get; set; }
-
-        private Board _state;
-
         private string _piece;
 
         public Piece(string piece, (int, int) piecePoint)
@@ -186,45 +183,17 @@ namespace GameCore
             return convexHull.Where(side => _HasAtLeastOneNeighbor(side)).ToList();
         }
 
-        /**
-        An idea of how this function could be implemented:
-        Just return all the neighbors for this beetle by adding the sides from the hashmap, and validate each one of them.
-        Remember that the beetle can also get on top. That means that we would have to add another piece to a particulate
-        element on the hashmap.
-
-        For instance, a hashmap with a beetle on top of a piece could look like this:
-        {
-            (0, 0):
-                Piece({Insect: Ant, Number: 1, Color: White}),
-                Piece({Insect: Beetle, Number: 2, Color: Black}), -->   Maybe the last piece is always the beetle?
-                                                                        Up to your engineering skills to figure that one out
-        }
-
-        One tricky part maybe populating the neighbors property, but it really should be just adding the ones that
-        the other pieces at that position have, without repetition of course.
-
-        Maybe something like:
-            validPositions = []
-            foreach (var side in sides)
-                validPositions.Add(ValidateBeetleMoves(piece_positions[piece] + side))
-        **/
         private List<(int, int)> _GetBeetleMovingSpots()
         {
-            // Filter out the sides that would break the hive
-            // List<(int, int)> validMoves = this.GetAvailableSides().Where(side => _HasAtLeastOneNeighbor(side, board)).ToList(); 
-            // List<(int, int)> validMoves = this.Sides.Values.Where(side => _IsValidPosition(this.Point, side, board)).ToList();
             var validMoves = new List<(int, int)>();
-            foreach (var offset in SIDE_OFFSETS_LIST)
+            foreach ((int, int) side in Sides.Values)
             {
-                var side =(offset.Item1 + Point.x, offset.Item2 + Point.y);
-                if (_IsValidPath(this.Point, side))
+                // Filter out the sides that would break the hive
+                if (_IsValidPath(this.Point, side, true))
                 {
                     validMoves.Add(side);
                 }
             }
-
-            // Because it is a beetle, add its existing neighbors too, because it can get on top of them
-            // validMoves.AddRange(this.Neighbors.Select(side => side.Value).ToList());
             return validMoves;
         }
 
@@ -258,7 +227,7 @@ namespace GameCore
             foreach ((int, int) spot in SpotsAround)
             {
                 // It is not busy and is valid
-                if (!_point_stack.ContainsKey(spot) && _IsValidPath(Point, spot))
+                if (_IsValidPath(Point, spot))
                 {
                     spots.Add(spot);
                 }
@@ -266,7 +235,7 @@ namespace GameCore
             return spots;
         }
 
-        private bool _PhysicallyFits ((int x, int y) from, (int x, int y) to)
+        private bool _IsFreedomOfMovement ((int x, int y) from, (int x, int y) to)
         {
             (int x, int y) offset = (to.x - from.x, to.y - from.y);
             int index = SIDE_OFFSETS_LIST.IndexOf(offset); // direction we're going
@@ -292,6 +261,12 @@ namespace GameCore
             Piece newPieceSpot = new Piece(ToString(), to);
             _board.RemovePiece(this);
             _board.AddPiece(to, newPieceSpot);
+
+            // Check if there is at least one common neighbor
+            // if (oldPieceSpot.Neighbors.Where newPieceSpot.Neighbors)
+            // {
+            // }
+
             if (!_board.IsAllConnected())
             {
                 // Put it back
@@ -308,39 +283,10 @@ namespace GameCore
             // ********************* Checking for broken hive ********************* 
         }
 
-        private bool _IsValidPath((int x, int y) from, (int x, int y) to)
+        private bool _IsValidPath((int x, int y) from, (int x, int y) to, bool isBeetle = false)
         {
-
-            // Needs fixing. Does not Pass BlackMove 7 from test
-            // ********************* Checking for blocked path ********************* 
-            // // if this spot is not itself
-            // if (to.x != this.Point.x || to.y != this.Point.y)
-            // {
-            //     if (!isBeetle)
-            //     {
-            //         // Make sure it is not being blocked by another piece
-            //         if (_point_piece.ContainsKey(to))
-            //         {
-            //             return false;
-            //         }
-            //     }
-            //     // Pass, because the beetle can crawl on top of this guy
-            // }
-            // else
-            // {
-            //     // Invalid spot because it is itself
-            //     return false;
-            // }
-
-
-            // if (!isBeetle && _point_piece.ContainsKey(to))
-            // {
-            //     // Only a beetl can move this move
-            //     return false;
-            // }
-            // ********************* Checking for blocked path ********************* 
-            return _DoesNotBreakHive(from, to) && _PhysicallyFits(from, to);
-            // return true;
+            //      Only beetle can crawl on top of                 One Hive Rule                       Physically Fits
+            return (isBeetle || !_point_stack.ContainsKey(to)) && _DoesNotBreakHive(from, to) && _IsFreedomOfMovement(from, to);
         }
 
         private void _DFS(ref List<(int x, int y)> positions, ref Dictionary<(int x, int y), bool> visited, (int x, int y) curSpot, int curDepth, int maxDepth)
@@ -361,15 +307,10 @@ namespace GameCore
             foreach ((int x, int y) offset in SIDE_OFFSETS.Values)
             {
                 (int x, int y) nextSpot = (curSpot.x + offset.x, curSpot.y + offset.y);
-                //  If no one is blocking the path and it (does not break the hive and it is not a gate position)
                 bool hasNotBeenVisited = !visited.ContainsKey(nextSpot) || (visited.ContainsKey(nextSpot) && !visited[nextSpot]);
-                if (hasNotBeenVisited && !_point_stack.ContainsKey(nextSpot) && _IsValidPath(curSpot, nextSpot))
+                if (hasNotBeenVisited && _IsValidPath(curSpot, nextSpot))
                 {
                     _DFS(ref positions, ref visited, nextSpot, curDepth + 1, maxDepth);
-                }
-                else
-                {
-                    visited[nextSpot] = true;
                 }
             }
         }
@@ -378,18 +319,12 @@ namespace GameCore
         {
             List<(int x, int y)> positions = new List<(int x, int y)>();
             Dictionary<(int x, int y), bool> visited = new Dictionary<(int x, int y), bool>();
-            foreach ((int x, int y) sideOffset in SIDE_OFFSETS.Values)
+            foreach ((int x, int y) side in SpotsAround)
             {
-                (int x, int y) side = (sideOffset.x + Point.x, sideOffset.y + Point.y);
-
                 bool hasNotBeenVisited = !visited.ContainsKey(side) || (visited.ContainsKey(side) && !visited[side]);
-                if (hasNotBeenVisited && !_point_stack.ContainsKey(side) && _IsValidPath(Point, side))
+                if (hasNotBeenVisited && _IsValidPath(Point, side))
                 {
                     _DFS(ref positions, ref visited, side, 1, _SPIDER_MAX_STEP_COUNT);
-                }
-                else
-                {
-                    visited[side] = true;
                 }
             }
             return positions;
