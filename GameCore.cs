@@ -55,16 +55,21 @@ namespace GameCore
             _PrintPlayerState();
             if (_isBlackPlayerTurn)
             {
-                // if it is a valid move
                 if (Board.MakeMove(ref _blackPlayer))
+                {
                     _isBlackPlayerTurn = false;
+                    _blackPlayer.TurnCount++;
+                }
             }
             else
             {
                 if (Board.MakeMove(ref _whitePlayer))
+                {
                     _isBlackPlayerTurn = true;
+                    _whitePlayer.TurnCount++;
+                }
             }
-            Board.Print();
+            Board.PrintFormatted();
         }
 
         public bool IsGameOver()

@@ -68,18 +68,20 @@ namespace GameCore
                 _ => new List<(int, int)>() { (1, 2) },// this is an invalid position
             };
         }
+
         public List<(int, int)> GetPlacingSpots(Board board)
         {
+            // Maybe keep track of the visited ones with a hashmap and also pass it to the hasopponent neighbor?
             List<(int, int)> positions = new();
 
             // iterate through the current player's color's pieces
             foreach (Piece piece in board._color_pieces[this.Color])
             {
-                // iterate through this piece's available sides
+                // iterate through this piece's available spots
                 foreach ((int, int) spot in piece.SpotsAround)
                 {
-                    //      Not been visited            No one is there                   Does not have neighbor opponent
-                    if (!positions.Contains(spot) && !board._point_stack.ContainsKey(spot) && !_HasOpponentNeighbor(spot))
+                    //      Not been visited        It is not neighboring an opponent
+                    if (!positions.Contains(spot) && !_HasOpponentNeighbor(spot, board._point_stack))
                     {
                             positions.Add(spot);
                     }
@@ -267,12 +269,12 @@ namespace GameCore
             }
         }
 
-        private bool _HasOpponentNeighbor((int, int) point)
+        private bool _HasOpponentNeighbor((int, int) point, Dictionary<(int, int), Stack<Piece>> _point_stack)
         {
             foreach ((int, int) side in SIDE_OFFSETS.Values)
             {
                 (int, int) potentialOpponentNeighborPosition = (point.Item1 + side.Item1, point.Item2 + side.Item2);
-                // If piece is on the board                             AND is not the same color as the piece that is about to be placed
+                // If piece is on the board                                     And Is not the same color as the piece that is about to be placed
                 if (_point_stack.ContainsKey(potentialOpponentNeighborPosition) && _point_stack[potentialOpponentNeighborPosition].Peek().Color != this.Color)
                 {
                     // Has an opponent neighbor

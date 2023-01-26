@@ -7,6 +7,7 @@ namespace GameCore
     {
         public char Color { get; set; }
         public List<string> Pieces { get; set; }
+        public int TurnCount { get; set; }
         public Player(char color)
         {
             Color = color;
@@ -24,14 +25,21 @@ namespace GameCore
                 $"{color}S1",
                 $"{color}S2",
             };
+            TurnCount = 1;
         }
-        public Move GetMove()
+
+        public static Move GetMove()
         {
             Console.WriteLine("Enter move");
             string input = Console.ReadLine();
             // temporary for debugging
             // string input = "bS1";
             return new Move(input!);
+        }
+
+        public bool HasNotPlayedQueen()
+        {
+            return !Pieces.Contains($"{Color}Q1");
         }
     }
 

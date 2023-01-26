@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using static GameCore.Utils;
 #pragma warning disable IDE1006 // Private members naming style
 
@@ -36,26 +35,100 @@ namespace GameCore
             Console.WriteLine();
         }
 
-        public static bool IsValidInput(Move move)
+        public static bool IsValidInput(char color, Move move)
         {
-            return !move.ToString().Equals("invalid");
+            if (!move.ToString().Equals("invalid"))
+            {
+                if (move.ToString()[0] == char.ToLower(color))
+                {
+                    return true;
+                }
+                else
+                {
+                    throw new ArgumentException("It is " + (color == 'b' ? "Black's" : "White's") + " turn");
+                }
+            }
+            {
+                return false;
+            }
         }
 
-        public bool IsPlacingValid(Move move)
+        public bool IsPlacingValid(Player player, Move move, Piece activePiece, (int x, int y) point)
         {
-            return true;
+            if (player.TurnCount > 1)
+            {
+                if (player.TurnCount == 4 && player.HasNotPlayedQueen() && !activePiece.ToString().Equals($"{player.Color}Q1"))
+                {
+                    throw new ArgumentException("It is your 4th turn. You have to play your queen.");
+                }
+
+                List<(int, int)> availablePlacingSpots = activePiece.GetPlacingSpots(Board);
+                if (availablePlacingSpots.Count != 0)
+                {
+                    if (availablePlacingSpots.Contains(point))
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        string availSpots = "";
+                        foreach ((int x, int y) spot in availablePlacingSpots)
+                        {
+                            availSpots += $"({spot.x}, {spot.y})";
+                        }
+                        throw new ArgumentException($"Invalid placing for {move.MovingPiece}. Your available spots are: {availSpots}");
+                    }
+                }
+                else
+                {
+                    throw new ArgumentException($"Piece {move.MovingPiece} has no valid placing spots.");
+                }
+            }
+            else
+            {
+                // If the reference piece exist
+                if (_piece_point.ContainsKey(move.DestinationPiece))
+                {
+                    return true;
+                }
+                else
+                {
+                    throw new ArgumentException("Invalid Move: Make sure your piece of reference exists on the board.");
+                }
+            }
         }
 
-        public bool IsPieceOnBoardMoveValid(Move move, Piece piece)
+        public bool IsPieceMoveOnBoardValid(Move move, Piece piece)
         {
-            return (
-                _piece_point.ContainsKey(move.MovingPiece)
-                && SIDE_OFFSETS.ContainsKey(move.DestinationSide)
-                && _piece_point.ContainsKey(move.DestinationPiece)
-            );
+            List<(int, int)> availableMovingSpots = _point_stack[piece.Point].Peek().GetMovingSpots(Board);
+            if (availableMovingSpots.Count != 0)
+            {
+                if (availableMovingSpots.Contains(piece.Point))
+                {
+                    return true;
+                }
+                else
+                {
+                    string availSpots = "";
+                    foreach ((int x, int y) spot in availableMovingSpots)
+                    {
+                        availSpots += $"({spot.x}, {spot.y})";
+                    }
+                    throw new ArgumentException($"Invalid placing for {move.MovingPiece}. Your available spots are: {availSpots}");
+                }
+            }
+            else
+            {
+                throw new ArgumentException($"Piece {move.MovingPiece} has no valid placing spots.");
+            }
+            // return (
+            //     _piece_point.ContainsKey(move.MovingPiece)
+            //     && SIDE_OFFSETS.ContainsKey(move.DestinationSide)
+            //     && _piece_point.ContainsKey(move.DestinationPiece)
+            // );
         }
 
-        private (int, int) GetPoint(Move move)
+        private (int, int) GetNewPoint(Move move)
         {
             // It is the first piece being placed
             if (String.IsNullOrEmpty(move.DestinationSide))
@@ -64,9 +137,9 @@ namespace GameCore
             }
             else
             {
-                (int, int) referencePiece = this._piece_point[move.DestinationPiece];
-                (int, int) delta = SIDE_OFFSETS[move.DestinationSide];
-                return (referencePiece.Item1 + delta.Item1, referencePiece.Item2 + delta.Item2);
+                (int x, int y) = this._piece_point[move.DestinationPiece];
+                (int x, int y) sideOffset = SIDE_OFFSETS[move.DestinationSide];
+                return (x + sideOffset.x, y + sideOffset.y);
             }
         }
 
@@ -78,7 +151,14 @@ namespace GameCore
         private bool IsFirstMove()
         {
             // Nothing has been played
-            return Board._point_stack.Count == 0 && Board._piece_point.Count == 0;
+            if (Board._point_stack.Count == 0 && Board._piece_point.Count == 0)
+            {
+                return true;
+            }
+            else
+            {
+                throw new ArgumentException("Invalid Move: Make sure you include your side and reference piece–e.g., wQ1NWbB1");
+            }
         }
 
         private void PrintAvailableMovesForThePiece(Piece piece)
@@ -90,8 +170,6 @@ namespace GameCore
             {
                 Console.WriteLine(point);
             }
-            Console.WriteLine("-------------------------------------------------------");
-
             Console.WriteLine("--------------------Available Placings--------------------");
             foreach ((int, int) point in piece.GetPlacingSpots(Board))
             {
@@ -104,42 +182,34 @@ namespace GameCore
         {
             try
             {
-                Move move = player.GetMove();
-                if (IsValidInput(move))
+                Move move = Player.GetMove();
+                if (IsValidInput(player.Color, move))
                 {
-                    (int, int) point = GetPoint(move);
+                    (int, int) point = GetNewPoint(move);
                     Piece piece = new(move.MovingPiece, point);
                     if (move.IsMoveWithDestination())
                     {
                         if (IsPlacingMove(move))
                         {
-                            // If the reference piece exist
-                            if (_piece_point.ContainsKey(move.DestinationPiece))
+                            if (IsPlacingValid(player, move, piece, point))
                             {
                                 // Add the new piece
                                 Board.AddPiece(point, piece);
                                 // Remove it from the player
                                 player.Pieces.Remove(move.MovingPiece);
-
-                                PrintAvailableMovesForThePiece(piece);
-                            }
-                            else
-                            {
-                                throw new ArgumentException("Invalid Move: Make sure your piece of reference exists on the board.");
                             }
                         }
                         else
                         {
                             // Possibly moving pieces already on the board
-                            if (IsPieceOnBoardMoveValid(move, piece))
+                            if (IsPieceMoveOnBoardValid(move, piece))
                             {
                                 // Move such existing piece
                                 // remove piece
                                 Board.RemovePiece(piece);
                                 // re-add it
                                 Board.AddPiece(point, piece);
-
-                                PrintAvailableMovesForThePiece(piece);
+                                // PrintAvailableMovesForThePiece(piece);
                             }
                             else
                             {
@@ -155,11 +225,7 @@ namespace GameCore
                             Board.AddPiece(point, piece);
                             // Does not remove on the first turn
                             player.Pieces.Remove(move.MovingPiece);
-                            PrintAvailableMovesForThePiece(piece);
-                        }
-                        else
-                        {
-                            throw new ArgumentException("Invalid Move: Make sure you include your side and reference piece–e.g., wQ1NWbB1");
+                            // PrintAvailableMovesForThePiece(piece);
                         }
                     }
                 }
@@ -192,88 +258,56 @@ namespace GameCore
         public void Print()
         {
             // Print the board
-            Console.WriteLine("/*********************************/");
-            Console.WriteLine("Current board state:");
-            foreach (var entry in _point_stack)
+            if (_point_stack.Count != 0)
             {
-                Console.WriteLine($"{entry.Key}: {entry.Value.Peek().Number} {entry.Value.Peek().Color} {entry.Value.Peek().Insect}");
-                //Print the neighbours
-                foreach (var neighbour in entry.Value.Peek().Neighbors)
+                Console.WriteLine("/*********************************/");
+                Console.WriteLine("Current board state:");
+                foreach (var entry in _point_stack)
                 {
-                    Console.WriteLine($"{neighbour.Key}: {neighbour.Value}");
+                    Console.WriteLine($"{entry.Key}: {entry.Value.Peek().Number} {entry.Value.Peek().Color} {entry.Value.Peek().Insect}");
+                    //Print the neighbours
+                    foreach (var neighbour in entry.Value.Peek().Neighbors)
+                    {
+                        Console.WriteLine($"{neighbour.Key}: {neighbour.Value}");
+                    }
                 }
+                Console.WriteLine("/*********************************/");
             }
-            Console.WriteLine("/*********************************/");
         }
 
-        // Does not work
-        public void PrintFormatted() {
-            // Create a list to store the hexagons to print
-            List<string> hexagons = new List<string>();
-
-            // Iterate through each key-value pair in the dictionary
-            foreach (KeyValuePair<(int, int), Stack<Piece>> kvp in _point_stack) {
-                // Get the current hexagon and its neighbors
-                (int, int) currentHex = kvp.Key;
-                Piece currentPiece = kvp.Value.Peek();
-                Dictionary<string, (int, int)> neighbors = currentPiece.Neighbors;
-
-                // Create a string to store the current hexagon's output
-                string hexagon = "";
-
-                // Add the northwest neighbor if it exists
-                if (neighbors.ContainsKey("*/")) {
-                    hexagon += "  /";
-                } else {
-                    hexagon += "   ";
+        public void PrintFormatted()
+        {
+            if (_point_stack.Count != 0)
+            {
+                Dictionary<(int, int), bool> hasBeenPrinted = new();
+                foreach (var entry in _point_stack)
+                {
+                    foreach (Piece piece in entry.Value)
+                    {
+                        if (!hasBeenPrinted.ContainsKey(piece.Point) || !hasBeenPrinted[piece.Point])
+                        {
+                            PrintAsHexagon(piece);
+                            hasBeenPrinted[piece.Point] = true;
+                        }
+                    }
                 }
-
-                // Add the west neighbor if it exists
-                if (neighbors.ContainsKey("*|")) {
-                    hexagon += " \\";
-                } else {
-                    hexagon += "  ";
-                }
-
-                // Add the current hexagon's coordinates
-                hexagon += $"\n |{currentHex.Item1},{currentHex.Item2}|";
-
-                // Add the east neighbor if it exists
-                if (neighbors.ContainsKey("|*")) {
-                    hexagon += "\n  \\";
-                } else {
-                    hexagon += "\n   ";
-                }
-
-                // Add the southeast neighbor if it exists
-                if (neighbors.ContainsKey("/*")) {
-                    hexagon += " /";
-                } else {
-                    hexagon += "  ";
-                }
-
-                // Add the southwest neighbor if it exists
-                if (neighbors.ContainsKey("*\\")) {
-                    hexagon += " \\";
-                } else {
-                    hexagon += "  ";
-                }
-
-                // Add the northeast neighbor if it exists
-                if (neighbors.ContainsKey("\\*")) {
-                    hexagon += " /";
-                } else {
-                    hexagon += "  ";
-                }
-
-                // Add the current hexagon's output to the list of hexagons
-                hexagons.Add(hexagon);
             }
+        }
 
-            // Iterate through the list of hexagons and print each one
-            for (int i = 0; i < hexagons.Count; i++) {
-                Console.WriteLine(hexagons[i]);
-            }
+        public static void PrintAsHexagon(Piece piece)
+        {
+            string NT = piece.Neighbors.ContainsKey("NT") ? (piece.Neighbors["NT"].ToString() + System.Environment.NewLine + "-----------") : "\t-----------";
+            string NW = piece.Neighbors.ContainsKey("NW") ? (piece.Neighbors["NW"].ToString() + "\t /") : "\t /";
+            string SW = piece.Neighbors.ContainsKey("SW") ? (piece.Neighbors["SW"].ToString() + "\t \\") : "\t \\";
+            string ST = piece.Neighbors.ContainsKey("ST") ? ("-----------" + System.Environment.NewLine + piece.Neighbors["ST"].ToString()) : "\t-----------";
+            string SE = piece.Neighbors.ContainsKey("SE") ? ("\t / \t" + piece.Neighbors["SE"].ToString()) : "\t /";
+            string NE = piece.Neighbors.ContainsKey("NE") ? ("\t \\ \t" + piece.Neighbors["NE"].ToString()) : "\t \\";
+
+            Console.WriteLine(NT);
+            Console.WriteLine(NW + NE);
+            Console.WriteLine($"\t{piece} {piece.Point}");
+            Console.WriteLine(SW + SE);
+            Console.WriteLine(ST);
         }
     }
 }

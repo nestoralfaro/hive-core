@@ -1,9 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using static GameCore.Utils;
-
 namespace GameCore
 {
     public class Board
@@ -11,6 +5,7 @@ namespace GameCore
         public readonly Dictionary<string, (int, int)> _piece_point;
         public readonly Dictionary<(int, int), Stack<Piece>> _point_stack;
         public readonly Dictionary<Color, List<Piece> > _color_pieces;
+        // public readonly Dictionary<Player, List<Piece>> _player_pieces;
 
         public Board()
         {
@@ -19,7 +14,7 @@ namespace GameCore
             // This is an approach that should help performance
             _point_stack = new Dictionary<(int, int), Stack<Piece>>();
             _point_stack.EnsureCapacity(22);
-            
+
             _piece_point = new Dictionary<string, (int, int)>();
             _piece_point.EnsureCapacity(22);
 
@@ -119,12 +114,5 @@ namespace GameCore
 
             return visited.Count == _point_stack.Count;
         }
-
-        // public bool _DoesNotBreakHive(Piece piece, (int x, int y) from, (int x, int y) to)
-        // {
-        //     RemovePiece(piece);
-        //     AddPiece();
-        //     return true;
-        // }
     }
 }

@@ -2,7 +2,7 @@ namespace GameCore
 {
     public static class Utils
     {
-        public static readonly Dictionary<string, (int, int)> SIDE_OFFSETS = new Dictionary<string, (int, int)>()
+        public static readonly Dictionary<string, (int, int)> SIDE_OFFSETS = new()
         {
             // Notice how each side is only valid if it adds up to an even number
             { "NT", (1, 1) },    // [0] North
@@ -13,7 +13,7 @@ namespace GameCore
             { "NE", (2, 0) },    // [5] Northeast
         };
 
-        public static readonly List<(int, int)> SIDE_OFFSETS_LIST = new List<(int, int)>()
+        public static readonly List<(int, int)> SIDE_OFFSETS_LIST = new()
         {
             // Notice how each side is only valid if it adds up to an even number
             (1, 1),    // [0] North
