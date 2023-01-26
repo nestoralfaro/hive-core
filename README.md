@@ -1,15 +1,6 @@
 # First iteration of our Game Core for Hive
 Todo:
 - Create more tests.
-- Fix `_IsValidPath` – make sure the spot is not itself, blocked, and it does not break the hive.
-- Fix `GetAntMovingSpots` – still adds itself as a valid moving position
-- Fix `GetBeetleMovingSpots` - has **not** been tested
-- Fix `GetQueenBeeMovingSpots` - has **not** been tested
-- Fix `GetSpiderMovingSpots` - has been tested *once*
-- Fix `GetGrasshopperMovingSpots` - has been tested *once*
-- Make sure that the player moves only THEIR pieces and not their opponent's.
-- Managing turns and keeping track of pieces.
-- Validating movements and displaying appropriate messages/exceptions.
 - Refactor–e.g., remove unnecessary variables, data types, etc. Just improve the overall implementation not only in speed, but also in readability.
 - Look into running `GetMovingPositions` and `GetAvailablePosition` concurrently (parallel programming).
 
