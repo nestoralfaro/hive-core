@@ -89,34 +89,37 @@ namespace GameCore
             }
         }
 
-        public bool IsPieceMoveOnBoardValid(Move move, Piece piece)
+        public bool IsPieceMoveOnBoardValid(Player player, Move move, Piece piece, (int, int) to)
         {
-            List<(int, int)> availableMovingSpots = _point_stack[piece.Point].Peek().GetMovingSpots(Board);
-            if (availableMovingSpots.Count != 0)
+            if (player.TurnCount == 4 && player.HasNotPlayedQueen())
             {
-                if (availableMovingSpots.Contains(piece.Point))
-                {
-                    return true;
-                }
-                else
-                {
-                    string availSpots = "";
-                    foreach ((int x, int y) spot in availableMovingSpots)
-                    {
-                        availSpots += $"({spot.x}, {spot.y})";
-                    }
-                    throw new ArgumentException($"Invalid placing for {move.MovingPiece}. Your available spots are: {availSpots}");
-                }
+                throw new ArgumentException("You have to play your queen before you are able to move your pieces.");
             }
             else
             {
-                throw new ArgumentException($"Piece {move.MovingPiece} has no valid placing spots.");
+                List<(int, int)> availableMovingSpots = _point_stack[piece.Point].Peek().GetMovingSpots(Board);
+                if (availableMovingSpots.Count != 0)
+                {
+                    if (availableMovingSpots.Contains(to))
+                    {
+                        // piece.Point = to;
+                        return true;
+                    }
+                    else
+                    {
+                        string availSpots = "";
+                        foreach ((int x, int y) spot in availableMovingSpots)
+                        {
+                            availSpots += $"({spot.x}, {spot.y})";
+                        }
+                        throw new ArgumentException($"Invalid placing for {move.MovingPiece}. Your available spots are: {availSpots}");
+                    }
+                }
+                else
+                {
+                    throw new ArgumentException($"Piece {move.MovingPiece} has no valid placing spots.");
+                }
             }
-            // return (
-            //     _piece_point.ContainsKey(move.MovingPiece)
-            //     && SIDE_OFFSETS.ContainsKey(move.DestinationSide)
-            //     && _piece_point.ContainsKey(move.DestinationPiece)
-            // );
         }
 
         private (int, int) GetNewPoint(Move move)
@@ -141,9 +144,14 @@ namespace GameCore
             }
         }
 
-        private bool IsPlacingMove(Move move)
+        private bool IsPlacingMove(Player player, Move move)
         {
-            return !_piece_point.ContainsKey(move.MovingPiece);
+            // if (!player.Pieces.Contains(move.MovingPiece))
+            // {
+            //     throw new ArgumentException($"Piece {move.MovingPiece} has already been played.");
+            // }
+            // return !_piece_point.ContainsKey(move.MovingPiece);
+            return player.Pieces.Contains(move.MovingPiece) && !_piece_point.ContainsKey(move.MovingPiece);
         }
 
         private bool IsFirstMove()
@@ -183,16 +191,25 @@ namespace GameCore
                 Move move = Player.GetMove();
                 if (IsValidInput(player.Color, move))
                 {
-                    (int, int) point = GetNewPoint(move);
-                    Piece piece = new(move.MovingPiece, point);
+                    (int, int) to = GetNewPoint(move);
+                    Piece piece;
+                    if (_piece_point.ContainsKey(move.MovingPiece))
+                    {
+                        (int, int) curPiecePoint = _piece_point[move.MovingPiece];
+                        piece = _point_stack[curPiecePoint].Peek();
+                    }
+                    else
+                    {
+                        piece = new(move.MovingPiece, to);
+                    }
                     if (move.IsMoveWithDestination())
                     {
-                        if (IsPlacingMove(move))
+                        if (IsPlacingMove(player, move))
                         {
-                            if (IsPlacingValid(player, move, piece, point))
+                            if (IsPlacingValid(player, move, piece, to))
                             {
                                 // Add the new piece
-                                Board.AddPiece(point, piece);
+                                Board.AddPiece(to, piece);
                                 // Remove it from the player
                                 player.Pieces.Remove(move.MovingPiece);
                             }
@@ -200,13 +217,14 @@ namespace GameCore
                         else
                         {
                             // Possibly moving pieces already on the board
-                            if (IsPieceMoveOnBoardValid(move, piece))
+                            if (IsPieceMoveOnBoardValid(player, move, piece, to))
                             {
                                 // Move such existing piece
                                 // remove piece
                                 Board.RemovePiece(piece);
                                 // re-add it
-                                Board.AddPiece(point, piece);
+                                piece.Point = to;
+                                Board.AddPiece(to, piece);
                                 // PrintAvailableMovesForThePiece(piece);
                             }
                             else
@@ -220,7 +238,7 @@ namespace GameCore
                         if (IsFirstMove())
                         {
                             // first piece on the board. Place it on the origin (0, 0)
-                            Board.AddPiece(point, piece);
+                            Board.AddPiece(to, piece);
                             // Does not remove on the first turn
                             player.Pieces.Remove(move.MovingPiece);
                             // PrintAvailableMovesForThePiece(piece);
@@ -246,12 +264,20 @@ namespace GameCore
             // Check if the game is over based on the game's rules
             // For example, check if a player has no more valid moves,
             // or if a player's queen bee has been surrounded
-            return (
-                (_piece_point.ContainsKey("wQ1") && _point_stack.ContainsKey(_piece_point["wQ1"]) && _point_stack[_piece_point["wQ1"]].Peek().IsSurrounded())
-                || (_piece_point.ContainsKey("bQ1") && _point_stack.ContainsKey(_piece_point["bQ1"]) && _point_stack[_piece_point["bQ1"]].Peek().IsSurrounded())
-            );
+            if (_piece_point.ContainsKey("wQ1") && _point_stack.ContainsKey(_piece_point["wQ1"]) && _point_stack[_piece_point["wQ1"]].Peek().IsSurrounded())
+            {
+                PrintGreen("Black won!");
+            }
+            else if (_piece_point.ContainsKey("bQ1") && _point_stack.ContainsKey(_piece_point["bQ1"]) && _point_stack[_piece_point["bQ1"]].Peek().IsSurrounded())
+            {
+                PrintGreen("White won!");
+            }
+            else
+            {
+                return false;
+            }
+            return true;
         }
-
 
         public void Print()
         {
@@ -294,18 +320,19 @@ namespace GameCore
 
         public static void PrintAsHexagon(Piece piece)
         {
-            string NT = piece.Neighbors.ContainsKey("NT") ? (piece.Neighbors["NT"].ToString() + System.Environment.NewLine + "-----------") : "\t-----------";
-            string NW = piece.Neighbors.ContainsKey("NW") ? (piece.Neighbors["NW"].ToString() + "\t /") : "\t /";
-            string SW = piece.Neighbors.ContainsKey("SW") ? (piece.Neighbors["SW"].ToString() + "\t \\") : "\t \\";
-            string ST = piece.Neighbors.ContainsKey("ST") ? ("-----------" + System.Environment.NewLine + piece.Neighbors["ST"].ToString()) : "\t-----------";
-            string SE = piece.Neighbors.ContainsKey("SE") ? ("\t / \t" + piece.Neighbors["SE"].ToString()) : "\t /";
-            string NE = piece.Neighbors.ContainsKey("NE") ? ("\t \\ \t" + piece.Neighbors["NE"].ToString()) : "\t \\";
-
+            string NT = piece.Neighbors.ContainsKey("NT") ? ("\t\t" + piece.Neighbors["NT"].ToString() + Environment.NewLine + "\t\t-----------") : "\t\t-----------";
+            string NW = piece.Neighbors.ContainsKey("NW") ? ("\t  " + piece.Neighbors["NW"].ToString() + "/") : "\t\t/";
+            string SW = piece.Neighbors.ContainsKey("SW") ? ("\t  " + piece.Neighbors["SW"].ToString() +  "\\") : "\t\t\\";
+            string ST = piece.Neighbors.ContainsKey("ST") ? ("\t\t-----------" + Environment.NewLine + "\t\t" + piece.Neighbors["ST"].ToString()) : "\t\t-----------";
+            string SE = piece.Neighbors.ContainsKey("SE") ? ("\t /" + piece.Neighbors["SE"].ToString()) : "\t /";
+            string NE = piece.Neighbors.ContainsKey("NE") ? ("\t \\" + piece.Neighbors["NE"].ToString()) : "\t \\";
             Console.WriteLine(NT);
             Console.WriteLine(NW + NE);
-            Console.WriteLine($"\t{piece} {piece.Point}");
+            Console.WriteLine($"\t\t{piece} {piece.Point}");
             Console.WriteLine(SW + SE);
             Console.WriteLine(ST);
+            Console.WriteLine("*************************************");
+            Console.WriteLine();
         }
     }
 }

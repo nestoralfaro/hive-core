@@ -38,7 +38,7 @@ namespace GameCore
 
         public bool HasNotPlayedQueen()
         {
-            return !Pieces.Contains($"{Color}Q1");
+            return Pieces.Contains($"{Color}Q1");
         }
     }
 

@@ -16,7 +16,19 @@ namespace GameCore
         public int Number { get; set; }
         public Insect Insect { get; set; }
         public (int x, int y) Point { get; set; }
-        public Dictionary<string, (int, int)> Sides { get; set; }
+        public Dictionary<string, (int, int)> Sides { get {
+            return new Dictionary<string, (int, int)>()
+                {
+                    // These values may not need to be hardcoded.
+                    // However, hardcoding them may make them more efficient
+                    { "NT", (Point.x + 1, Point.y + 1) },         // [0] North
+                    { "NW", (Point.x + (-1), Point.y + 1) },      // [1] Northwest
+                    { "SW", (Point.x + (-2), Point.y + 0) },      // [2] Southwest
+                    { "ST", (Point.x + (-1), Point.y + (-1)) },   // [3] South
+                    { "SE", (Point.x + 1, Point.y + (-1)) },      // [4] Southeast
+                    { "NE", (Point.x + 2, Point.y + 0) },         // [5] Northeast
+                };
+        } }
         public Dictionary<string, (int, int)> Neighbors { get; set; }
         public List<(int, int)> SpotsAround { get { return Sides.Except(Neighbors).Select(side => side.Value).ToList(); } }
         public int ManyNeighbors { get{ return Neighbors.Count; } }
@@ -42,17 +54,6 @@ namespace GameCore
             Number = piece[2] - '0';
             Neighbors = new Dictionary<string, (int, int)>();
             Point = piecePoint;
-            Sides = new Dictionary<string, (int, int)>()
-            {
-                // These values may not need to be hardcoded.
-                // However, hardcoding them may make them more efficient
-                { "NT", (piecePoint.Item1 + 1, piecePoint.Item2 + 1) },         // [0] North
-                { "NW", (piecePoint.Item1 + (-1), piecePoint.Item2 + 1) },      // [1] Northwest
-                { "SW", (piecePoint.Item1 + (-2), piecePoint.Item2 + 0) },      // [2] Southwest
-                { "ST", (piecePoint.Item1 + (-1), piecePoint.Item2 + (-1)) },   // [3] South
-                { "SE", (piecePoint.Item1 + 1, piecePoint.Item2 + (-1)) },      // [4] Southeast
-                { "NE", (piecePoint.Item1 + 2, piecePoint.Item2 + 0) },         // [5] Northeast
-            };
         }
 
         public List<(int, int)> GetMovingSpots(Board board)

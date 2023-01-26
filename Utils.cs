@@ -54,6 +54,15 @@ namespace GameCore
             Console.WriteLine();
         }
 
+        public static void PrintGreen (string message)
+        {
+            Console.BackgroundColor = ConsoleColor.Green;
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write(message);
+            Console.ResetColor();
+            Console.WriteLine();
+        }
+
         private static void _PrintRemainingPieces(Player player)
         {
             string Output = "";
