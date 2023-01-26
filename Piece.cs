@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using static GameCore.Utils;
 #pragma warning disable IDE1006 // Private members naming style
 
@@ -45,15 +46,14 @@ namespace GameCore
             {
                 // These values may not need to be hardcoded.
                 // However, hardcoding them may make them more efficient
-                { "NT", (piecePoint.Item1 + (1), piecePoint.Item2 + (1)) },    // [0] North
-                { "NW", (piecePoint.Item1 + (-1), piecePoint.Item2 + (1)) },   // [1] Northwest
-                { "SW", (piecePoint.Item1 + (-2), piecePoint.Item2 + (0)) },   // [2] Southwest
-                { "ST", (piecePoint.Item1 + (-1), piecePoint.Item2 + (-1)) },  // [3] South
-                { "SE", (piecePoint.Item1 + (1), piecePoint.Item2 + (-1)) },   // [4] Southeast
-                { "NE", (piecePoint.Item1 + (2), piecePoint.Item2 + (0)) },    // [5] Northeast
+                { "NT", (piecePoint.Item1 + 1, piecePoint.Item2 + 1) },         // [0] North
+                { "NW", (piecePoint.Item1 + (-1), piecePoint.Item2 + 1) },      // [1] Northwest
+                { "SW", (piecePoint.Item1 + (-2), piecePoint.Item2 + 0) },      // [2] Southwest
+                { "ST", (piecePoint.Item1 + (-1), piecePoint.Item2 + (-1)) },   // [3] South
+                { "SE", (piecePoint.Item1 + 1, piecePoint.Item2 + (-1)) },      // [4] Southeast
+                { "NE", (piecePoint.Item1 + 2, piecePoint.Item2 + 0) },         // [5] Northeast
             };
         }
-
 
         public List<(int, int)> GetMovingSpots(Board board)
         {
@@ -71,6 +71,9 @@ namespace GameCore
 
         public List<(int, int)> GetPlacingSpots(Board board)
         {
+            Stopwatch stopwatch = new();
+            stopwatch.Start();
+
             // Maybe keep track of the visited ones with a hashmap and also pass it to the hasopponent neighbor?
             List<(int, int)> positions = new();
 
@@ -87,11 +90,18 @@ namespace GameCore
                     }
                 }
             }
+
+            stopwatch.Stop();
+            PrintRed("Generating Available Spots took: " + stopwatch.Elapsed.Milliseconds + "ms");
+
             return positions;
         }
 
         private List<(int, int)> _GetAntMovingSpots()
         {
+            Stopwatch stopwatch = new();
+            stopwatch.Start();
+
             List<(int, int)> spots = new();
             List<(int, int)> results = new();
 
@@ -120,12 +130,18 @@ namespace GameCore
                 }
             }
 
+            stopwatch.Stop();
+            PrintRed("Generating Ant Moves took: " + stopwatch.Elapsed.Milliseconds + "ms");
+
             return results;
         }
 
         private List<(int, int)> _GetBeetleMovingSpots()
         {
-            var validMoves = new List<(int, int)>();
+            Stopwatch stopwatch = new();
+            stopwatch.Start();
+
+            List<(int, int)> validMoves = new();
 
             foreach ((int, int) side in Sides.Values)
             {
@@ -136,11 +152,17 @@ namespace GameCore
                 }
             }
 
+            stopwatch.Stop();
+            PrintRed("Generating Beetle moves took: " + stopwatch.Elapsed.Milliseconds + "ms");
+
             return validMoves;
         }
 
         private List<(int, int)> _GetGrasshopperMovingSpots()
         {
+            Stopwatch stopwatch = new();
+            stopwatch.Start();
+
             List<(int x, int y)> positions = new();
             foreach ((int x, int y) sideOffset in SIDE_OFFSETS.Values)
             {
@@ -163,11 +185,18 @@ namespace GameCore
                     }
                 }
             }
+
+            stopwatch.Stop();
+            PrintRed("Generating grasshoper moves took: " + stopwatch.Elapsed.Milliseconds + "ms");
+
             return positions;
         }
 
         private List<(int, int)> _GetSpiderMovingSpots()
         {
+            Stopwatch stopwatch = new();
+            stopwatch.Start();
+
             List<(int x, int y)> positions = new();
             Dictionary<(int x, int y), bool> visited = new();
             foreach ((int x, int y) side in SpotsAround)
@@ -178,11 +207,18 @@ namespace GameCore
                     _SpiderDFS(ref positions, ref visited, side, 1, _SPIDER_MAX_STEP_COUNT);
                 }
             }
+
+            stopwatch.Stop();
+            PrintRed("Generating spider moves took: " + stopwatch.Elapsed.Milliseconds + "ms");
+
             return positions;
         }
 
         private List<(int, int)> _GetQueenMovingSpots()
         {
+            Stopwatch stopwatch = new();
+            stopwatch.Start();
+
             List<(int, int)> spots = new();
             foreach ((int, int) spot in SpotsAround)
             {
@@ -192,6 +228,10 @@ namespace GameCore
                     spots.Add(spot);
                 }
             }
+
+            stopwatch.Stop();
+            PrintRed("Elapsed time: " + stopwatch.Elapsed.Milliseconds + "ms");
+
             return spots;
         }
 
@@ -204,11 +244,11 @@ namespace GameCore
             (int x, int y) leftOffset = index == 0 ? SIDE_OFFSETS_LIST[5] : SIDE_OFFSETS_LIST[index - 1];
             (int x, int y) rightOffset = index == 5 ? SIDE_OFFSETS_LIST[0] : SIDE_OFFSETS_LIST[index + 1];
 
-            (int x, int y) peripheralLeftSpot = (from.x + leftOffset.x, from.y + leftOffset.y);  
+            (int x, int y) peripheralLeftSpot = (from.x + leftOffset.x, from.y + leftOffset.y);
             (int x, int y) peripheralRightSpot = (from.x + rightOffset.x, from.y + rightOffset.y);
 
             bool eitherPeripheralSpotIsNotItself = (peripheralLeftSpot.x != Point.x || peripheralLeftSpot.y != Point.y) && (peripheralRightSpot.x != Point.x || peripheralRightSpot.y != Point.y);
-            bool onlyOneSpotIsOpen = (_point_stack.ContainsKey(peripheralLeftSpot) && !_point_stack.ContainsKey(peripheralRightSpot)) || (!_point_stack.ContainsKey(peripheralLeftSpot) && _point_stack.ContainsKey(peripheralRightSpot));
+            bool onlyOneSpotIsOpen = _point_stack.ContainsKey(peripheralLeftSpot) ^ _point_stack.ContainsKey(peripheralRightSpot);
 
             //     Either side is not itself      AND   If it is a beetle, check it can crawl     OR Treat it as a normal piece                            
             return eitherPeripheralSpotIsNotItself && ((isBeetle && _point_stack.ContainsKey(to)) || onlyOneSpotIsOpen);
@@ -216,8 +256,8 @@ namespace GameCore
 
         private bool _DoesNotBreakHive((int x, int y) to)
         {
-            Piece oldPieceSpot = new Piece(ToString(), Point);
-            Piece newPieceSpot = new Piece(ToString(), to);
+            Piece oldPieceSpot = new(ToString(), Point);
+            Piece newPieceSpot = new(ToString(), to);
             _board.RemovePiece(this);
             _board.AddPiece(to, newPieceSpot);
 

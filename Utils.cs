@@ -1,4 +1,6 @@
 namespace GameCore
+#pragma warning disable IDE1006 // Private members naming style
+
 {
     public static class Utils
     {
@@ -23,5 +25,44 @@ namespace GameCore
             (1, -1),   // [4] Southeast
             (2, 0),    // [5] Northeast
         };
+
+        public static void _PrintWarning(string warning)
+        {
+            Console.BackgroundColor = ConsoleColor.Yellow;
+            Console.ForegroundColor = ConsoleColor.Black;
+            Console.Write(warning);
+            Console.ResetColor();
+            Console.WriteLine();
+        }
+
+        public static void PrintPlayerHeader(Player player)
+        {
+                Console.BackgroundColor = player.Color == 'b' ? ConsoleColor.Blue : ConsoleColor.White;
+                Console.ForegroundColor = player.Color == 'b' ? ConsoleColor.White : ConsoleColor.Black;
+                Console.Write(player.Color == 'b' ? "Black's Turn" : "White's Turn");
+                _PrintRemainingPieces(player);
+                Console.ResetColor();
+                Console.WriteLine();
+        }
+
+        public static void PrintRed (string message)
+        {
+            Console.BackgroundColor = ConsoleColor.DarkRed;
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write(message);
+            Console.ResetColor();
+            Console.WriteLine();
+        }
+
+        private static void _PrintRemainingPieces(Player player)
+        {
+            string Output = "";
+            foreach (string piece in player.Pieces)
+            {
+                // Maybe we should use the String builder for performance improvement
+                Output += $"{piece[1]}{piece[2]}|";
+            }
+            Console.Write($" | Remaining pieces: {Output}");
+        }
     }
 }

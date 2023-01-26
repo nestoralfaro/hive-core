@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+#nullable enable
 #pragma warning disable IDE1006 // Private members naming style
 
 namespace GameCore
@@ -31,9 +32,7 @@ namespace GameCore
         public static Move GetMove()
         {
             Console.WriteLine("Enter move");
-            string input = Console.ReadLine();
-            // temporary for debugging
-            // string input = "bS1";
+            string input = Console.ReadLine()!;
             return new Move(input!);
         }
 
@@ -65,6 +64,12 @@ namespace GameCore
 
         public Move (string input)
         {
+            // To make the compiler happy so that it does not throw the
+            // `Non-nullable property`
+            MovingPiece = null!;
+            DestinationPiece = null!;
+            DestinationSide = null!;
+
             // Remove whitespaces
             input = Regex.Replace(input, @"\s+", "");
             const string validPattern = "^([wbWB])([ABGQSabgqs])([1-3])([NSns])?([TWEtwe])?([wbWB]?)([ABGQSabgqs]?)([1-3]?)$";

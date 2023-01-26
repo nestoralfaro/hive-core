@@ -26,15 +26,6 @@ namespace GameCore
             Board = new();
         }
 
-        private static void _PrintWarning(string warning)
-        {
-            Console.BackgroundColor = ConsoleColor.Yellow;
-            Console.ForegroundColor = ConsoleColor.Black;
-            Console.Write(warning);
-            Console.ResetColor();
-            Console.WriteLine();
-        }
-
         public static bool IsValidInput(char color, Move move)
         {
             if (!move.ToString().Equals("invalid"))
@@ -137,9 +128,16 @@ namespace GameCore
             }
             else
             {
-                (int x, int y) = this._piece_point[move.DestinationPiece];
-                (int x, int y) sideOffset = SIDE_OFFSETS[move.DestinationSide];
-                return (x + sideOffset.x, y + sideOffset.y);
+                if (_piece_point.ContainsKey(move.DestinationPiece))
+                {
+                    (int x, int y) = this._piece_point[move.DestinationPiece];
+                    (int x, int y) sideOffset = SIDE_OFFSETS[move.DestinationSide];
+                    return (x + sideOffset.x, y + sideOffset.y);
+                }
+                else
+                {
+                    throw new ArgumentException($"Invalid placing for {move.DestinationPiece}. This piece does not exist on the board.");
+                }
             }
         }
 

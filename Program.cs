@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using static GameCore.Utils;
 
 namespace GameCore
 {
@@ -9,17 +10,11 @@ namespace GameCore
             GameCore gameCore = new();
             while (!gameCore.IsGameOver())
             {
-                Stopwatch stopwatch = new Stopwatch();
+                Stopwatch stopwatch = new();
                 stopwatch.Start();
-
                 gameCore.Play();
-
                 stopwatch.Stop();
-                Console.BackgroundColor = ConsoleColor.DarkRed;
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.Write("Elapsed time: " + stopwatch.Elapsed.Milliseconds + "ms");
-                Console.ResetColor();
-                Console.WriteLine();
+                PrintRed("Elapsed time: " + stopwatch.Elapsed.Milliseconds + "ms");
             }
         }
     }

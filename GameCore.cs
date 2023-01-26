@@ -1,3 +1,4 @@
+using static GameCore.Utils;
 #pragma warning disable IDE1006 // Private members naming style
 
 namespace GameCore
@@ -14,7 +15,7 @@ namespace GameCore
             Board = new Logic();
             _blackPlayer = new Player('b');
             _whitePlayer = new Player('w');
-            _isBlackPlayerTurn = true;
+            _isBlackPlayerTurn = false;
         }
 
         private static void _PrintRemainingPieces(Player player)
@@ -28,33 +29,11 @@ namespace GameCore
             Console.Write($" | Remaining pieces: {Output}");
         }
 
-        private void _PrintPlayerState()
-        {
-            if (_isBlackPlayerTurn)
-            {
-                Console.BackgroundColor = ConsoleColor.Blue;
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.Write("Black's Turn");
-                _PrintRemainingPieces(_blackPlayer);
-                Console.ResetColor();
-                Console.WriteLine();
-            }
-            else
-            {
-                Console.BackgroundColor = ConsoleColor.White;
-                Console.ForegroundColor = ConsoleColor.Black;
-                Console.Write("White's Turn");
-                _PrintRemainingPieces(_whitePlayer);
-                Console.ResetColor();
-                Console.WriteLine();
-            }
-        }
-
         public void Play()
         {
-            _PrintPlayerState();
             if (_isBlackPlayerTurn)
             {
+                PrintPlayerHeader(_blackPlayer);
                 if (Board.MakeMove(ref _blackPlayer))
                 {
                     _isBlackPlayerTurn = false;
@@ -63,6 +42,7 @@ namespace GameCore
             }
             else
             {
+                PrintPlayerHeader(_whitePlayer);
                 if (Board.MakeMove(ref _whitePlayer))
                 {
                     _isBlackPlayerTurn = true;
