@@ -154,11 +154,15 @@ namespace GameCore
             return player.Pieces.Contains(move.MovingPiece) && !_piece_point.ContainsKey(move.MovingPiece);
         }
 
-        private bool IsFirstMove()
+        private bool IsFirstMove(Piece piece)
         {
             // Nothing has been played
             if (Board._point_stack.Count == 0 && Board._piece_point.Count == 0)
             {
+                if (piece.Insect == Insect.QueenBee)
+                {
+                    throw new ArgumentException("You may not play the queen as your first piece.");
+                }
                 return true;
             }
             else
@@ -235,7 +239,7 @@ namespace GameCore
                     }
                     else
                     {
-                        if (IsFirstMove())
+                        if (IsFirstMove(piece))
                         {
                             // first piece on the board. Place it on the origin (0, 0)
                             Board.AddPiece(to, piece);
