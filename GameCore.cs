@@ -9,12 +9,12 @@ namespace GameCore
         private Player _whitePlayer;
         private bool _isBlackPlayerTurn;
 
-        public Logic Board { get; }
+        public GameManager Board { get; }
         public GameCore()
         {
-            Board = new Logic();
-            _blackPlayer = new Player('b');
-            _whitePlayer = new Player('w');
+            Board = new GameManager();
+            _blackPlayer = new Player(Color.Black);
+            _whitePlayer = new Player(Color.White);
             _isBlackPlayerTurn = false;
         }
 

@@ -3,40 +3,41 @@ using static GameCore.Utils;
 
 namespace GameCore
 {
-    public class Logic
+    public class GameManager
     {
         /// <summary>
         /// Hashmap { hashedPiece: piece }
         /// </summary>
-        public Board Board; 
-        private Dictionary<(int, int), Stack<Piece>> _point_stack { get { return Board._point_stack; } }
-        private Dictionary<string, (int, int)> _piece_point { get { return Board._piece_point; } }
-        private Dictionary<Color, List<Piece> > _color_pieces { get { return Board._color_pieces; } }
+        public Board board; 
+        private Dictionary<(int, int), Stack<Piece>> _point_stack { get { return board.pieces; } }
+        private Dictionary<string, (int, int)> _piece_point { get { return board._piece_point; } }
+        private Dictionary<Color, List<(int, int)> > _color_pieces { get { return board._color_pieces; } }
 
         // *******************************************
         // For testing
         public Dictionary<(int, int), Stack<Piece>> GetAllPieces() { return _point_stack; }
         public Dictionary<string, (int, int)> GetPiecePoint() { return _piece_point; }
-        public Dictionary<Color, List<Piece>> GetColorPieces() { return _color_pieces; }
+        public Dictionary<Color, List<(int, int)>> GetColorPieces() { return _color_pieces; }
         // For testing
         // *******************************************
 
-        public Logic()
+        public GameManager()
         {
-            Board = new();
+            board = new();
         }
 
-        public static bool IsValidInput(char color, Move move)
+        public static bool IsValidInput(Color color, Move move)
         {
+            char c = char.ToLower(color.ToString()[0]);
             if (!move.ToString().Equals("invalid"))
             {
-                if (move.ToString()[0] == char.ToLower(color))
+                if (move.ToString()[0] == c)
                 {
                     return true;
                 }
                 else
                 {
-                    throw new ArgumentException("It is " + (color == 'b' ? "Black's" : "White's") + " turn");
+                    throw new ArgumentException($"It is {color}'s turn.");
                 }
             }
             {
@@ -53,7 +54,7 @@ namespace GameCore
                     throw new ArgumentException("It is your 4th turn. You have to play your queen.");
                 }
 
-                List<(int, int)> availablePlacingSpots = activePiece.GetPlacingSpots(Board);
+                List<(int, int)> availablePlacingSpots = player.GetPlacingSpots(board);
                 if (availablePlacingSpots.Count != 0)
                 {
                     if (availablePlacingSpots.Contains(point))
@@ -97,7 +98,7 @@ namespace GameCore
             }
             else
             {
-                List<(int, int)> availableMovingSpots = _point_stack[piece.Point].Peek().GetMovingSpots(Board);
+                List<(int, int)> availableMovingSpots = _point_stack[piece.Point].Peek().GetMovingSpots(board);
                 if (availableMovingSpots.Count != 0)
                 {
                     if (availableMovingSpots.Contains(to))
@@ -157,7 +158,7 @@ namespace GameCore
         private bool IsFirstMove(Piece piece)
         {
             // Nothing has been played
-            if (Board._point_stack.Count == 0 && Board._piece_point.Count == 0)
+            if (board.pieces.Count == 0 && board._piece_point.Count == 0)
             {
                 if (piece.Insect == Insect.QueenBee)
                 {
@@ -171,17 +172,17 @@ namespace GameCore
             }
         }
 
-        private void PrintAvailableMovesForThePiece(Piece piece)
+        private void PrintAvailableMovesForThePiece(Player player, Piece piece)
         {
             // Improvement idea:
             // Parallelized both of these in the background (MovingPositions, PlacingPositions)
             Console.WriteLine("--------------------Available Moves--------------------");
-            foreach ((int, int) point in piece.GetMovingSpots(Board))
+            foreach ((int, int) point in piece.GetMovingSpots(board))
             {
                 Console.WriteLine(point);
             }
             Console.WriteLine("--------------------Available Placings--------------------");
-            foreach ((int, int) point in piece.GetPlacingSpots(Board))
+            foreach ((int, int) point in player.GetPlacingSpots(board))
             {
                 Console.WriteLine(point);
             }
@@ -190,8 +191,9 @@ namespace GameCore
 
         public bool MakeMove(ref Player player)
         {
-            try
-            {
+            // temporarily disabled for testing
+            // try
+            // {
                 Move move = Player.GetMove();
                 if (IsValidInput(player.Color, move))
                 {
@@ -212,10 +214,11 @@ namespace GameCore
                         {
                             if (IsPlacingValid(player, move, piece, to))
                             {
-                                // Add the new piece
-                                Board.AddPiece(to, piece);
-                                // Remove it from the player
-                                player.Pieces.Remove(move.MovingPiece);
+                                // // Add the new piece
+                                // Board._AddPiece(to, piece);
+                                // // Remove it from the player
+                                // player.Pieces.Remove(move.MovingPiece);
+                                board.PlacePiece(player, move, piece, to);
                             }
                         }
                         else
@@ -223,13 +226,14 @@ namespace GameCore
                             // Possibly moving pieces already on the board
                             if (IsPieceMoveOnBoardValid(player, move, piece, to))
                             {
-                                // Move such existing piece
-                                // remove piece
-                                Board.RemovePiece(piece);
-                                // re-add it
-                                piece.Point = to;
-                                Board.AddPiece(to, piece);
-                                // PrintAvailableMovesForThePiece(piece);
+                                // // Move such existing piece
+                                // // remove piece
+                                // Board._RemovePiece(piece);
+                                // // re-add it
+                                // piece.Point = to;
+                                // Board._AddPiece(to, piece);
+                                // // PrintAvailableMovesForThePiece(piece);
+                                board.MovePiece(piece, to);
                             }
                             else
                             {
@@ -241,11 +245,12 @@ namespace GameCore
                     {
                         if (IsFirstMove(piece))
                         {
-                            // first piece on the board. Place it on the origin (0, 0)
-                            Board.AddPiece(to, piece);
-                            // Does not remove on the first turn
-                            player.Pieces.Remove(move.MovingPiece);
-                            // PrintAvailableMovesForThePiece(piece);
+                            // // first piece on the board. Place it on the origin (0, 0)
+                            // Board._AddPiece(to, piece);
+                            // // Does not remove on the first turn
+                            // player.Pieces.Remove(move.MovingPiece);
+                            // // PrintAvailableMovesForThePiece(piece);
+                            board.PlacePiece(player, move, piece, to);
                         }
                     }
                 }
@@ -253,13 +258,13 @@ namespace GameCore
                 {
                     throw new ArgumentException("Invalid Move: Make sure you follow the appropriate notation, and it is an existing piece-e.g., wQ1");
                 }
-            }
-            catch (ArgumentException ex)
-            {
-                // something went wrong
-                _PrintWarning(ex.Message);
-                return false;
-            }
+            // }
+            // catch (ArgumentException ex)
+            // {
+            //     // something went wrong
+            //     _PrintWarning(ex.Message);
+            //     return false;
+            // }
             return true;
         }
 

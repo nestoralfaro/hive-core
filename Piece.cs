@@ -10,7 +10,7 @@ namespace GameCore
         private const int _SPIDER_MAX_STEP_COUNT = 3;
         private readonly string _piece;
         private Board _board { get; set; }
-        private Dictionary<(int, int), Stack<Piece>> _point_stack { get { return _board._point_stack; } }
+        private Dictionary<(int, int), Stack<Piece>> _point_stack { get { return _board.pieces; } }
 
         public Color Color { get; set; }
         public int Number { get; set; }
@@ -30,7 +30,7 @@ namespace GameCore
                 };
         } }
         public Dictionary<string, (int, int)> Neighbors { get; set; }
-        public List<(int, int)> SpotsAround { get { return Sides.Except(Neighbors).Select(side => side.Value).ToList(); } }
+        public List<(int, int)> SpotsAround { get { return Sides.Except(Neighbors).Select(spot => spot.Value).ToList(); } }
         public int ManyNeighbors { get{ return Neighbors.Count; } }
         public override string ToString() { return _piece; }
         public bool IsSurrounded() { return Neighbors.Count == _MANY_SIDES; }
@@ -70,66 +70,74 @@ namespace GameCore
             };
         }
 
-        public List<(int, int)> GetPlacingSpots(Board board)
+        // This should be used for the pieces that have an expensive move generation–i.e., For now, only the Ant
+        // TODO: Test whether adding this validation actually improves performance on other pieces
+        // (which probably does not because I would be validating its surroundings twice) 
+        public bool IsPinned(bool isBeetle = false)
         {
-            Stopwatch stopwatch = new();
-            stopwatch.Start();
-
-            // Maybe keep track of the visited ones with a hashmap and also pass it to the hasopponent neighbor?
-            List<(int, int)> positions = new();
-
-            // iterate through the current player's color's pieces
-            foreach (Piece piece in board._color_pieces[this.Color])
+            foreach((int, int) side in Sides.Values)
             {
-                // iterate through this piece's available spots
-                foreach ((int, int) spot in piece.SpotsAround)
+                // If there is at least one valid path
+                if (_IsValidPath(Point, side, isBeetle))
                 {
-                    //      Not been visited        It is not neighboring an opponent
-                    if (!positions.Contains(spot) && !_HasOpponentNeighbor(spot, board._point_stack))
-                    {
-                            positions.Add(spot);
-                    }
+                    // It is not pinned
+                    return false;
                 }
             }
 
-            stopwatch.Stop();
-            PrintRed("Generating Available Spots took: " + stopwatch.Elapsed.Milliseconds + "ms");
-
-            return positions;
+            // None of its side were a valid path,
+            // So this piece is pinned
+            return true;
         }
+
 
         private List<(int, int)> _GetAntMovingSpots()
         {
             Stopwatch stopwatch = new();
             stopwatch.Start();
 
-            List<(int, int)> spots = new();
             List<(int, int)> results = new();
 
-            // Get all the open spots
-            foreach (KeyValuePair<(int, int), Stack<Piece>> p in _point_stack)
+            // Before getting all the open spots (which is an expensive computation)
+            // Make sure this piece is not pinned
+            if (!IsPinned())
             {
-                foreach ((int, int) spot in p.Value.Peek().SpotsAround)
+                List<(int, int)> spots = new();
+
+                // Get all the open spots
+                foreach (KeyValuePair<(int, int), Stack<Piece>> p in _point_stack)
                 {
-                    if (!spots.Contains(spot))
+                    foreach ((int, int) spot in p.Value.Peek().SpotsAround)
                     {
-                        spots.Add(spot);
+                        if (!spots.Contains(spot))
+                        {
+                            spots.Add(spot);
+                        }
+                    }
+                }
+
+                // Validate each moving from `spot` to `adjacentSpot`
+                foreach((int x, int y) spot in spots)
+                {
+                    foreach((int x, int y) sideOffset in SIDE_OFFSETS_LIST)
+                    {
+                        (int, int) adjacentSpot = (spot.x + sideOffset.x, spot.y + sideOffset.y);
+
+                        // for testing only!
+                        if (Color == Color.White && Point.x == 4 && Point.y == 2 && adjacentSpot.Item1 == 5 && adjacentSpot.Item2 == 1 && Neighbors.Count == 1 && Neighbors.Contains(new KeyValuePair<string, (int, int)>("bA1", (3, 1))))
+                        {
+                            // break point!
+                            Console.WriteLine("break point!");
+                        }
+
+                        if (!results.Contains(adjacentSpot) && spots.Contains(adjacentSpot) && _IsValidPath(spot, adjacentSpot))
+                        {
+                            results.Add(adjacentSpot);
+                        }
                     }
                 }
             }
 
-            // Validate each moving from `spot` to `adjacentSpot`
-            foreach((int x, int y) spot in spots)
-            {
-                foreach((int x, int y) sideOffset in SIDE_OFFSETS_LIST)
-                {
-                    (int, int) adjacentSpot = (spot.x + sideOffset.x, spot.y + sideOffset.y);
-                    if (!results.Contains(adjacentSpot) && spots.Contains(adjacentSpot) && _IsFreedomOfMovement(spot, adjacentSpot))
-                    {
-                        results.Add(adjacentSpot);
-                    }
-                }
-            }
 
             stopwatch.Stop();
             PrintRed("Generating Ant Moves took: " + stopwatch.Elapsed.Milliseconds + "ms");
@@ -248,33 +256,39 @@ namespace GameCore
             (int x, int y) peripheralLeftSpot = (from.x + leftOffset.x, from.y + leftOffset.y);
             (int x, int y) peripheralRightSpot = (from.x + rightOffset.x, from.y + rightOffset.y);
 
-            bool eitherPeripheralSpotIsNotItself = (peripheralLeftSpot.x != Point.x || peripheralLeftSpot.y != Point.y) && (peripheralRightSpot.x != Point.x || peripheralRightSpot.y != Point.y);
-            bool onlyOneSpotIsOpen = _point_stack.ContainsKey(peripheralLeftSpot) ^ _point_stack.ContainsKey(peripheralRightSpot);
+            bool peripheralLeftIsNotItself = peripheralLeftSpot.x != Point.x || peripheralLeftSpot.y != Point.y;
+            bool peripheralRightIsNotItself = peripheralRightSpot.x != Point.x || peripheralRightSpot.y != Point.y;
 
-            //     Either side is not itself      AND   If it is a beetle, check it can crawl     OR Treat it as a normal piece                            
-            return eitherPeripheralSpotIsNotItself && ((isBeetle && _point_stack.ContainsKey(to)) || onlyOneSpotIsOpen);
+            bool noneOfThePeripheralsIsItself = peripheralLeftIsNotItself && peripheralRightIsNotItself;
+            bool onlyOneSpotIsOpen = _point_stack.ContainsKey(peripheralLeftSpot) ^ _point_stack.ContainsKey(peripheralRightSpot);
+            bool checkThatTheOppositePeripheralExists = (!peripheralRightIsNotItself && _point_stack.ContainsKey(peripheralLeftSpot)) || (!peripheralLeftIsNotItself && _point_stack.ContainsKey(peripheralRightSpot));
+
+            return noneOfThePeripheralsIsItself
+                    // If it is a beetle, check it can crawl     OR Treat it as a normal piece
+                    ? ((isBeetle && _point_stack.ContainsKey(to)) || onlyOneSpotIsOpen)
+                    : checkThatTheOppositePeripheralExists;
         }
 
         private bool _DoesNotBreakHive((int x, int y) to)
         {
             Piece oldPieceSpot = new(ToString(), Point);
             Piece newPieceSpot = new(ToString(), to);
-            _board.RemovePiece(this);
-            _board.AddPiece(to, newPieceSpot);
+            _board._RemovePiece(this);
+            _board._AddPiece(to, newPieceSpot);
 
             if (!_board.IsAllConnected())
             {
                 // Put it back
-                _board.RemovePiece(newPieceSpot);
-                _board.AddPiece(oldPieceSpot.Point, oldPieceSpot);
+                _board._RemovePiece(newPieceSpot);
+                _board._AddPiece(oldPieceSpot.Point, oldPieceSpot);
 
                 // it breaks the hive
                 return false;
             }
 
             // Put it back
-            _board.RemovePiece(newPieceSpot);
-            _board.AddPiece(oldPieceSpot.Point, oldPieceSpot);
+            _board._RemovePiece(newPieceSpot);
+            _board._AddPiece(oldPieceSpot.Point, oldPieceSpot);
             return true;
         }
 
@@ -310,22 +324,6 @@ namespace GameCore
             }
         }
 
-        private bool _HasOpponentNeighbor((int, int) point, Dictionary<(int, int), Stack<Piece>> _point_stack)
-        {
-            foreach ((int, int) side in SIDE_OFFSETS.Values)
-            {
-                (int, int) potentialOpponentNeighborPosition = (point.Item1 + side.Item1, point.Item2 + side.Item2);
-                // If piece is on the board                                     And Is not the same color as the piece that is about to be placed
-                if (_point_stack.ContainsKey(potentialOpponentNeighborPosition) && _point_stack[potentialOpponentNeighborPosition].Peek().Color != this.Color)
-                {
-                    // Has an opponent neighbor
-                    return true;
-                }
-            }
-
-            // Checked each side, and no opponent's pieces were found
-            return false;
-        }
         #endregion
     }
 

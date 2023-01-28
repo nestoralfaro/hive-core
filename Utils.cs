@@ -37,9 +37,9 @@ namespace GameCore
 
         public static void PrintPlayerHeader(Player player)
         {
-                Console.BackgroundColor = player.Color == 'b' ? ConsoleColor.Blue : ConsoleColor.White;
-                Console.ForegroundColor = player.Color == 'b' ? ConsoleColor.White : ConsoleColor.Black;
-                Console.Write(player.Color == 'b' ? "Black's Turn" : "White's Turn");
+                Console.BackgroundColor = player.Color == Color.Black ? ConsoleColor.Blue : ConsoleColor.White;
+                Console.ForegroundColor = player.Color == Color.Black ? ConsoleColor.White : ConsoleColor.Black;
+                Console.Write($"It is {player.Color}'s turn.");
                 _PrintRemainingPieces(player);
                 Console.ResetColor();
                 Console.WriteLine();

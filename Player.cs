@@ -1,32 +1,34 @@
+using static GameCore.Utils;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
-#nullable enable
 #pragma warning disable IDE1006 // Private members naming style
 
 namespace GameCore
 {
     public class Player
     {
-        public char Color { get; set; }
+        public Color Color { get; set; }
         public List<string> Pieces { get; set; }
         public int TurnCount { get; set; }
-        public Player(char color)
+        public Player(Color color)
         {
+            TurnCount = 1;
+            char c = char.ToLower(color.ToString()[0]);
             Color = color;
             Pieces = new List<string>()
             {
-                $"{color}Q1",
-                $"{color}A1",
-                $"{color}A2",
-                $"{color}A3",
-                $"{color}B1",
-                $"{color}B2",
-                $"{color}G1",
-                $"{color}G2",
-                $"{color}G3",
-                $"{color}S1",
-                $"{color}S2",
+                $"{c}Q1",
+                $"{c}A1",
+                $"{c}A2",
+                $"{c}A3",
+                $"{c}B1",
+                $"{c}B2",
+                $"{c}G1",
+                $"{c}G2",
+                $"{c}G3",
+                $"{c}S1",
+                $"{c}S2",
             };
-            TurnCount = 1;
         }
 
         public static Move GetMove()
@@ -39,6 +41,53 @@ namespace GameCore
         public bool HasNotPlayedQueen()
         {
             return Pieces.Contains($"{Color}Q1");
+        }
+
+        public List<(int, int)> GetPlacingSpots(Board board)
+        {
+            Stopwatch stopwatch = new();
+            stopwatch.Start();
+
+            // Maybe keep track of the visited ones with a hashmap and also pass it to the hasopponent neighbor?
+            List<(int, int)> positions = new();
+
+            // iterate through the current player's color's pieces
+            foreach ((int, int) point in board._color_pieces[this.Color])
+            {
+                // iterate through this piece's available spots
+                foreach ((int, int) spot in board.pieces[point].Peek().SpotsAround)
+                {
+                    //      Not been visited        It is not neighboring an opponent
+                    if (!positions.Contains(spot) && !_HasOpponentNeighbor(spot, board.pieces))
+                    {
+                            positions.Add(spot);
+                    }
+                }
+            }
+
+            stopwatch.Stop();
+            PrintRed($"Generating Available Spots for Player {Color} took: {stopwatch.Elapsed.Milliseconds} ms");
+
+            return positions;
+        }
+
+
+        private bool _HasOpponentNeighbor((int, int) point, Dictionary<(int, int), Stack<Piece>> _point_stack)
+        {
+            foreach ((int, int) side in SIDE_OFFSETS.Values)
+            {
+                (int, int) potentialOpponentNeighborPosition = (point.Item1 + side.Item1, point.Item2 + side.Item2);
+                // If piece is on the board                                     And Is not the same color as the piece that is about to be placed
+                if (_point_stack.ContainsKey(potentialOpponentNeighborPosition) && _point_stack[potentialOpponentNeighborPosition].Peek().Color != this.Color)
+                {
+                    // Has an opponent neighbor
+                    return true;
+                }
+            }
+
+            // // Checked each side, and no opponent's pieces were found
+            return false;
+            // return _point_stack[point].Peek().Neighbors.Any(neighbor => _point_stack[neighbor.Value].Peek().Color != Color);
         }
     }
 

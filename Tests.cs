@@ -8,510 +8,516 @@ namespace GameCore
 {
     public class Tests
     {
-        Logic logic = new Logic();
-        Player _blackPlayer = new('b');
-        Player _whitePlayer = new('w');
+        readonly GameManager manager = new();
+        Player _blackPlayer = new(Color.Black);
+        Player _whitePlayer = new(Color.White);
 
         [Fact]
         public void NewBoardIsEmptyTest()
         {
-            Assert.Empty(logic.Board._point_stack);
-            Assert.Empty(logic.Board._piece_point);
+            Assert.Empty(manager.board.pieces);
+            Assert.Empty(manager.board._piece_point);
         }
 
         [Fact]
-        public void OnlyAssertingPieces()
+        public void CantPlayTheQueenFirst()
         {
-            /////////////////////////////////////////////////// BlackMove 1 ///////////////////////////////////////////////////
-            _FirstBlackMove("bG1");
-            _AssertPiecePoint("bG1", (0, 0));
-            _AssertSpotsForPiece("bG1", new List<(int, int)>() {(-1, 1), (-2, 0), (-1, -1), (1, -1), (2, 0), (1, 1)}, new List<(int, int)>());
+            Assert.Throws<ArgumentException>(() => _FirstBlackMove("bQ1"));
+            Assert.Throws<ArgumentException>(() => _FirstWhiteMove("bw1"));
+        }
 
-            /////////////////////////////////////////////////// BlackMove 2 ///////////////////////////////////////////////////
-            _BlackMove("bA1NWbG1");
-            _AssertPiecePoint("bG1", (0, 0));
-            _AssertPiecePoint("bA1", (-1, 1));
+        [Fact]
+        public void PlayOnlyYourPiece()
+        {
+            Assert.Throws<ArgumentException>(() => _FirstBlackMove("wQ1"));
+            Assert.Throws<ArgumentException>(() => _FirstWhiteMove("bQ1"));
+        }
 
-            var blackPlacingSpots = new List<(int, int)>(){(-2, 2), (-3, 1), (-2, 0), (-1, -1), (1, -1), (2, 0), (1, 1), (0, 2)};
-            _AssertSpotsForPiece("bG1",
-            blackPlacingSpots,                  // placing
-            new List<(int, int)>(){(-2, 2)}     // moving
+        [Fact]
+        public void InvalidFirstMove()
+        {
+            Assert.Throws<ArgumentException>(() => _FirstBlackMove("bB1NWbA1"));
+            Assert.Throws<ArgumentException>(() => _FirstWhiteMove("wQ1NEwS1"));
+        }
+
+        [Fact]
+        public void Game1()
+        {
+            _FirstWhiteMove("wS1");
+            _AssertPiecePoint("wS1", (0, 0));
+            _AssertSpotsForPlayerAndPiece(
+                _whitePlayer, new List<(int, int)>() {(-1, 1), (-2, 0), (-1, -1), (1, -1), (2, 0), (1, 1)}, // This player should these returned placing spots
+                "wS1", new List<(int, int)>()                                                               // This piece should these returned moving spots
             );
 
-            _AssertSpotsForPiece("bA1",
-            blackPlacingSpots,
-            logic.Board._point_stack[logic.Board._piece_point["bG1"]].Peek().SpotsAround);
+            _BlackMove("bG1NEwS1");
+            _AssertPiecePoint("wS1", (0, 0));
+            _AssertPiecePoint("bG1", (2, 0));
+            _AssertMovingSpots("wS1", new List<(int, int)>() {(4, 0)});
+            _AssertMovingSpots("bG1", new List<(int, int)>() {(-2, 0)});
+            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(-1, 1), (-2, 0), (-1, -1)});
+            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(3, 1), (4, 0), (3, -1)});
 
-            /////////////////////////////////////////////////// BlackMove 3 ///////////////////////////////////////////////////
-            _BlackMove("bS1NEbA1");
-            _AssertPiecePoint("bG1", (0, 0));
-            _AssertPiecePoint("bA1", (-1, 1));
-            _AssertPiecePoint("bS1", (1, 1));
+            _WhiteMove("wQ1SWwS1");
+            _AssertPiecePoint("wS1", (0, 0));
+            _AssertPiecePoint("bG1", (2, 0));
+            _AssertPiecePoint("wQ1", (-2, 0));
+            _AssertMovingSpots("wS1", new List<(int, int)>());
+            _AssertMovingSpots("bG1", new List<(int, int)>() {(-4, 0)});
+            _AssertMovingSpots("wQ1", new List<(int, int)>() {(-1, 1), (-1, -1)});
+            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(-1, 1), (-3, 1), (-4, 0), (-3, -1), (-1, -1)});
+            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(3, 1), (4, 0), (3, -1)});
 
-            blackPlacingSpots = new List<(int, int)>() {(-2, 0), (-1, -1), (1, -1), (2, 0), (3, 1), (2, 2), (0, 2), (-2, 2), (-3, 1)};
+            _BlackMove("bS1SEbG1");
+            _AssertPiecePoint("wS1", (0, 0));
+            _AssertPiecePoint("bG1", (2, 0));
+            _AssertPiecePoint("wQ1", (-2, 0));
+            _AssertPiecePoint("bS1", (3, -1));
+            _AssertMovingSpots("wS1", new List<(int, int)>());
+            _AssertMovingSpots("bG1", new List<(int, int)>());
+            _AssertMovingSpots("wQ1", new List<(int, int)>() {(-1, 1), (-1, -1)});
+            _AssertMovingSpots("bS1", new List<(int, int)>() {(1, 1), (-3, -1)});
+            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(-1, 1), (-3, 1), (-4, 0), (-3, -1), (-1, -1)});
+            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(3, 1), (4, 0), (5, -1), (4, -2), (2, -2)});
 
-            _AssertSpotsForPiece("bG1",
-            blackPlacingSpots,  // placing
-            new List<(int, int)>(){(-2, 2), (2, 2)}     // moving
-            );
+            _WhiteMove("wG1STwQ1");
+            _AssertPiecePoint("wS1", (0, 0));
+            _AssertPiecePoint("bG1", (2, 0));
+            _AssertPiecePoint("wQ1", (-2, 0));
+            _AssertPiecePoint("bS1", (3, -1));
+            _AssertPiecePoint("wG1", (-3, -1));
+            _AssertMovingSpots("wS1", new List<(int, int)>());
+            _AssertMovingSpots("bG1", new List<(int, int)>());
+            _AssertMovingSpots("wQ1", new List<(int, int)>());
+            _AssertMovingSpots("bS1", new List<(int, int)>() {(1, 1), (-2, -2)});
+            _AssertMovingSpots("wG1", new List<(int, int)>() {(-1, 1)});
+            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(-1, 1), (-3, 1), (-4, 0), (-5, -1), (-4, -2), (-2 ,-2), (-1, -1)});
+            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(3, 1), (4, 0), (5, -1), (4, -2), (2, -2)});
 
-            _AssertSpotsForPiece("bA1",
-            blackPlacingSpots,  // placing
-            new List<(int, int)>(){(0, 2), (-2, 0), (-1, -1), (1, -1), (2, 0), (3, 1), (2, 2)}         // moving
-            );
+            _BlackMove("bQ1NTbS1");
+            _AssertPiecePoint("wS1", (0, 0));
+            _AssertPiecePoint("bG1", (2, 0));
+            _AssertPiecePoint("wQ1", (-2, 0));
+            _AssertPiecePoint("bS1", (3, -1));
+            _AssertPiecePoint("wG1", (-3, -1));
+            _AssertPiecePoint("bQ1", (4, 0));
+            _AssertMovingSpots("wS1", new List<(int, int)>());
+            _AssertMovingSpots("bG1", new List<(int, int)>());
+            _AssertMovingSpots("wQ1", new List<(int, int)>());
+            _AssertMovingSpots("bS1", new List<(int, int)>() {(5, 1), (-2, -2)});
+            _AssertMovingSpots("wG1", new List<(int, int)>() {(-1, 1)});
+            _AssertMovingSpots("bQ1", new List<(int, int)>() {(3, 1), (5, -1)});
+            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(-1, 1), (-3, 1), (-4, 0), (-5, -1), (-4, -2), (-2 ,-2), (-1, -1)});
+            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(3, 1), (5, 1), (6, 0), (5, -1), (4, -2), (2, -2)});
 
-            _AssertSpotsForPiece("bS1",
-            blackPlacingSpots,  // placing
-            new List<(int, int)>(){(-3, 1), (-1, -1)}     // moving
-            );
+            _WhiteMove("wG2NWwG1");
+            _AssertPiecePoint("wS1", (0, 0));
+            _AssertPiecePoint("bG1", (2, 0));
+            _AssertPiecePoint("wQ1", (-2, 0));
+            _AssertPiecePoint("bS1", (3, -1));
+            _AssertPiecePoint("wG1", (-3, -1));
+            _AssertPiecePoint("bQ1", (4, 0));
+            _AssertPiecePoint("wG2", (-4, 0));
+            _AssertMovingSpots("wS1", new List<(int, int)>());
+            _AssertMovingSpots("bG1", new List<(int, int)>());
+            _AssertMovingSpots("wQ1", new List<(int, int)>());
+            _AssertMovingSpots("bS1", new List<(int, int)>() {(5, 1), (-2, -2)});
+            _AssertMovingSpots("wG1", new List<(int, int)>() {(-1, 1), (-5, 1)});
+            _AssertMovingSpots("bQ1", new List<(int, int)>() {(3, 1), (5, -1)});
+            _AssertMovingSpots("wG2", new List<(int, int)>() {(-2, -2), (6, 0)});
+            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(-1, 1), (-3, 1), (-5, 1), (-6, 0), (-5, -1), (-4 ,-2), (-2, -2), (-1, -1)});
+            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(3, 1), (5, 1), (6, 0), (5, -1), (4, -2), (2, -2)});
 
-            /////////////////////////////////////////////////// BlackMove 4 ///////////////////////////////////////////////////
-            _BlackMove("bQ1NTbA1");
-            _AssertPiecePoint("bG1", (0, 0));
-            _AssertPiecePoint("bA1", (-1, 1));
-            _AssertPiecePoint("bS1", (1, 1));
-            _AssertPiecePoint("bQ1", (0, 2));
-            blackPlacingSpots = new List<(int, int)>() {(-2, 0), (-1, -1), (1, -1), (2, 0), (3, 1), (2, 2), (1, 3), (-1, 3), (-2, 2), (-3, 1)};
+            // First moving of a piece on the board
+            _BlackMove("bS1SEwG1");
+            _AssertPiecePoint("wS1", (0, 0));
+            _AssertPiecePoint("bG1", (2, 0));
+            _AssertPiecePoint("wQ1", (-2, 0));
+            _AssertPiecePoint("bS1", (-2, -2));
+            _AssertPiecePoint("wG1", (-3, -1));
+            _AssertPiecePoint("bQ1", (4, 0));
+            _AssertPiecePoint("wG2", (-4, 0));
+            _AssertMovingSpots("wS1", new List<(int, int)>());
+            _AssertMovingSpots("bG1", new List<(int, int)>());
+            _AssertMovingSpots("wQ1", new List<(int, int)>());
+            _AssertMovingSpots("bS1", new List<(int, int)>() {(-6, 0), (3, -1)});
+            _AssertMovingSpots("wG1", new List<(int, int)>());
+            _AssertMovingSpots("bQ1", new List<(int, int)>() {(3, 1), (3, -1)});
+            _AssertMovingSpots("wG2", new List<(int, int)>() {(-1, -3), (6, 0)});
+            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(-1, 1), (-3, 1), (-5, 1), (-6, 0), (-5, -1)});
+            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(3, 1), (5, 1), (6, 0), (5, -1), (3, -1), (0, -2), (-1, -3), (-3, -3)});
 
-            _AssertSpotsForPiece("bG1",
-            blackPlacingSpots,  // placing
-            new List<(int, int)>(){(-2, 2), (2, 2)}     // moving
-            );
+            _WhiteMove("wG3NTwG2");
+            _AssertPiecePoint("wS1", (0, 0));
+            _AssertPiecePoint("bG1", (2, 0));
+            _AssertPiecePoint("wQ1", (-2, 0));
+            _AssertPiecePoint("bS1", (-2, -2));
+            _AssertPiecePoint("wG1", (-3, -1));
+            _AssertPiecePoint("bQ1", (4, 0));
+            _AssertPiecePoint("wG2", (-4, 0));
+            _AssertPiecePoint("wG3", (-3, 1));
+            _AssertMovingSpots("wS1", new List<(int, int)>());
+            _AssertMovingSpots("bG1", new List<(int, int)>());
+            _AssertMovingSpots("wQ1", new List<(int, int)>());
+            _AssertMovingSpots("bS1", new List<(int, int)>() {(-6, 0), (3, -1)});
+            _AssertMovingSpots("wG1", new List<(int, int)>());
+            _AssertMovingSpots("bQ1", new List<(int, int)>() {(3, 1), (3, -1)});
+            _AssertMovingSpots("wG2", new List<(int, int)>() {(-1, -3), (6, 0), (-2, 2)});
+            _AssertMovingSpots("wG3", new List<(int, int)>() {(-5, -1), (-1, -1)});
+            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(-1, 1), (-2, 2), (-4, 2), (-5, 1), (-6, 0), (-5, -1)});
+            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(3, 1), (5, 1), (6, 0), (5, -1), (3, -1), (0, -2), (-1, -3), (-3, -3)});
 
-            _AssertSpotsForPiece("bA1",
-            blackPlacingSpots,  // placing
-            new List<(int, int)>(){(-2, 0), (-1, -1), (1, -1), (2, 0), (3, 1), (2, 2), (1, 3), (-1, 3), (-2, 2)}         // moving
-            );
+            _BlackMove("bB1NEbS1");
+            _AssertPiecePoint("wS1", (0, 0));
+            _AssertPiecePoint("bG1", (2, 0));
+            _AssertPiecePoint("wQ1", (-2, 0));
+            _AssertPiecePoint("bS1", (-2, -2));
+            _AssertPiecePoint("wG1", (-3, -1));
+            _AssertPiecePoint("bQ1", (4, 0));
+            _AssertPiecePoint("wG2", (-4, 0));
+            _AssertPiecePoint("wG3", (-3, 1));
+            _AssertPiecePoint("bB1", (0, -2));
+            _AssertMovingSpots("wS1", new List<(int, int)>());
+            _AssertMovingSpots("bG1", new List<(int, int)>());
+            _AssertMovingSpots("wQ1", new List<(int, int)>());
+            _AssertMovingSpots("bS1", new List<(int, int)>());
+            _AssertMovingSpots("wG1", new List<(int, int)>());
+            _AssertMovingSpots("bQ1", new List<(int, int)>() {(3, 1), (3, -1)});
+            _AssertMovingSpots("wG2", new List<(int, int)>() {(-2, 2), (-1, -3), (6, 0)});
+            _AssertMovingSpots("wG3", new List<(int, int)>() {(-5, -1), (-1, -1)});
+            _AssertMovingSpots("bB1", new List<(int, int)>() {(-1, -1), (-2, -2), (-1 ,-3)});
+            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(-1, 1), (-2, 2), (-4, 2), (-5, 1), (-6, 0), (-5, -1)});
+            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(3, 1), (5, 1), (6, 0), (5, -1), (3, -1), (2, -2), (1, -3), (-1, -3), (-3, -3)});
 
-            _AssertSpotsForPiece("bS1",
-            blackPlacingSpots,  // placing
-            new List<(int, int)>(){(-1, -1), (-1, 3)}     // moving
-            );
+            _WhiteMove("wG2NEbQ1");
+            _AssertPiecePoint("wS1", (0, 0));
+            _AssertPiecePoint("bG1", (2, 0));
+            _AssertPiecePoint("wQ1", (-2, 0));
+            _AssertPiecePoint("bS1", (-2, -2));
+            _AssertPiecePoint("wG1", (-3, -1));
+            _AssertPiecePoint("bQ1", (4, 0));
+            _AssertPiecePoint("wG2", (6, 0));
+            _AssertPiecePoint("wG3", (-3, 1));
+            _AssertPiecePoint("bB1", (0, -2));
+            _AssertMovingSpots("wS1", new List<(int, int)>());
+            _AssertMovingSpots("bG1", new List<(int, int)>());
+            _AssertMovingSpots("wQ1", new List<(int, int)>());
+            _AssertMovingSpots("bS1", new List<(int, int)>());
+            _AssertMovingSpots("wG1", new List<(int, int)>());
+            _AssertMovingSpots("bQ1", new List<(int, int)>());
+            _AssertMovingSpots("wG2", new List<(int, int)>() {(-4, 0)});
+            _AssertMovingSpots("wG3", new List<(int, int)>() {(-1, -1)});
+            _AssertMovingSpots("bB1", new List<(int, int)>() {(-1, -1), (-2, -2), (-1 ,-3)});
+            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(-1, 1), (-2, 2), (-4, 2), (-5, 1), (-4, 0), (-5, -1), (7, 1), (8, 0), (7, -1)});
+            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(3, 1), (3, -1), (2, -2), (1, -3), (-1, -3), (-3, -3)});
 
-            _AssertSpotsForPiece("bQ1",
-            blackPlacingSpots,  // placing
-            new List<(int, int)>(){(2, 2), (-2, 2)}     // moving
-            );
+            _BlackMove("bB1STwS1");
+            _AssertPiecePoint("wS1", (0, 0));
+            _AssertPiecePoint("bG1", (2, 0));
+            _AssertPiecePoint("wQ1", (-2, 0));
+            _AssertPiecePoint("bS1", (-2, -2));
+            _AssertPiecePoint("wG1", (-3, -1));
+            _AssertPiecePoint("bQ1", (4, 0));
+            _AssertPiecePoint("wG2", (6, 0));
+            _AssertPiecePoint("wG3", (-3, 1));
+            _AssertPiecePoint("bB1", (-1, -1));
+            _AssertMovingSpots("wS1", new List<(int, int)>());
+            _AssertMovingSpots("bG1", new List<(int, int)>());
+            _AssertMovingSpots("wQ1", new List<(int, int)>());
+            _AssertMovingSpots("bS1", new List<(int, int)>() {(-4, 0), (3, -1)});
+            _AssertMovingSpots("wG1", new List<(int, int)>() {(1, -1), (-1, -3), (-1, 1)});
+            _AssertMovingSpots("bQ1", new List<(int, int)>());
+            _AssertMovingSpots("wG2", new List<(int, int)>() {(-4, 0)});
+            _AssertMovingSpots("wG3", new List<(int, int)>() {(0, -2)});
+            _AssertMovingSpots("bB1", new List<(int, int)>() {(0, 0), (-2, 0), (-3, -1), (-2, -2), (0, -2), (1, -1)});
+            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(-1, 1), (-2, 2), (-4, 2), (-5, 1), (-4, 0), (-5, -1), (7, 1), (8, 0), (7, -1)});
+            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(3, 1), (3, -1), (0, -2), (-1, -3), (-3, -3)});
 
-            ///////////////////////////////////////////////// BlackMove 5 ///////////////////////////////////////////////////
-            _BlackMove("bB1NTbS1");
-            _AssertPiecePoint("bG1", (0, 0));
-            _AssertPiecePoint("bA1", (-1, 1));
-            _AssertPiecePoint("bS1", (1, 1));
-            _AssertPiecePoint("bQ1", (0, 2));
-            _AssertPiecePoint("bB1", (2, 2));
-            blackPlacingSpots = new List<(int, int)>() {(-2, 0), (-1, -1), (1, -1), (2, 0), (3, 1), (4, 2), (3, 3), (1, 3), (-1, 3), (-2, 2) , (-3, 1)};
+            _WhiteMove("wG1NTwQ1");
+            _AssertPiecePoint("wS1", (0, 0));
+            _AssertPiecePoint("bG1", (2, 0));
+            _AssertPiecePoint("wQ1", (-2, 0));
+            _AssertPiecePoint("bS1", (-2, -2));
+            _AssertPiecePoint("wG1", (-1, 1));
+            _AssertPiecePoint("bQ1", (4, 0));
+            _AssertPiecePoint("wG2", (6, 0));
+            _AssertPiecePoint("wG3", (-3, 1));
+            _AssertPiecePoint("bB1", (-1, -1));
+            _AssertMovingSpots("wS1", new List<(int, int)>());
+            _AssertMovingSpots("bG1", new List<(int, int)>());
+            _AssertMovingSpots("wQ1", new List<(int, int)>() {(-4, 0), (-3, -1)});
+            _AssertMovingSpots("bS1", new List<(int, int)>() {(-5, 1), (3, -1)});
+            _AssertMovingSpots("wG1", new List<(int, int)>() {(-3, -1), (1, -1), (-5, 1)});
+            _AssertMovingSpots("bQ1", new List<(int, int)>());
+            _AssertMovingSpots("wG2", new List<(int, int)>() {(-4, 0)});
+            _AssertMovingSpots("wG3", new List<(int, int)>() {(0, -2), (1, 1)});
+            _AssertMovingSpots("bB1", new List<(int, int)>());
+            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(0, 2), (-2, 2), (-4, 2), (-5, 1), (-4, 0), (7, 1), (8, 0), (7, -1)});
+            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(-4, -2), (-3, -3), (-1, -3), (0, -2), (3, -1), (3, 1)});
 
-            _AssertSpotsForPiece("bG1",
-            blackPlacingSpots,  // placing
-            new List<(int, int)>(){(-2, 2), (3, 3)}     // moving
-            );
+            _BlackMove("bS1SWwG3");
+            _AssertPiecePoint("wS1", (0, 0));
+            _AssertPiecePoint("bG1", (2, 0));
+            _AssertPiecePoint("wQ1", (-2, 0));
+            _AssertPiecePoint("bS1", (-5, 1));
+            _AssertPiecePoint("wG1", (-1, 1));
+            _AssertPiecePoint("bQ1", (4, 0));
+            _AssertPiecePoint("wG2", (6, 0));
+            _AssertPiecePoint("wG3", (-3, 1));
+            _AssertPiecePoint("bB1", (-1, -1));
+            _AssertMovingSpots("wS1", new List<(int, int)>());
+            _AssertMovingSpots("bG1", new List<(int, int)>());
+            _AssertMovingSpots("wQ1", new List<(int, int)>() {(-4, 0), (-3, -1)});
+            _AssertMovingSpots("bS1", new List<(int, int)>() {(0, 2), (-2, -2)});
+            _AssertMovingSpots("wG1", new List<(int, int)>() {(-3, -1), (1, -1), (-7, 1)});
+            _AssertMovingSpots("bQ1", new List<(int, int)>());
+            _AssertMovingSpots("wG2", new List<(int, int)>() {(-4, 0)});
+            _AssertMovingSpots("wG3", new List<(int, int)>());
+            _AssertMovingSpots("bB1", new List<(int, int)>() {(0, 0), (-2, 0), (-3, -1), (1, -1)});
+            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(0, 2), (-2, 2), (7, 1), (8, 0), (7, -1)});
+            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(-6, 2), (-7, 1), (-6, 0), (-2, -2), (0, -2), (3, -1), (3, 1)});
 
-            _AssertSpotsForPiece("bA1",
-            blackPlacingSpots,  // placing
-            new List<(int, int)>(){(-2, 0), (-1, -1), (1, -1), (2, 0), (3, 1), (4, 2), (3, 3), (1, 3), (-1, 3), (-2, 2)}         // moving
-            );
+            _WhiteMove("wG1SEwS1");
+            _AssertPiecePoint("wS1", (0, 0));
+            _AssertPiecePoint("bG1", (2, 0));
+            _AssertPiecePoint("wQ1", (-2, 0));
+            _AssertPiecePoint("bS1", (-5, 1));
+            _AssertPiecePoint("wG1", (1, -1));
+            _AssertPiecePoint("bQ1", (4, 0));
+            _AssertPiecePoint("wG2", (6, 0));
+            _AssertPiecePoint("wG3", (-3, 1));
+            _AssertPiecePoint("bB1", (-1, -1));
+            _AssertMovingSpots("wS1", new List<(int, int)>() {(-4, 2), (5, 1)});
+            _AssertMovingSpots("bG1", new List<(int, int)>());
+            _AssertMovingSpots("wQ1", new List<(int, int)>());
+            _AssertMovingSpots("bS1", new List<(int, int)>() {(-1, 1), (-2, -2)});
+            _AssertMovingSpots("wG1", new List<(int, int)>() {(3, 1), (-1, 1), (-3, -1)});
+            _AssertMovingSpots("bQ1", new List<(int, int)>());
+            _AssertMovingSpots("wG2", new List<(int, int)>() {(-4, 0)});
+            _AssertMovingSpots("wG3", new List<(int, int)>());
+            _AssertMovingSpots("bB1", new List<(int, int)>() {(0, 0), (-2, 0), (-3, -1), (0, -2), (1, -1)});
+            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(-1, 1), (-2, 2), (2, -2), (7, -1), (8, 0), (7, 1)});
+            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(3, 1), (-6, 2), (-7, 1), (-6, 0), (-2, -2)});
 
-            _AssertSpotsForPiece("bS1",
-            blackPlacingSpots,  // placing
-            new List<(int, int)>(){(-1, -1), (3, 3)}     // moving
-            );
+            _BlackMove("bG2NWbS1");
+            _AssertPiecePoint("wS1", (0, 0));
+            _AssertPiecePoint("bG1", (2, 0));
+            _AssertPiecePoint("wQ1", (-2, 0));
+            _AssertPiecePoint("bS1", (-5, 1));
+            _AssertPiecePoint("wG1", (1, -1));
+            _AssertPiecePoint("bQ1", (4, 0));
+            _AssertPiecePoint("wG2", (6, 0));
+            _AssertPiecePoint("wG3", (-3, 1));
+            _AssertPiecePoint("bB1", (-1, -1));
+            _AssertPiecePoint("bG2", (-6, 2));
+            _AssertMovingSpots("wS1", new List<(int, int)>() {(-4, 2), (5, 1)});
+            _AssertMovingSpots("bG1", new List<(int, int)>());
+            _AssertMovingSpots("wQ1", new List<(int, int)>());
+            _AssertMovingSpots("bS1", new List<(int, int)>());
+            _AssertMovingSpots("wG1", new List<(int, int)>() {(3, 1), (-1, 1), (-3, -1)});
+            _AssertMovingSpots("bQ1", new List<(int, int)>());
+            _AssertMovingSpots("wG2", new List<(int, int)>() {(-4, 0)});
+            _AssertMovingSpots("wG3", new List<(int, int)>());
+            _AssertMovingSpots("bB1", new List<(int, int)>() {(0, 0), (-2, 0), (-3, -1), (0, -2), (1, -1)});
+            _AssertMovingSpots("bG2", new List<(int, int)>() {(-4, 0)});
+            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(-1, 1), (-2, 2), (2, -2), (7, -1), (8, 0), (7, 1)});
+            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(-5, 3), (-7, 3), (-8 ,2), (-7, 1), (-6, 0), (-2, -2), (3, 1)});
 
-            _AssertSpotsForPiece("bB1",
-            blackPlacingSpots,  // placing
-            new List<(int, int)>(){(1, 1), (0, 2), (3, 1), (1, 3)}     // moving
-            );
-            // /////////////////////////////////////////////////// BlackMove 6 ///////////////////////////////////////////////////
+            _WhiteMove("wA1NTwQ1");
+            _AssertPiecePoint("wS1", (0, 0));
+            _AssertPiecePoint("bG1", (2, 0));
+            _AssertPiecePoint("wQ1", (-2, 0));
+            _AssertPiecePoint("bS1", (-5, 1));
+            _AssertPiecePoint("wG1", (1, -1));
+            _AssertPiecePoint("bQ1", (4, 0));
+            _AssertPiecePoint("wG2", (6, 0));
+            _AssertPiecePoint("wG3", (-3, 1));
+            _AssertPiecePoint("bB1", (-1, -1));
+            _AssertPiecePoint("bG2", (-6, 2));
+            _AssertPiecePoint("wA1", (-1, 1));
+            _AssertMovingSpots("wS1", new List<(int, int)>());
+            _AssertMovingSpots("bG1", new List<(int, int)>());
+            _AssertMovingSpots("wQ1", new List<(int, int)>() {(-4, 0), (-3, -1)});
+            _AssertMovingSpots("bS1", new List<(int, int)>());
+            _AssertMovingSpots("wG1", new List<(int, int)>() {(3, 1), (-2, 2), (-3, -1)});
+            _AssertMovingSpots("bQ1", new List<(int, int)>());
+            _AssertMovingSpots("wG2", new List<(int, int)>() {(-4, 0)});
+            _AssertMovingSpots("wG3", new List<(int, int)>());
+            _AssertMovingSpots("bB1", new List<(int, int)>() {(0, 0), (-2, 0), (-3, -1), (0, -2), (1, -1)});
+            _AssertMovingSpots("bG2", new List<(int, int)>() {(-4, 0)});
+            _AssertMovingSpots("wA1", new List<(int, int)>() {(-2, 2), (-4, 2), (-5, 3), (-7, 3), (-8, 2), (-7, 1), (-6, 0), (-4, 0), (-3, -1), (-2, -2), (0, -2), (2, -2), (3, -1), (5, -1), (7, -1), (8, 0), (7, 1), (5, 1), (3, 1), (1, 1)});
+            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(0, 2), (-2, 2), (2, -2), (7, -1), (8, 0), (7, 1)});
+            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(3, 1), (-5, 3), (-7, 3), (-8, 2), (-7, 1), (-6, 0), (-2, -2)});
+
             _BlackMove("bG2SEbS1");
-            _AssertPiecePoint("bG1", (0, 0));
-            _AssertPiecePoint("bA1", (-1, 1));
-            _AssertPiecePoint("bS1", (1, 1));
-            _AssertPiecePoint("bQ1", (0, 2));
-            _AssertPiecePoint("bB1", (2, 2));
-            _AssertPiecePoint("bG2", (2, 0));
-            blackPlacingSpots = new List<(int, int)>() {(-2, 0), (-1, -1), (1, -1), (3, -1), (4, 0), (3, 1), (4, 2), (3, 3), (1, 3), (-1, 3), (-2, 2), (-3, 1)};
+            _AssertPiecePoint("wS1", (0, 0));
+            _AssertPiecePoint("bG1", (2, 0));
+            _AssertPiecePoint("wQ1", (-2, 0));
+            _AssertPiecePoint("bS1", (-5, 1));
+            _AssertPiecePoint("wG1", (1, -1));
+            _AssertPiecePoint("bQ1", (4, 0));
+            _AssertPiecePoint("wG2", (6, 0));
+            _AssertPiecePoint("wG3", (-3, 1));
+            _AssertPiecePoint("bB1", (-1, -1));
+            _AssertPiecePoint("bG2", (-4, 0));
+            _AssertPiecePoint("wA1", (-1, 1));
+            _AssertMovingSpots("wS1", new List<(int, int)>());
+            _AssertMovingSpots("bG1", new List<(int, int)>());
+            _AssertMovingSpots("wQ1", new List<(int, int)>());
+            _AssertMovingSpots("bS1", new List<(int, int)>() {(0, 2), (-3, -1)});
+            _AssertMovingSpots("wG1", new List<(int, int)>() {(3, 1), (-2, 2), (-3, -1)});
+            _AssertMovingSpots("bQ1", new List<(int, int)>());
+            _AssertMovingSpots("wG2", new List<(int, int)>() {(-6, 0)});
+            _AssertMovingSpots("wG3", new List<(int, int)>() {(-7, 1), (-5, -1), (0, -2), (1, 1)});
+            _AssertMovingSpots("bB1", new List<(int, int)>() {(0, 0), (-2, 0), (-3, -1), (0, -2), (1, -1)});
+            _AssertMovingSpots("bG2", new List<(int, int)>() {(-2, 2), (-6, 2), (8, 0)});
+            _AssertMovingSpots("wA1", new List<(int, int)>() {(-2, 2), (-4, 2), (-6, 2), (-7, 1), (-6, 0), (-5, -1), (-3, -1), (-2, -2), (0, -2), (2, -2), (3, -1), (5, -1), (7, -1), (8, 0), (7, 1), (5, 1), (3, 1), (1, 1)});
+            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(0, 2), (-2, 2), (2, -2), (7, -1), (8, 0), (7, 1)});
+            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(3, 1), (-6, 2), (-7, 1), (-6, 0), (-5, -1), (-2, -2)});
 
-            _AssertSpotsForPiece("bG1",
-            blackPlacingSpots,  // placing
-            new List<(int, int)>(){(-2, 2), (3, 3), (4, 0)}     // moving
-            );
+            _WhiteMove("wA1NWbS1");
+            _AssertPiecePoint("wS1", (0, 0));
+            _AssertPiecePoint("bG1", (2, 0));
+            _AssertPiecePoint("wQ1", (-2, 0));
+            _AssertPiecePoint("bS1", (-5, 1));
+            _AssertPiecePoint("wG1", (1, -1));
+            _AssertPiecePoint("bQ1", (4, 0));
+            _AssertPiecePoint("wG2", (6, 0));
+            _AssertPiecePoint("wG3", (-3, 1));
+            _AssertPiecePoint("bB1", (-1, -1));
+            _AssertPiecePoint("bG2", (-4, 0));
+            _AssertPiecePoint("wA1", (-6, 2));
+            _AssertMovingSpots("wS1", new List<(int, int)>() {(5, 1), (-4, 2)});
+            _AssertMovingSpots("bG1", new List<(int, int)>());
+            _AssertMovingSpots("wQ1", new List<(int, int)>());
+            _AssertMovingSpots("bS1", new List<(int, int)>());
+            _AssertMovingSpots("wG1", new List<(int, int)>() {(3, 1), (-1, 1), (-3, -1)});
+            _AssertMovingSpots("bQ1", new List<(int, int)>());
+            _AssertMovingSpots("wG2", new List<(int, int)>() {(-6, 0)});
+            _AssertMovingSpots("wG3", new List<(int, int)>() {(-7, 1), (-5, -1), (0, -2)});
+            _AssertMovingSpots("bB1", new List<(int, int)>() {(0, 0), (-2, 0), (-3, -1), (0, -2), (1, -1)});
+            _AssertMovingSpots("bG2", new List<(int, int)>() {(-2, 2), (-7, 3), (8, 0)});
+            _AssertMovingSpots("wA1", new List<(int, int)>() {(-2, 2), (-4, 2), (-7, 1), (-6, 0), (-5, -1), (-3, -1), (-2, -2), (0, -2), (2, -2), (3, -1), (5, -1), (7, -1), (8, 0), (7, 1), (5, 1), (3, 1), (1, 1), (-1, 1)});
+            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(-1, 1), (-2, 2), (-5, 3), (-7, 3), (-8, 2), (2, -2), (7, -1), (8, 0), (7, 1)});
+            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(3, 1), (-6, 0), (-5, -1), (-2, -2)});
 
-            _AssertSpotsForPiece("bA1",
-            blackPlacingSpots,  // placing
-            new List<(int, int)>(){(-2, 0), (-1, -1), (1, -1), (3, -1), (4, 0), (3, 1), (4, 2), (3, 3), (1, 3), (-1, 3), (-2, 2)}         // moving
-            );
+            _BlackMove("bA1NWbQ1");
+            _AssertPiecePoint("wS1", (0, 0));
+            _AssertPiecePoint("bG1", (2, 0));
+            _AssertPiecePoint("wQ1", (-2, 0));
+            _AssertPiecePoint("bS1", (-5, 1));
+            _AssertPiecePoint("wG1", (1, -1));
+            _AssertPiecePoint("bQ1", (4, 0));
+            _AssertPiecePoint("wG2", (6, 0));
+            _AssertPiecePoint("wG3", (-3, 1));
+            _AssertPiecePoint("bB1", (-1, -1));
+            _AssertPiecePoint("bG2", (-4, 0));
+            _AssertPiecePoint("wA1", (-6, 2));
+            _AssertPiecePoint("bA1", (3, 1));
+            _AssertMovingSpots("wS1", new List<(int, int)>() {(4, 2), (-4, 2)});
+            _AssertMovingSpots("bG1", new List<(int, int)>());
+            _AssertMovingSpots("wQ1", new List<(int, int)>());
+            _AssertMovingSpots("bS1", new List<(int, int)>());
+            _AssertMovingSpots("wG1", new List<(int, int)>() {(4, 2), (-1, 1), (-3, -1)});
+            _AssertMovingSpots("bQ1", new List<(int, int)>());
+            _AssertMovingSpots("wG2", new List<(int, int)>() {(-6, 0)});
+            _AssertMovingSpots("wG3", new List<(int, int)>() {(-7, 1), (-5, -1), (0, -2)});
+            _AssertMovingSpots("bB1", new List<(int, int)>() {(0, 0), (-2, 0), (-3, -1), (0, -2), (1, -1)});
+            _AssertMovingSpots("bG2", new List<(int, int)>() {(-2, 2), (-7, 3), (8, 0)});
+            _AssertMovingSpots("wA1", new List<(int, int)>() {(-2, 2), (-4, 2), (-7, 1), (-6, 0), (-5, -1), (-3, -1), (-2, -2), (0, -2), (2, -2), (3, -1), (5, -1), (7, -1), (8, 0), (7, 1), (5, 1), (4, 2), (2, 2), (1, 1), (-1, 1)});
+            _AssertMovingSpots("bA1", new List<(int, int)>() {(1, 1), (-1, 1), (-2, 2), (-4, 2), (-5, 3), (-7, 3), (-8, 2), (-7, 1), (-6, 0), (-5, -1), (-3, -1), (-2, -2), (0, -2), (2, -2), (3, -1), (5, -1), (7, -1), (8, 0), (7, 1), (5, 1)});
+            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(-1, 1), (-2, 2), (-5, 3), (-7, 3), (-8, 2), (2, -2), (7, -1), (8, 0), (7, 1)});
+            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(4, 2), (2, 2), (-6, 0), (-5, -1), (-2, -2)});
 
-            _AssertSpotsForPiece("bS1",
-            blackPlacingSpots,      // placing
-            new List<(int, int)>()  // moving
-            );
+            _WhiteMove("wA1NTbA1");
+            _AssertPiecePoint("wS1", (0, 0));
+            _AssertPiecePoint("bG1", (2, 0));
+            _AssertPiecePoint("wQ1", (-2, 0));
+            _AssertPiecePoint("bS1", (-5, 1));
+            _AssertPiecePoint("wG1", (1, -1));
+            _AssertPiecePoint("bQ1", (4, 0));
+            _AssertPiecePoint("wG2", (6, 0));
+            _AssertPiecePoint("wG3", (-3, 1));
+            _AssertPiecePoint("bB1", (-1, -1));
+            _AssertPiecePoint("bG2", (-4, 0));
+            _AssertPiecePoint("wA1", (4, 2));
+            _AssertPiecePoint("bA1", (3, 1));
+            _AssertMovingSpots("wS1", new List<(int, int)>() {(3, 3), (-4, 2)});
+            _AssertMovingSpots("bG1", new List<(int, int)>());
+            _AssertMovingSpots("wQ1", new List<(int, int)>());
+            _AssertMovingSpots("bS1", new List<(int, int)>() {(-1, 1), (-3, -1)});
+            _AssertMovingSpots("wG1", new List<(int, int)>() {(5, 3), (-1, 1), (-3, -1)});
+            _AssertMovingSpots("bQ1", new List<(int, int)>());
+            _AssertMovingSpots("wG2", new List<(int, int)>() {(-6, 0)});
+            _AssertMovingSpots("wG3", new List<(int, int)>() {(-7, 1), (-5, -1), (0, -2)});
+            _AssertMovingSpots("bB1", new List<(int, int)>() {(0, 0), (-2, 0), (-3, -1), (0, -2), (1, -1)});
+            _AssertMovingSpots("bG2", new List<(int, int)>() {(-2, 2), (-6, 2), (8, 0)});
+            _AssertMovingSpots("wA1", new List<(int, int)>() {(-2, 2), (-4, 2), (-6, 2), (-7, 1), (-6, 0), (-5, -1), (-3, -1), (-2, -2), (0, -2), (2, -2), (3, -1), (5, -1), (7, -1), (8, 0), (7, 1), (5, 1), (2, 2), (1, 1), (-1, 1)});
+            _AssertMovingSpots("bA1", new List<(int, int)>());
+            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(-1, 1), (-2, 2), (2, -2), (7, -1), (8, 0), (7, 1), (6, 2), (5, 3), (3, 3)});
+            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(-6, 0), (-5, -1), (-2, -2), (-6, 2), (-7, 1)});
 
-            _AssertSpotsForPiece("bB1",
-            blackPlacingSpots,  // placing
-            new List<(int, int)>(){(1, 1), (0, 2), (3, 1), (1, 3)}     // moving
-            );
+            // This move is better than south because it would pin the wS1
+            // This move also decreased whitePlayers placing spots, and spots available
+            // do for the enemy to protect its queen
+            _BlackMove("bS1NTwQ1");
+            _AssertPiecePoint("wS1", (0, 0));
+            _AssertPiecePoint("bG1", (2, 0));
+            _AssertPiecePoint("wQ1", (-2, 0));
+            _AssertPiecePoint("bS1", (-1, 1));
+            _AssertPiecePoint("wG1", (1, -1));
+            _AssertPiecePoint("bQ1", (4, 0));
+            _AssertPiecePoint("wG2", (6, 0));
+            _AssertPiecePoint("wG3", (-3, 1));
+            _AssertPiecePoint("bB1", (-1, -1));
+            _AssertPiecePoint("bG2", (-4, 0));
+            _AssertPiecePoint("wA1", (4, 2));
+            _AssertPiecePoint("bA1", (3, 1));
+            _AssertMovingSpots("wS1", new List<(int, int)>());
+            _AssertMovingSpots("bG1", new List<(int, int)>());
+            _AssertMovingSpots("wQ1", new List<(int, int)>());
+            _AssertMovingSpots("bS1", new List<(int, int)>() {(3, 3), (-5, 1)});
+            _AssertMovingSpots("wG1", new List<(int, int)>() {(5, 3), (-2, 2), (-3, -1)});
+            _AssertMovingSpots("bQ1", new List<(int, int)>());
+            _AssertMovingSpots("wG2", new List<(int, int)>() {(-6, 0)});
+            _AssertMovingSpots("wG3", new List<(int, int)>() {(-5, -1), (0, -2), (1, 1)});
+            _AssertMovingSpots("bB1", new List<(int, int)>() {(0, 0), (-2, 0), (-3, -1), (0, -2), (1, -1)});
+            _AssertMovingSpots("bG2", new List<(int, int)>() {(-2, 2), (8, 0)});
+            _AssertMovingSpots("wA1", new List<(int, int)>() {(-2, 2), (-4, 2), (-5, 1), (-6, 0), (-5, -1), (-3, -1), (-2, -2), (0, -2), (2, -2), (3, -1), (5, -1), (7, -1), (8, 0), (7, 1), (5, 1), (2, 2), (1, 1), (0, 2)});
+            _AssertMovingSpots("bA1", new List<(int, int)>());
+            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(2, -2), (7, -1), (8, 0), (7, 1), (6, 2), (5, 3), (3, 3), (-4, 2)});
+            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(-6, 0), (-5, -1), (-2, -2), (0, 2)});
 
-            _AssertSpotsForPiece("bG2",
-            blackPlacingSpots,  // placing
-            new List<(int, int)>(){(-1, 3), (-2, 0)}     // moving
-            );
-
-            // /////////////////////////////////////////////////// BlackMove 7 ///////////////////////////////////////////////////
-            _BlackMove("bA2NEbB1");
-            _AssertPiecePoint("bG1", (0, 0));
-            _AssertPiecePoint("bA1", (-1, 1));
-            _AssertPiecePoint("bS1", (1, 1));
-            _AssertPiecePoint("bQ1", (0, 2));
-            _AssertPiecePoint("bB1", (2, 2));
-            _AssertPiecePoint("bG2", (2, 0));
-            _AssertPiecePoint("bA2", (4, 2));
-            blackPlacingSpots = new List<(int, int)>() {(-2, 0), (-1, -1), (1, -1), (3, -1), (4, 0), (3, 1), (5, 1), (6, 2), (5, 3), (3, 3), (1, 3), (-1, 3), (-2, 2), (-3, 1)};
-
-            _AssertSpotsForPiece("bG1",
-            blackPlacingSpots,  // placing
-            new List<(int, int)>(){(-2, 2), (3, 3), (4, 0)}     // moving
-            );
-
-            _AssertSpotsForPiece("bA1",
-            blackPlacingSpots,  // placing
-            new List<(int, int)>() {(-2, 0), (-1, -1), (1, -1), (3, -1), (4, 0), (3, 1), (5, 1), (6, 2), (5, 3), (3, 3), (1, 3), (-1, 3), (-2, 2)}
-            );
-
-            _AssertSpotsForPiece("bS1",
-            blackPlacingSpots,      // placing
-            new List<(int, int)>()  // moving
-            );
-
-            _AssertSpotsForPiece("bB1",
-            blackPlacingSpots,     // placing
-            new List<(int, int)>() // moving
-            );
-
-            _AssertSpotsForPiece("bG2",
-            blackPlacingSpots,  // placing
-            new List<(int, int)>(){(-1, 3), (-2, 0)}     // moving
-            );
-
-            _AssertSpotsForPiece("bA2",
-            blackPlacingSpots,  // placing
-            new List<(int, int)>(){(3, 1), (4, 0), (3, -1), (1, -1), (-1, -1), (-2, 0), (-3, 1), (-2, 2), (-1, 3), (1, 3), (3, 3)}     // moving
-            );
+            _WhiteMove("wA2NTwG2");
+            _AssertPiecePoint("wS1", (0, 0));
+            _AssertPiecePoint("bG1", (2, 0));
+            _AssertPiecePoint("wQ1", (-2, 0));
+            _AssertPiecePoint("bS1", (-1, 1));
+            _AssertPiecePoint("wG1", (1, -1));
+            _AssertPiecePoint("bQ1", (4, 0));
+            _AssertPiecePoint("wG2", (6, 0));
+            _AssertPiecePoint("wG3", (-3, 1));
+            _AssertPiecePoint("bB1", (-1, -1));
+            _AssertPiecePoint("bG2", (-4, 0));
+            _AssertPiecePoint("wA1", (4, 2));
+            _AssertPiecePoint("bA1", (3, 1));
+            _AssertPiecePoint("wA2", (7, 1));
+            _AssertMovingSpots("wS1", new List<(int, int)>());
+            _AssertMovingSpots("bG1", new List<(int, int)>());
+            _AssertMovingSpots("wQ1", new List<(int, int)>());
+            _AssertMovingSpots("bS1", new List<(int, int)>() {(3, 3), (-5, 1)});
+            _AssertMovingSpots("wG1", new List<(int, int)>() {(5, 3), (-2, 2), (-3, -1)});
+            _AssertMovingSpots("bQ1", new List<(int, int)>());
+            _AssertMovingSpots("wG2", new List<(int, int)>());
+            _AssertMovingSpots("wG3", new List<(int, int)>() {(-5, -1), (0, -2), (1, 1)});
+            _AssertMovingSpots("bB1", new List<(int, int)>() {(0, 0), (-2, 0), (-3, -1), (0, -2), (1, -1)});
+            _AssertMovingSpots("bG2", new List<(int, int)>() {(-2, 2), (8, 0)});
+            _AssertMovingSpots("wA1", new List<(int, int)>() {(2, 2), (1, 1), (0, 2), (-2, 2), (-4, 2), (-5, 1), (-6, 0), (-5, -1), (-3, -1), (-2, -2), (0, -2), (2, -2), (3, -1), (5, -1), (7, -1), (8, 0), (9, 1), (8, 2), (6, 2), (5, 1)});
+            _AssertMovingSpots("bA1", new List<(int, int)>());
+            _AssertMovingSpots("wA2", new List<(int, int)>() {(5, 1), (6, 2), (5, 3), (3, 3), (2, 2), (1, 1), (0, 2), (-2, 2), (-4, 2), (-5, 1), (-6, 0), (-5, -1), (-3, -1), (-2, -2), (0, -2), (2, -2), (3, -1), (5, -1), (7, -1), (8, 0)});
+            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(5, 3), (3, 3), (-4, 2), (2, -2), (7, -1), (8, 0), (9, 1), (8, 2), (6, 2)});
+            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(0, 2), (-6, 0), (-5, -1), (-2, -2)});
         }
-
-        // Will test that the beetle does not jump to the other end of the ring
-        [Fact]
-        public void RingCase()
-        {
-            /////////////////////////////////////////////////// BlackMove 1 ///////////////////////////////////////////////////
-            _FirstBlackMove("bS1");
-            _AssertPiecePoint("bS1", (0, 0));
-            _AssertSpotsForPiece("bS1", new List<(int, int)>() {(-1, 1), (-2, 0), (-1, -1), (1, -1), (2, 0), (1, 1)}, new List<(int, int)>());
-
-            /////////////////////////////////////////////////// BlackMove 2 ///////////////////////////////////////////////////
-            _BlackMove("bQ1NWbS1");
-            _AssertPiecePoint("bS1", (0, 0));
-            _AssertPiecePoint("bQ1", (-1, 1));
-
-            var blackPlacingSpots = new List<(int, int)>(){(-2, 2), (-3, 1), (-2, 0), (-1, -1), (1, -1), (2, 0), (1, 1), (0, 2)};
-            _AssertSpotsForPiece("bS1",
-            blackPlacingSpots,                  // placing
-            new List<(int, int)>(){(-2, 2)}     // moving
-            );
-
-            _AssertSpotsForPiece("bQ1",
-            blackPlacingSpots,
-            new List<(int, int)>(){(-2, 0), (1, 1)}
-            );
-
-            /////////////////////////////////////////////////// BlackMove 3 ///////////////////////////////////////////////////
-            _BlackMove("bB1NTbQ1");
-            _AssertPiecePoint("bS1", (0, 0));
-            _AssertPiecePoint("bQ1", (-1, 1));
-            _AssertPiecePoint("bB1", (0, 2));
-
-            blackPlacingSpots = new List<(int, int)>(){(-2, 0), (-3, 1), (-2, 2), (-1, 3), (1, 3), (2, 2), (1, 1), (2, 0), (1, -1), (-1, -1)};
-
-            _AssertSpotsForPiece("bS1",
-            blackPlacingSpots,                          // placing
-            new List<(int, int)>(){(-2, 2), (1, 3)}     // moving
-            );
-
-            _AssertSpotsForPiece("bQ1",
-            blackPlacingSpots,
-            new List<(int, int)>()
-            );
-
-            _AssertSpotsForPiece("bB1",
-            blackPlacingSpots,
-            new List<(int, int)>(){(-1, 1), (1, 1), (-2 ,2)}
-            );
-
-            /////////////////////////////////////////////////// BlackMove 4 ///////////////////////////////////////////////////
-            _BlackMove("bG1NEbB1");
-            _AssertPiecePoint("bS1", (0, 0));
-            _AssertPiecePoint("bQ1", (-1, 1));
-            _AssertPiecePoint("bB1", (0, 2));
-            _AssertPiecePoint("bG1", (2, 2));
-
-            blackPlacingSpots = new List<(int, int)>(){(-1, -1), (-2, 0), (-3, 1), (-2, 2), (-1, 3), (1, 3), (3, 3), (4 ,2), (3, 1), (1, 1), (2, 0), (1, -1)};
-
-            _AssertSpotsForPiece("bS1",
-            blackPlacingSpots,                          // placing
-            new List<(int, int)>(){(-2, 2), (4, 2)}     // moving
-            );
-
-            _AssertSpotsForPiece("bQ1",
-            blackPlacingSpots,
-            new List<(int, int)>()
-            );
-
-            _AssertSpotsForPiece("bB1",
-            blackPlacingSpots,
-            new List<(int, int)>()
-            );
-
-            _AssertSpotsForPiece("bG1",
-            blackPlacingSpots,
-            new List<(int, int)>(){(-2, 2)}
-            );
-
-            /////////////////////////////////////////////////// BlackMove 5 ///////////////////////////////////////////////////
-            _BlackMove("bB2SEbG1");
-            _AssertPiecePoint("bS1", (0, 0));
-            _AssertPiecePoint("bQ1", (-1, 1));
-            _AssertPiecePoint("bB1", (0, 2));
-            _AssertPiecePoint("bG1", (2, 2));
-            _AssertPiecePoint("bB2", (3, 1));
-
-            blackPlacingSpots = new List<(int, int)>(){(1, 1), (2, 0), (1, -1), (-1, -1), (-2, 0), (-3, 1), (-2, 2), (-1, 3), (1, 3), (3, 3), (4, 2), (5, 1), (4, 0)};
-
-            _AssertSpotsForPiece("bS1",
-            blackPlacingSpots,                  // placing
-            new List<(int, int)>(){(-2, 2)}     // moving
-            );
-
-            _AssertSpotsForPiece("bQ1",
-            blackPlacingSpots,
-            new List<(int, int)>()
-            );
-
-            _AssertSpotsForPiece("bB1",
-            blackPlacingSpots,
-            new List<(int, int)>()
-            );
-
-            _AssertSpotsForPiece("bG1",
-            blackPlacingSpots,
-            new List<(int, int)>()
-            );
-
-            _AssertSpotsForPiece("bB2",
-            blackPlacingSpots,
-            new List<(int, int)>{(1, 1), (2, 2), (4, 2)}
-            );
-        }
-
-        // Will test that the Ant does not violate the freedom of movement by moving inside the ring or donut 
-        [Fact]
-        public void RingCase2()
-        {
-            /////////////////////////////////////////////////// BlackMove 1 ///////////////////////////////////////////////////
-            _FirstBlackMove("bQ1");
-            _AssertPiecePoint("bQ1", (0, 0));
-            _AssertSpotsForPiece("bQ1", new List<(int, int)>() {(-1, 1), (-2, 0), (-1, -1), (1, -1), (2, 0), (1, 1)}, new List<(int, int)>());
-
-            /////////////////////////////////////////////////// BlackMove 2 ///////////////////////////////////////////////////
-            _BlackMove("bS1SWbQ1");
-            _AssertPiecePoint("bQ1", (0, 0));
-            _AssertPiecePoint("bS1", (-2, 0));
-
-            var blackPlacingSpots = new List<(int, int)>(){(-1, -1), (-3, -1), (-4, 0), (-3, 1), (-1, 1), (1, 1), (2, 0), (1, -1)};
-
-            _AssertSpotsForPiece("bS1",
-            blackPlacingSpots,                  // placing
-            new List<(int, int)>(){(2, 0)}     // moving
-            );
-
-            _AssertSpotsForPiece("bQ1",
-            blackPlacingSpots,
-            new List<(int, int)>(){(-1, 1), (-1, -1)}
-            );
-
-            /////////////////////////////////////////////////// BlackMove 3 ///////////////////////////////////////////////////
-            _BlackMove("bG1NTbS1");
-            _AssertPiecePoint("bQ1", (0, 0));
-            _AssertPiecePoint("bS1", (-2, 0));
-            _AssertPiecePoint("bG1", (-1, 1));
-
-            blackPlacingSpots = new List<(int, int)>(){(-3, -1), (-4, 0), (-3, 1), (-2, 2), (0, 2), (1, 1), (2, 0), (1, -1), (-1, -1)};
-
-            _AssertSpotsForPiece("bS1",
-            blackPlacingSpots,                  // placing
-            new List<(int, int)>(){(0, 2), (2, 0)}     // moving
-            );
-
-            _AssertSpotsForPiece("bQ1",
-            blackPlacingSpots,
-            new List<(int, int)>(){(1, 1), (-1, -1)}
-            );
-
-            _AssertSpotsForPiece("bG1",
-            blackPlacingSpots,
-            new List<(int, int)>(){(-3, -1), (1, -1)}
-            );
-
-            /////////////////////////////////////////////////// BlackMove 4 ///////////////////////////////////////////////////
-            _BlackMove("bA1NWbG1");
-            _AssertPiecePoint("bQ1", (0, 0));
-            _AssertPiecePoint("bS1", (-2, 0));
-            _AssertPiecePoint("bG1", (-1, 1));
-            _AssertPiecePoint("bA1", (-2, 2));
-
-            blackPlacingSpots = new List<(int, int)>(){(-3, -1), (-4, 0), (-3, 1), (-4, 2), (-3, 3), (-1, 3), (0, 2), (1, 1), (2, 0), (1, -1), (-1, -1)};
-
-            _AssertSpotsForPiece("bS1",
-            blackPlacingSpots,                  // placing
-            new List<(int, int)>(){(-3, 3), (2, 0)}     // moving
-            );
-
-            _AssertSpotsForPiece("bQ1",
-            blackPlacingSpots,
-            new List<(int, int)>(){(1, 1), (-1, -1)}
-            );
-
-            _AssertSpotsForPiece("bG1",
-            blackPlacingSpots,
-            new List<(int, int)>()
-            );
-
-            _AssertSpotsForPiece("bA1",
-            blackPlacingSpots,
-            new List<(int, int)>() {(0, 2), (1, 1), (2, 0), (1, -1), (-1, -1), (-3, -1), (-4, 0), (-3, 1)}
-            );
-            /////////////////////////////////////////////////// BlackMove 5 ///////////////////////////////////////////////////
-            _BlackMove("bS2NTbG1");
-            _AssertPiecePoint("bQ1", (0, 0));
-            _AssertPiecePoint("bS1", (-2, 0));
-            _AssertPiecePoint("bG1", (-1, 1));
-            _AssertPiecePoint("bA1", (-2, 2));
-            _AssertPiecePoint("bS2", (0, 2));
-
-            blackPlacingSpots = new List<(int, int)>(){(-3, 1), (-4, 2), (-3, 3), (-1, 3), (1, 3), (2, 2), (1, 1), (2, 0), (1, -1), (-1, -1), (-3, -1), (-4, 0)};
-
-            _AssertSpotsForPiece("bS1",
-            blackPlacingSpots,                  // placing
-            new List<(int, int)>(){(-3, 3), (2, 0)}     // moving
-            );
-
-            _AssertSpotsForPiece("bQ1",
-            blackPlacingSpots,
-            new List<(int, int)>(){(1, 1), (-1, -1)}
-            );
-
-            _AssertSpotsForPiece("bG1",
-            blackPlacingSpots,
-            new List<(int, int)>()
-            );
-
-            _AssertSpotsForPiece("bA1",
-            blackPlacingSpots,
-            new List<(int, int)>() {(-1, 3), (1, 3), (2, 2), (1, 1), (2, 0), (1, -1), (-1, -1), (-3, -1), (-4, 0), (-3, 1)}
-            );
-
-            _AssertSpotsForPiece("bS2",
-            blackPlacingSpots,
-            new List<(int, int)>() {(1, -1), (-4, 2)}
-            );
-            /////////////////////////////////////////////////// BlackMove 6 ///////////////////////////////////////////////////
-            _BlackMove("bB1NEbS2");
-            _AssertPiecePoint("bQ1", (0, 0));
-            _AssertPiecePoint("bS1", (-2, 0));
-            _AssertPiecePoint("bG1", (-1, 1));
-            _AssertPiecePoint("bA1", (-2, 2));
-            _AssertPiecePoint("bS2", (0, 2));
-            _AssertPiecePoint("bB1", (2, 2));
-
-            blackPlacingSpots = new List<(int, int)>(){(-4, 0), (-3, 1), (-4, 2), (-3, 3), (-1, 3), (1, 3), (3, 3), (4, 2), (3, 1), (1, 1), (2, 0), (1, -1), (-1, -1), (-3, -1)};
-
-            _AssertSpotsForPiece("bS1",
-            blackPlacingSpots,                  // placing
-            new List<(int, int)>(){(-3, 3), (2, 0)}     // moving
-            );
-
-            _AssertSpotsForPiece("bQ1",
-            blackPlacingSpots,
-            new List<(int, int)>(){(1, 1), (-1, -1)}
-            );
-
-            _AssertSpotsForPiece("bG1",
-            blackPlacingSpots,
-            new List<(int, int)>()
-            );
-
-            _AssertSpotsForPiece("bA1",
-            blackPlacingSpots,
-            new List<(int, int)>() {(-1, 3), (1, 3), (3, 3), (4, 2), (3, 1), (1, 1), (2, 0), (1, -1), (-1, -1), (-3, -1), (-4, 0), (-3, 1)}
-            );
-
-            _AssertSpotsForPiece("bS2",
-            blackPlacingSpots,
-            new List<(int, int)>()
-            );
-
-            _AssertSpotsForPiece("bB1",
-            blackPlacingSpots,
-            new List<(int, int)>(){(1, 3), (0, 2), (1, 1)}
-            );
-            /////////////////////////////////////////////////// BlackMove 7 ///////////////////////////////////////////////////
-            _BlackMove("bA2SEbB1");
-            _AssertPiecePoint("bQ1", (0, 0));
-            _AssertPiecePoint("bS1", (-2, 0));
-            _AssertPiecePoint("bG1", (-1, 1));
-            _AssertPiecePoint("bA1", (-2, 2));
-            _AssertPiecePoint("bS2", (0, 2));
-            _AssertPiecePoint("bB1", (2, 2));
-            _AssertPiecePoint("bA2", (3, 1));
-
-            blackPlacingSpots = new List<(int, int)>(){(1, 1), (2, 0), (1, -1), (-1, -1), (-3, -1), (-4, 0), (-3, 1), (-4, 2), (-3, 3), (-1, 3), (1, 3), (3, 3), (4, 2), (5, 1), (4, 0)};
-
-            _AssertSpotsForPiece("bS1",
-            blackPlacingSpots,                  // placing
-            new List<(int, int)>(){(-3, 3), (2, 0)}     // moving
-            );
-
-            _AssertSpotsForPiece("bQ1",
-            blackPlacingSpots,
-            new List<(int, int)>(){(1, 1), (-1, -1)}
-            );
-
-            _AssertSpotsForPiece("bG1",
-            blackPlacingSpots,
-            new List<(int, int)>()
-            );
-
-            _AssertSpotsForPiece("bA1",
-            blackPlacingSpots,
-            new List<(int, int)>() {(-1, 3), (1, 3), (3, 3), (4, 2), (5, 1), (4, 0), (2, 0), (1, -1), (-1, -1), (-3, -1), (-4, 0), (-3, 1)}
-            );
-
-            _AssertSpotsForPiece("bS2",
-            blackPlacingSpots,
-            new List<(int, int)>()
-            );
-
-            _AssertSpotsForPiece("bB1",
-            blackPlacingSpots,
-            new List<(int, int)>()
-            );
-
-            _AssertSpotsForPiece("bA2",
-            blackPlacingSpots,
-            new List<(int, int)>() {(4, 2), (3, 3), (1, 3), (-1, 3), (-3, 3), (-4, 2), (-3, 1), (-4, 0), (-3, -1), (-1, -1), (1, -1), (2, 0)}
-            );
-        }
-
-
-
 
 
 
@@ -524,27 +530,28 @@ namespace GameCore
         # region Helper Methods
         private void _AssertPiecePoint(string piece, (int, int) point)
         {
-            var actualPoint = logic.Board._piece_point[piece];
+            var actualPoint = manager.board._piece_point[piece];
+            Console.WriteLine($"Actual {piece}'s point was {actualPoint}");
             Assert.True(actualPoint.Item1 == point.Item1 && actualPoint.Item2 == point.Item2);
         }
 
-        private void _AssertSpotsForPiece(string piece, List<(int, int)> placing, List<(int, int)> moving)
+        private void _AssertSpotsForPlayerAndPiece(Player player, List<(int, int)> placing, string piece, List<(int, int)> moving)
         {
-            var point = logic.Board._piece_point[piece];
-            Assert.True(logic.Board._point_stack.Count == logic.Board._piece_point.Count);
+            var point = manager.board._piece_point[piece];
+            Assert.True(manager.board.pieces.Count == manager.board._piece_point.Count);
             // Assert.True(logic.Board._point_piece.Count == logic.Board._color_pieces[piece[0] == 'b' ? Color.Black : Color.White].Count);
-            Assert.True(logic.Board._point_stack[point].Peek().ToString() == piece);
+            Assert.True(manager.board.pieces[point].Peek().ToString() == piece);
 
             // If you were able to put the same piece again
-            _AssertPlacingSpots(piece, placing);
+            _AssertPlacingSpots(player, placing);
             _AssertMovingSpots(piece, moving);
         }
 
-        private void _AssertPlacingSpots(string piece, List<(int, int)> spots)
+        private void _AssertPlacingSpots(Player player, List<(int, int)> spots)
         {
-            var returnedSpots = logic.Board._point_stack[logic.Board._piece_point[piece]].Peek().GetPlacingSpots(logic.Board);
+            var returnedSpots = player.GetPlacingSpots(manager.board);
 
-            Console.WriteLine($"////////////////Actual Placing Spots For {piece}////////////////");
+            Console.WriteLine($"////////////////Actual Placing Spots Returned For Player {player.Color}////////////////");
             foreach (var s in returnedSpots)
             {
                 Console.WriteLine(s);
@@ -559,7 +566,7 @@ namespace GameCore
 
         private void _AssertMovingSpots(string piece, List<(int, int)> spots)
         {
-            var returnedSpots = logic.Board._point_stack[logic.Board._piece_point[piece]].Peek().GetMovingSpots(logic.Board);
+            var returnedSpots = manager.board.pieces[manager.board._piece_point[piece]].Peek().GetMovingSpots(manager.board);
 
             Console.WriteLine($"////////////////Actual Moving Spots For {piece}////////////////");
             foreach (var s in returnedSpots)
@@ -579,10 +586,12 @@ namespace GameCore
             using (var input = new StringReader(piece))
             {
                 Console.SetIn(input);
-                logic.MakeMove(ref _blackPlayer);
-                Assert.True(logic.Board._point_stack.ContainsKey((0, 0)));
-                Assert.True(logic.Board._point_stack[(0, 0)].Peek().ToString() == piece);
-                Assert.True(logic.Board._piece_point.ContainsKey(piece));
+                if (manager.MakeMove(ref _blackPlayer))
+                {
+                    Assert.True(manager.board.pieces.ContainsKey((0, 0)));
+                    Assert.True(manager.board.pieces[(0, 0)].Peek().ToString() == piece);
+                    Assert.True(manager.board._piece_point.ContainsKey(piece));
+                }
             }
         }
 
@@ -591,10 +600,12 @@ namespace GameCore
             using (var input = new StringReader(piece))
             {
                 Console.SetIn(input);
-                logic.MakeMove(ref _whitePlayer);
-                Assert.True(logic.Board._point_stack.ContainsKey((0, 0)));
-                Assert.True(logic.Board._point_stack[(0, 0)].Peek().ToString() == piece);
-                Assert.True(logic.Board._piece_point.ContainsKey(piece));
+                if (manager.MakeMove(ref _whitePlayer))
+                {
+                    Assert.True(manager.board.pieces.ContainsKey((0, 0)));
+                    Assert.True(manager.board.pieces[(0, 0)].Peek().ToString() == piece);
+                    Assert.True(manager.board._piece_point.ContainsKey(piece));
+                }
             }
         }
 
@@ -604,7 +615,7 @@ namespace GameCore
             using (var input = new StringReader(moveStr))
             {
                 Console.SetIn(input);
-                logic.MakeMove(ref _blackPlayer);
+                manager.MakeMove(ref _blackPlayer);
             }
         }
 
@@ -614,7 +625,7 @@ namespace GameCore
             using (var input = new StringReader(moveStr))
             {
                 Console.SetIn(input);
-                logic.MakeMove(ref _whitePlayer);
+                manager.MakeMove(ref _whitePlayer);
             }
         }
         # endregion
