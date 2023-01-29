@@ -4,7 +4,7 @@ namespace GameCore
     public class Board
     {
         public readonly Dictionary<string, (int, int)> _piece_point;
-        public readonly Dictionary<(int, int), Stack<Piece>> pieces;
+        public readonly Dictionary<(int, int), Stack<Piece>> Pieces;
         public readonly Dictionary<Color, List<(int, int)> > _color_pieces;
         // public readonly Dictionary<Player, List<Piece>> _player_pieces;
 
@@ -13,8 +13,8 @@ namespace GameCore
             // Ensuring capacities so that each time an element is added
             // there is no need to dynamically allocate more memory.
             // This is an approach that should help performance
-            pieces = new Dictionary<(int, int), Stack<Piece>>();
-            pieces.EnsureCapacity(22);
+            Pieces = new Dictionary<(int, int), Stack<Piece>>();
+            Pieces.EnsureCapacity(22);
 
             _piece_point = new Dictionary<string, (int, int)>();
             _piece_point.EnsureCapacity(22);
@@ -26,12 +26,10 @@ namespace GameCore
             };
             _color_pieces.EnsureCapacity(2);
         }
-        // Change the `List<Piece>` to `List<(int, int)` so that it can later be accessed by _point_stack
-        // this way, we dont have to update two hashmaps. That would take too much time.
 
         public void UpdateAllNeighbors()
         {
-            foreach (KeyValuePair<(int, int), Stack<Piece>> stack in pieces)
+            foreach (KeyValuePair<(int, int), Stack<Piece>> stack in Pieces)
             {
                 foreach (Piece piece in stack.Value)
                 {
@@ -42,7 +40,7 @@ namespace GameCore
 
         public Piece GetTopPieceByStringName(string piece)
         {
-            return pieces[_piece_point[piece]].Peek();
+            return Pieces[_piece_point[piece]].Peek();
         }
 
         public bool IsAQueenSurrounded()
@@ -52,32 +50,32 @@ namespace GameCore
 
         public Piece GetTopPieceByPoint((int, int) point)
         {
-            return pieces[point].Peek();
+            return Pieces[point].Peek();
         }
 
         public Piece GetPieceByStringName(string piece)
         {
-            return pieces[_piece_point[piece]].First(piece => piece.ToString().Equals(piece));
+            return Pieces[_piece_point[piece]].First(piece => piece.ToString().Equals(piece));
         }
 
         public Piece GetPieceByPoint((int x, int y) point)
         {
-            return pieces[point].First(piece => piece.Point.x == point.x && piece.Point.y == point.y);
+            return Pieces[point].First(piece => piece.Point.x == point.x && piece.Point.y == point.y);
         }
 
         public List<Piece> GetPiecesByColor(Color color)
         {
-            return _color_pieces[color].ConvertAll(piecePoint => pieces[piecePoint].Peek());
+            return _color_pieces[color].ConvertAll(piecePoint => Pieces[piecePoint].Peek());
         }
 
         private void PopulateNeighborsFor(Piece piece)
         {
             piece.Neighbors.Clear();
-            foreach (KeyValuePair<string, (int, int)> side in piece.Sides)  
+            foreach (KeyValuePair<string, (int, int)> side in piece.Sides)
             {
                 // bool IsNeighbour = (point % side == (0, 0));
                 // (int, int) neighborPoint = (point.x + side.Value.Item1, point.y + side.Value.Item2);
-                bool neighbourExists = pieces.ContainsKey(side.Value);
+                bool neighbourExists = Pieces.ContainsKey(side.Value);
                 if (neighbourExists)
                 {
                     piece.Neighbors[side.Key] = side.Value;
@@ -88,9 +86,9 @@ namespace GameCore
         public void _AddPiece((int x, int y) point, Piece piece)
         {
             // There are pieces at this spot    AND  It is a beetle
-            if (pieces.ContainsKey(point) && piece.Insect == Insect.Beetle)
+            if (Pieces.ContainsKey(point) && piece.Insect == Insect.Beetle)
             {
-                pieces[point].Push(piece);
+                Pieces[point].Push(piece);
                 _piece_point.Add(piece.ToString(), point);
                 _color_pieces[piece.Color].Add(point);
                 UpdateAllNeighbors();
@@ -99,8 +97,8 @@ namespace GameCore
             // No pieces at this spot
             else
             {
-                pieces.Add(point, new Stack<Piece>());
-                pieces[point].Push(piece);
+                Pieces.Add(point, new Stack<Piece>());
+                Pieces[point].Push(piece);
                 _piece_point.Add(piece.ToString(), point);
                 _color_pieces[piece.Color].Add(point);
                 UpdateAllNeighbors();
@@ -110,13 +108,13 @@ namespace GameCore
         public void _RemovePiece(Piece piece)
         {
             (int, int) piecePointToRemove = _piece_point[piece.ToString()];
-            pieces[piecePointToRemove].Pop();
+            Pieces[piecePointToRemove].Pop();
 
             // If this is an empty stack
-            if (pieces[piecePointToRemove].Count == 0)
+            if (Pieces[piecePointToRemove].Count == 0)
             {
                 // Delete the reference, as it is now an open spot
-                pieces.Remove(piecePointToRemove);
+                Pieces.Remove(piecePointToRemove);
             }
 
             _piece_point.Remove(piece.ToString());
@@ -147,14 +145,14 @@ namespace GameCore
         private void _DFS(ref Dictionary<(int, int), bool> visited, (int, int) piecePoint)
         {
             visited[piecePoint] = true;
-            if (!pieces.ContainsKey(piecePoint))
+            if (!Pieces.ContainsKey(piecePoint))
             {
                 return;
             }
-            Piece curPiece = pieces[piecePoint].Peek();
+            Piece curPiece = Pieces[piecePoint].Peek();
             foreach ((int, int) neighbor in curPiece.Neighbors.Values)
             {
-                if ((!visited.ContainsKey(neighbor) || (visited.ContainsKey(neighbor) && !visited[neighbor])) && pieces.ContainsKey(neighbor))
+                if ((!visited.ContainsKey(neighbor) || (visited.ContainsKey(neighbor) && !visited[neighbor])) && Pieces.ContainsKey(neighbor))
                     _DFS(ref visited, neighbor);
             }
         }
@@ -162,13 +160,13 @@ namespace GameCore
         public bool IsAllConnected()
         {
             var visited = new Dictionary<(int, int), bool>();
-            if (pieces.Count > 0)
+            if (Pieces.Count > 0)
             {
-                (int, int) start = pieces.Keys.First();
+                (int, int) start = Pieces.Keys.First();
 
                 _DFS(ref visited, start);
 
-                return visited.Count == pieces.Count;
+                return visited.Count == Pieces.Count;
             }
             else
             {

@@ -9,10 +9,10 @@ namespace GameCore
         private Player _whitePlayer;
         private bool _isBlackPlayerTurn;
 
-        public GameManager Board { get; }
+        public GameManager Game { get; }
         public GameCore()
         {
-            Board = new GameManager();
+            Game = new GameManager();
             _blackPlayer = new Player(Color.Black);
             _whitePlayer = new Player(Color.White);
             _isBlackPlayerTurn = false;
@@ -34,7 +34,7 @@ namespace GameCore
             if (_isBlackPlayerTurn)
             {
                 PrintPlayerHeader(_blackPlayer);
-                if (Board.MakeMove(ref _blackPlayer))
+                if (Game.MakeMove(ref _blackPlayer))
                 {
                     _isBlackPlayerTurn = false;
                     _blackPlayer.TurnCount++;
@@ -43,18 +43,18 @@ namespace GameCore
             else
             {
                 PrintPlayerHeader(_whitePlayer);
-                if (Board.MakeMove(ref _whitePlayer))
+                if (Game.MakeMove(ref _whitePlayer))
                 {
                     _isBlackPlayerTurn = true;
                     _whitePlayer.TurnCount++;
                 }
             }
-            Board.PrintFormatted();
+            Game.PrintFormatted();
         }
 
         public bool IsGameOver()
         {
-            return Board.IsGameOver();
+            return Game.IsGameOver();
         }
     }
 }

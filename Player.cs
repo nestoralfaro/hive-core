@@ -43,7 +43,7 @@ namespace GameCore
             return Pieces.Contains($"{Color}Q1");
         }
 
-        public List<(int, int)> GetPlacingSpots(Board board)
+        public List<(int, int)> GetPlacingSpots(Dictionary<(int, int), Stack<Piece>> pieces, Dictionary<Color, List<(int, int)>> colorPieces, bool IsAQueenSurrounded)
         {
             Stopwatch stopwatch = new();
             stopwatch.Start();
@@ -51,16 +51,16 @@ namespace GameCore
             // Maybe keep track of the visited ones with a hashmap and also pass it to the hasopponent neighbor?
             List<(int, int)> positions = new();
 
-            if (!board.IsAQueenSurrounded())
+            if (!IsAQueenSurrounded)
             {
                 // iterate through the current player's color's pieces
-                foreach ((int, int) point in board._color_pieces[this.Color])
+                foreach ((int, int) point in colorPieces[this.Color])
                 {
                     // iterate through this piece's available spots
-                    foreach ((int, int) spot in board.pieces[point].Peek().SpotsAround)
+                    foreach ((int, int) spot in pieces[point].Peek().SpotsAround)
                     {
                         //      Not been visited        It is not neighboring an opponent
-                        if (!positions.Contains(spot) && !_HasOpponentNeighbor(spot, board.pieces))
+                        if (!positions.Contains(spot) && !_HasOpponentNeighbor(spot, pieces))
                         {
                                 positions.Add(spot);
                         }
@@ -75,22 +75,22 @@ namespace GameCore
         }
 
 
-        private bool _HasOpponentNeighbor((int, int) point, Dictionary<(int, int), Stack<Piece>> _point_stack)
+        private bool _HasOpponentNeighbor((int x, int y) point, Dictionary<(int, int), Stack<Piece>> pieces)
         {
-            foreach ((int, int) side in SIDE_OFFSETS.Values)
+            // foreach ((int, int) side in SIDE_OFFSETS.Values)
+            for (int i = 0; i < 6; ++i)
             {
-                (int, int) potentialOpponentNeighborPosition = (point.Item1 + side.Item1, point.Item2 + side.Item2);
+                (int, int) potentialOpponentNeighborPosition = (point.x + SIDE_OFFSETS_ARRAY[i].x, point.y + SIDE_OFFSETS_ARRAY[i].y);
                 // If piece is on the board                                     And Is not the same color as the piece that is about to be placed
-                if (_point_stack.ContainsKey(potentialOpponentNeighborPosition) && _point_stack[potentialOpponentNeighborPosition].Peek().Color != this.Color)
+                if (pieces.ContainsKey(potentialOpponentNeighborPosition) && pieces[potentialOpponentNeighborPosition].Peek().Color != this.Color)
                 {
                     // Has an opponent neighbor
                     return true;
                 }
             }
 
-            // // Checked each side, and no opponent's pieces were found
+            // Checked each side, and no opponent's pieces were found
             return false;
-            // return _point_stack[point].Peek().Neighbors.Any(neighbor => _point_stack[neighbor.Value].Peek().Color != Color);
         }
     }
 
@@ -124,12 +124,12 @@ namespace GameCore
 
             // Remove whitespaces
             input = Regex.Replace(input, @"\s+", "");
+            //                  Case insensitive Not optional piece     Optional Side                Optional Piece
             const string validPattern = "^([wbWB])([ABGQSabgqs])([1-3])([NSns])?([TWEtwe])?([wbWB]?)([ABGQSabgqs]?)([1-3]?)$";
             if (input.Equals("quit", StringComparison.OrdinalIgnoreCase))
             {
                 _move = input.ToLower();
             }
-            //  Case insensitive Not optional piece       Optional Side       Optional Piece
             else if (Regex.IsMatch(input, validPattern))
             {
                 MovingPiece = _formatPieceString(input[..3]);

@@ -15,7 +15,7 @@ namespace GameCore
             { "NE", (2, 0) },    // [5] Northeast
         };
 
-        public static readonly List<(int, int)> SIDE_OFFSETS_LIST = new()
+        public static readonly (int x, int y)[] SIDE_OFFSETS_ARRAY =
         {
             // Notice how each side is only valid if it adds up to an even number
             (1, 1),    // [0] North

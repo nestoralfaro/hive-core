@@ -8,15 +8,15 @@ namespace GameCore
 {
     public class Tests
     {
-        readonly GameManager manager = new();
+        readonly GameManager game = new();
         Player _blackPlayer = new(Color.Black);
         Player _whitePlayer = new(Color.White);
 
         [Fact]
         public void NewBoardIsEmptyTest()
         {
-            Assert.Empty(manager.board.pieces);
-            Assert.Empty(manager.board._piece_point);
+            Assert.Empty(game.Board.Pieces);
+            Assert.Empty(game.Board._piece_point);
         }
 
         [Fact]
@@ -824,17 +824,17 @@ namespace GameCore
         # region Helper Methods
         private void _AssertPiecePoint(string piece, (int, int) point)
         {
-            var actualPoint = manager.board._piece_point[piece];
+            var actualPoint = game.Board._piece_point[piece];
             Console.WriteLine($"Actual {piece}'s point was {actualPoint}");
             Assert.True(actualPoint.Item1 == point.Item1 && actualPoint.Item2 == point.Item2);
         }
 
         private void _AssertSpotsForPlayerAndPiece(Player player, List<(int, int)> placing, string piece, List<(int, int)> moving)
         {
-            var point = manager.board._piece_point[piece];
-            Assert.True(manager.board.pieces.Count == manager.board._piece_point.Count);
+            var point = game.Board._piece_point[piece];
+            Assert.True(game.Board.Pieces.Count == game.Board._piece_point.Count);
             // Assert.True(logic.Board._point_piece.Count == logic.Board._color_pieces[piece[0] == 'b' ? Color.Black : Color.White].Count);
-            Assert.True(manager.board.pieces[point].Peek().ToString() == piece);
+            Assert.True(game.Board.Pieces[point].Peek().ToString() == piece);
 
             // If you were able to put the same piece again
             _AssertPlacingSpots(player, placing);
@@ -843,7 +843,7 @@ namespace GameCore
 
         private void _AssertPlacingSpots(Player player, List<(int, int)> spots)
         {
-            var returnedSpots = player.GetPlacingSpots(manager.board);
+            var returnedSpots = player.GetPlacingSpots(game.Board.Pieces, game.Board._color_pieces, game.Board.IsAQueenSurrounded());
 
             Console.WriteLine($"////////////////Actual Placing Spots Returned For Player {player.Color}////////////////");
             foreach (var s in returnedSpots)
@@ -863,7 +863,7 @@ namespace GameCore
 
         private void _AssertMovingSpots(string piece, List<(int, int)> spots)
         {
-            var returnedSpots = manager.board.pieces[manager.board._piece_point[piece]].Peek().GetMovingSpots(manager.board);
+            var returnedSpots = game.Board.Pieces[game.Board._piece_point[piece]].Peek().GetMovingSpots(ref game.Board);
 
             Console.WriteLine($"////////////////Actual Moving Spots For {piece}////////////////");
             foreach (var s in returnedSpots)
@@ -886,11 +886,11 @@ namespace GameCore
             using (var input = new StringReader(piece))
             {
                 Console.SetIn(input);
-                if (manager.MakeMove(ref _blackPlayer))
+                if (game.MakeMove(ref _blackPlayer))
                 {
-                    Assert.True(manager.board.pieces.ContainsKey((0, 0)));
-                    Assert.True(manager.board.pieces[(0, 0)].Peek().ToString() == piece);
-                    Assert.True(manager.board._piece_point.ContainsKey(piece));
+                    Assert.True(game.Board.Pieces.ContainsKey((0, 0)));
+                    Assert.True(game.Board.Pieces[(0, 0)].Peek().ToString() == piece);
+                    Assert.True(game.Board._piece_point.ContainsKey(piece));
                 }
             }
         }
@@ -900,11 +900,11 @@ namespace GameCore
             using (var input = new StringReader(piece))
             {
                 Console.SetIn(input);
-                if (manager.MakeMove(ref _whitePlayer))
+                if (game.MakeMove(ref _whitePlayer))
                 {
-                    Assert.True(manager.board.pieces.ContainsKey((0, 0)));
-                    Assert.True(manager.board.pieces[(0, 0)].Peek().ToString() == piece);
-                    Assert.True(manager.board._piece_point.ContainsKey(piece));
+                    Assert.True(game.Board.Pieces.ContainsKey((0, 0)));
+                    Assert.True(game.Board.Pieces[(0, 0)].Peek().ToString() == piece);
+                    Assert.True(game.Board._piece_point.ContainsKey(piece));
                 }
             }
         }
@@ -915,7 +915,7 @@ namespace GameCore
             using (var input = new StringReader(moveStr))
             {
                 Console.SetIn(input);
-                manager.MakeMove(ref _blackPlayer);
+                game.MakeMove(ref _blackPlayer);
             }
         }
 
@@ -925,7 +925,7 @@ namespace GameCore
             using (var input = new StringReader(moveStr))
             {
                 Console.SetIn(input);
-                manager.MakeMove(ref _whitePlayer);
+                game.MakeMove(ref _whitePlayer);
             }
         }
         # endregion

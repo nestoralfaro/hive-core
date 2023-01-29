@@ -9,9 +9,6 @@ namespace GameCore
         private const int _MANY_SIDES = 6;
         private const int _SPIDER_MAX_STEP_COUNT = 3;
         private readonly string _piece;
-        private Board _board { get; set; }
-        private Dictionary<(int, int), Stack<Piece>> _point_stack { get { return _board.pieces; } }
-
         public Color Color { get; set; }
         public int Number { get; set; }
         public Insect Insect { get; set; }
@@ -19,8 +16,6 @@ namespace GameCore
         public Dictionary<string, (int, int)> Sides { get {
             return new Dictionary<string, (int, int)>()
                 {
-                    // These values may not need to be hardcoded.
-                    // However, hardcoding them may make them more efficient
                     { "NT", (Point.x + 1, Point.y + 1) },         // [0] North
                     { "NW", (Point.x + (-1), Point.y + 1) },      // [1] Northwest
                     { "SW", (Point.x + (-2), Point.y + 0) },      // [2] Southwest
@@ -37,8 +32,6 @@ namespace GameCore
 
         public Piece(string piece, (int, int) piecePoint)
         {
-            // Necessary for checking whether the one-hive rule has been violated  
-            _board = new Board();
             _piece = piece;
             Color = piece[0] == 'b' ? Color.Black : Color.White;
             Insect = piece[1] == 'Q'
@@ -56,29 +49,31 @@ namespace GameCore
             Point = piecePoint;
         }
 
-        public List<(int, int)> GetMovingSpots(Board board)
+        public List<(int, int)> GetMovingSpots(ref Board board)
         {
-            _board = board;
-            return !board.IsAQueenSurrounded() ? Insect switch
+            return !board.IsAQueenSurrounded()
+            ? Insect switch
             {
-                Insect.Ant => _GetAntMovingSpots(),
-                Insect.Beetle => _GetBeetleMovingSpots(),
-                Insect.Grasshopper => _GetGrasshopperMovingSpots(),
-                Insect.Spider => _GetSpiderMovingSpots(),
-                Insect.QueenBee => _GetQueenMovingSpots(),
-                _ => new List<(int, int)>(),
-            } : new List<(int, int)>();
+                Insect.Ant => _GetAntMovingSpots(ref board),
+                Insect.Beetle => _GetBeetleMovingSpots(ref board),
+                Insect.Grasshopper => _GetGrasshopperMovingSpots(ref board),
+                Insect.Spider => _GetSpiderMovingSpots(ref board),
+                Insect.QueenBee => _GetQueenMovingSpots(ref board),
+                _ => throw new ArgumentException("This piece is not valid."),
+            }
+            // No moving spots because the game is over
+            : new List<(int, int)>();
         }
 
-        // This should be used for the pieces that have an expensive move generation–i.e., For now, only the Ant
+        // This should be used for the pieces that have an expensive move generation–i.e., for now, only the Ant
         // TODO: Test whether adding this validation actually improves performance on other pieces
-        // (which probably does not because I would be validating its surroundings twice) 
-        public bool IsPinned(bool isBeetle = false)
+        // (which probably does not because it would be validating its surroundings twice) 
+        public bool IsPinned(Board board, bool isBeetle = false)
         {
             foreach((int, int) side in Sides.Values)
             {
                 // If there is at least one valid path
-                if (_IsValidPath(Point, side, isBeetle))
+                if (_IsValidPath(ref board, Point, side, isBeetle))
                 {
                     // It is not pinned
                     return false;
@@ -91,21 +86,21 @@ namespace GameCore
         }
 
 
-        private List<(int, int)> _GetAntMovingSpots()
+        private List<(int, int)> _GetAntMovingSpots(ref Board board)
         {
             Stopwatch stopwatch = new();
             stopwatch.Start();
 
-            List<(int, int)> results = new();
+            List<(int x, int y)> results = new();
 
             // Before getting all the open spots (which is an expensive computation)
             // Make sure this piece is not pinned
-            if (!IsPinned())
+            if (!IsPinned(board))
             {
-                List<(int, int)> spots = new();
+                List<(int x, int y)> spots = new();
 
                 // Get all the open spots
-                foreach (KeyValuePair<(int, int), Stack<Piece>> p in _point_stack)
+                foreach (KeyValuePair<(int, int), Stack<Piece>> p in board.Pieces)
                 {
                     foreach ((int, int) spot in p.Value.Peek().SpotsAround)
                     {
@@ -117,12 +112,12 @@ namespace GameCore
                 }
 
                 // Validate each moving from `spot` to `adjacentSpot`
-                foreach((int x, int y) spot in spots)
+                for(int s = 0; s < spots.Count; ++s)
                 {
-                    foreach((int x, int y) sideOffset in SIDE_OFFSETS_LIST)
+                    for(int i = 0; i < _MANY_SIDES; ++i)
                     {
-                        (int, int) adjacentSpot = (spot.x + sideOffset.x, spot.y + sideOffset.y);
-                        if (!results.Contains(adjacentSpot) && spots.Contains(adjacentSpot) && _IsValidPath(spot, adjacentSpot))
+                        (int x, int y) adjacentSpot = (spots[s].x + SIDE_OFFSETS_ARRAY[i].x, spots[s].y + SIDE_OFFSETS_ARRAY[i].y);
+                        if (!results.Contains(adjacentSpot) && spots.Contains(adjacentSpot) && _IsValidPath(ref board, spots[s], adjacentSpot))
                         {
                             results.Add(adjacentSpot);
                         }
@@ -136,7 +131,7 @@ namespace GameCore
             return results;
         }
 
-        private List<(int, int)> _GetBeetleMovingSpots()
+        private List<(int, int)> _GetBeetleMovingSpots(ref Board board)
         {
             Stopwatch stopwatch = new();
             stopwatch.Start();
@@ -145,8 +140,8 @@ namespace GameCore
 
             foreach ((int, int) side in Sides.Values)
             {
-                // Filter out the sides that would break the hive
-                if (_IsValidPath(this.Point, side, true))
+                // Keep the valid "paths" (from point -> to side)
+                if (_IsValidPath(ref board, this.Point, side, true))
                 {
                     validMoves.Add(side);
                 }
@@ -158,28 +153,29 @@ namespace GameCore
             return validMoves;
         }
 
-        private List<(int, int)> _GetGrasshopperMovingSpots()
+        private List<(int, int)> _GetGrasshopperMovingSpots(ref Board board)
         {
             Stopwatch stopwatch = new();
             stopwatch.Start();
 
             List<(int x, int y)> positions = new();
-            foreach ((int x, int y) sideOffset in SIDE_OFFSETS.Values)
+            // foreach ((int x, int y) sideOffset in SIDE_OFFSETS.Values)
+            for (int s = 0; s < _MANY_SIDES; ++s)
             {
-                (int x, int y) nextSpot = (this.Point.x + sideOffset.x, this.Point.y + sideOffset.y);
+                (int x, int y) nextSpot = (this.Point.x + SIDE_OFFSETS_ARRAY[s].x, this.Point.y + SIDE_OFFSETS_ARRAY[s].y);
                 bool firstIsValid = false;
 
                 // Keep hopping over pieces
-                while (_point_stack.ContainsKey(nextSpot))
+                while (board.Pieces.ContainsKey(nextSpot))
                 {
-                    nextSpot = (nextSpot.x + sideOffset.x, nextSpot.y + sideOffset.y);
+                    // until you find a spot
+                    nextSpot = (nextSpot.x + SIDE_OFFSETS_ARRAY[s].x, nextSpot.y + SIDE_OFFSETS_ARRAY[s].y);
                     firstIsValid = true;
                 }
 
                 if (firstIsValid)
                 {
-                    // until you find a spot
-                    if (_DoesNotBreakHive(nextSpot))
+                    if (_DoesNotBreakHive(ref board, nextSpot))
                     {
                         positions.Add(nextSpot);
                     }
@@ -192,19 +188,20 @@ namespace GameCore
             return positions;
         }
 
-        private List<(int, int)> _GetSpiderMovingSpots()
+        private List<(int, int)> _GetSpiderMovingSpots(ref Board board)
         {
             Stopwatch stopwatch = new();
             stopwatch.Start();
 
             List<(int x, int y)> positions = new();
             Dictionary<(int x, int y), bool> visited = new();
-            foreach ((int x, int y) side in SpotsAround)
+            // foreach ((int x, int y) side in SpotsAround)
+            for (int s = 0; s < SpotsAround.Count; ++s)
             {
-                bool hasNotBeenVisited = !visited.ContainsKey(side) || (visited.ContainsKey(side) && !visited[side]);
-                if (hasNotBeenVisited && _IsValidPath(Point, side))
+                bool hasNotBeenVisited = !visited.ContainsKey(SpotsAround[s]) || (visited.ContainsKey(SpotsAround[s]) && !visited[SpotsAround[s]]);
+                if (hasNotBeenVisited && _IsValidPath(ref board, Point, SpotsAround[s]))
                 {
-                    _SpiderDFS(ref positions, ref visited, side, 1, _SPIDER_MAX_STEP_COUNT);
+                    _SpiderDFS(ref board, ref positions, ref visited, SpotsAround[s], 1, _SPIDER_MAX_STEP_COUNT);
                 }
             }
 
@@ -214,18 +211,19 @@ namespace GameCore
             return positions;
         }
 
-        private List<(int, int)> _GetQueenMovingSpots()
+        private List<(int, int)> _GetQueenMovingSpots(ref Board board)
         {
             Stopwatch stopwatch = new();
             stopwatch.Start();
 
             List<(int, int)> spots = new();
-            foreach ((int, int) spot in SpotsAround)
+            // foreach ((int, int) spot in SpotsAround)
+            for (int s = 0; s < SpotsAround.Count; ++s)
             {
                 // It is not busy and is valid
-                if (_IsValidPath(this.Point, spot))
+                if (_IsValidPath(ref board, this.Point, SpotsAround[s]))
                 {
-                    spots.Add(spot);
+                    spots.Add(SpotsAround[s]);
                 }
             }
 
@@ -236,13 +234,23 @@ namespace GameCore
         }
 
         #region Helper Methods For Finding Valid Spots
-        private bool _IsFreedomOfMovement((int x, int y) from, (int x, int y) to, bool isBeetle = false)
+        private bool _IsFreedomOfMovement(ref Board board, (int x, int y) from, (int x, int y) to, bool isBeetle = false)
         {
-            (int x, int y) offset = (to.x - from.x, to.y - from.y);
-            int index = SIDE_OFFSETS_LIST.IndexOf(offset); // direction we're going
+            (int offsetX, int offsetY) = (to.x - from.x, to.y - from.y);
+            // int index = SIDE_OFFSETS_LIST.IndexOf(offset); // direction we're going
 
-            (int x, int y) leftOffset = index == 0 ? SIDE_OFFSETS_LIST[5] : SIDE_OFFSETS_LIST[index - 1];
-            (int x, int y) rightOffset = index == 5 ? SIDE_OFFSETS_LIST[0] : SIDE_OFFSETS_LIST[index + 1];
+            int index = 0;
+            for (; index < 6; ++index)
+            {
+                if (SIDE_OFFSETS_ARRAY[index].x == offsetX && SIDE_OFFSETS_ARRAY[index].y == offsetY)
+                {
+                    // direction we are going
+                    break;
+                }
+            }
+
+            (int x, int y) leftOffset = index == 0 ? SIDE_OFFSETS_ARRAY[5] : SIDE_OFFSETS_ARRAY[index - 1];
+            (int x, int y) rightOffset = index == 5 ? SIDE_OFFSETS_ARRAY[0] : SIDE_OFFSETS_ARRAY[index + 1];
 
             (int x, int y) peripheralLeftSpot = (from.x + leftOffset.x, from.y + leftOffset.y);
             (int x, int y) peripheralRightSpot = (from.x + rightOffset.x, from.y + rightOffset.y);
@@ -251,25 +259,26 @@ namespace GameCore
             bool peripheralRightIsNotItself = peripheralRightSpot.x != Point.x || peripheralRightSpot.y != Point.y;
 
             bool noneOfThePeripheralsIsItself = peripheralLeftIsNotItself && peripheralRightIsNotItself;
-            bool onlyOneSpotIsOpen = _point_stack.ContainsKey(peripheralLeftSpot) ^ _point_stack.ContainsKey(peripheralRightSpot);
-            bool checkThatTheOppositePeripheralExists = (!peripheralRightIsNotItself && _point_stack.ContainsKey(peripheralLeftSpot)) || (!peripheralLeftIsNotItself && _point_stack.ContainsKey(peripheralRightSpot));
+            bool onlyOneSpotIsOpen = board.Pieces.ContainsKey(peripheralLeftSpot) ^ board.Pieces.ContainsKey(peripheralRightSpot);
+            //                                              Right is itself             Someone MUST be there on the left             OR    Left is itself                    Someone MUST be there on the right 
+            bool checkThatTheOppositePeripheralExists = (!peripheralRightIsNotItself && board.Pieces.ContainsKey(peripheralLeftSpot)) || (!peripheralLeftIsNotItself && board.Pieces.ContainsKey(peripheralRightSpot));
 
             return noneOfThePeripheralsIsItself
                     // If it is a beetle, check it can crawl     OR Treat it as a normal piece
-                    ? ((isBeetle && _point_stack.ContainsKey(to)) || onlyOneSpotIsOpen)
+                    ? ((isBeetle && board.Pieces.ContainsKey(to)) || onlyOneSpotIsOpen)
                     : checkThatTheOppositePeripheralExists;
         }
 
-        private bool _DoesNotBreakHive((int x, int y) to)
+        private bool _DoesNotBreakHive(ref Board board, (int x, int y) to)
         {
             Piece oldPieceSpot = new(ToString(), Point);
             Piece newPieceSpot = new(ToString(), to);
-            _board._RemovePiece(this);
+            board._RemovePiece(this);
 
-            if (!_board.IsAllConnected())
+            if (!board.IsAllConnected())
             {
                 // put it back
-                _board._AddPiece(oldPieceSpot.Point, oldPieceSpot);
+                board._AddPiece(oldPieceSpot.Point, oldPieceSpot);
 
                 // this move breaks the hive
                 return false;
@@ -277,38 +286,38 @@ namespace GameCore
             else
             {
                 // Temporarily move it the new spot
-                _board._AddPiece(to, newPieceSpot);
-                if (!_board.IsAllConnected())
+                board._AddPiece(to, newPieceSpot);
+                if (!board.IsAllConnected())
                 {
                     // Put it back
-                    _board._RemovePiece(newPieceSpot);
-                    _board._AddPiece(oldPieceSpot.Point, oldPieceSpot);
+                    board._RemovePiece(newPieceSpot);
+                    board._AddPiece(oldPieceSpot.Point, oldPieceSpot);
 
                     // this move breaks the hive
                     return false;
                 }
-                _board._RemovePiece(newPieceSpot);
+                board._RemovePiece(newPieceSpot);
             }
 
             // Put it back
-            _board._AddPiece(oldPieceSpot.Point, oldPieceSpot);
+            board._AddPiece(oldPieceSpot.Point, oldPieceSpot);
 
             // this move does not break the hive
             return true;
         }
 
-        private bool _IsValidPath((int x, int y) from, (int x, int y) to, bool isBeetle = false)
+        private bool _IsValidPath(ref Board board, (int x, int y) from, (int x, int y) to, bool isBeetle = false)
         {
             //      Only beetle can crawl on top of                 One Hive Rule                       Physically Fits
-            return (isBeetle || !_point_stack.ContainsKey(to)) && _DoesNotBreakHive(to) && _IsFreedomOfMovement(from, to, isBeetle);
+            return (isBeetle || !board.Pieces.ContainsKey(to)) && _DoesNotBreakHive(ref board, to) && _IsFreedomOfMovement(ref board, from, to, isBeetle);
         }
 
-        private void _SpiderDFS(ref List<(int x, int y)> positions, ref Dictionary<(int x, int y), bool> visited, (int x, int y) curSpot, int curDepth, int maxDepth)
+        private void _SpiderDFS(ref Board board, ref List<(int x, int y)> positions, ref Dictionary<(int x, int y), bool> visited, (int x, int y) curSpot, int curDepth, int maxDepth)
         {
             if (curDepth == maxDepth)
             {
                 // No one is at that position
-                if (!_point_stack.ContainsKey(curSpot))
+                if (!board.Pieces.ContainsKey(curSpot))
                 {
                     visited[curSpot] = true;
                     positions.Add(curSpot);
@@ -318,13 +327,13 @@ namespace GameCore
 
             visited[curSpot] = true;
 
-            foreach ((int x, int y) offset in SIDE_OFFSETS.Values)
+            for (int i = 0; i < 6; ++i)
             {
-                (int x, int y) nextSpot = (curSpot.x + offset.x, curSpot.y + offset.y);
+                (int x, int y) nextSpot = (curSpot.x + SIDE_OFFSETS_ARRAY[i].x, curSpot.y + SIDE_OFFSETS_ARRAY[i].y);
                 bool hasNotBeenVisited = !visited.ContainsKey(nextSpot) || (visited.ContainsKey(nextSpot) && !visited[nextSpot]);
-                if (hasNotBeenVisited && _IsValidPath(curSpot, nextSpot))
+                if (hasNotBeenVisited && _IsValidPath(ref board, curSpot, nextSpot))
                 {
-                    _SpiderDFS(ref positions, ref visited, nextSpot, curDepth + 1, maxDepth);
+                    _SpiderDFS(ref board, ref positions, ref visited, nextSpot, curDepth + 1, maxDepth);
                 }
             }
         }

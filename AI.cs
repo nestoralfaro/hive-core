@@ -10,16 +10,16 @@ namespace GameCore
             List<(int, int)> whiteMoves = new ();
             List<(int, int)> blackMoves = new ();
 
-            foreach (var pieces in board.pieces)
+            foreach (var pieces in board.Pieces)
             {
                 var piece = pieces.Value.Peek();
                 if (piece.Color == Color.White)
                 {
-                    whiteMoves.AddRange(piece.GetMovingSpots(board));
+                    whiteMoves.AddRange(piece.GetMovingSpots(ref board));
                 }
                 else
                 {
-                    blackMoves.AddRange(piece.GetMovingSpots(board));
+                    blackMoves.AddRange(piece.GetMovingSpots(ref board));
                 }
             }
 
