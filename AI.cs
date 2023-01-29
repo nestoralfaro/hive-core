@@ -42,6 +42,8 @@ namespace GameCore
                 int maxValue = -1000000;
                 // For every movable/placeable piece for AI color
 
+                // First alternative: run each in parallel?
+
                 // first movable
                 // for current piece
                 foreach(var piece in board.Pieces)
@@ -119,6 +121,8 @@ namespace GameCore
                     }
                 }
                 return (maxValue, myMove);
+
+                // Second alternative: run all at the same time but they might have to be labeled–i.e., moving or placing
             }
 
             // if Player turn
