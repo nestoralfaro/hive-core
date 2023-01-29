@@ -3,7 +3,7 @@ using static GameCore.Utils;
 
 namespace GameCore
 {
-    public class Program
+    public static class Program
     {
         public static void Main()
         {

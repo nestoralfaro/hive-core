@@ -122,12 +122,13 @@ namespace GameCore
             UpdateAllNeighbors();
         }
 
-        public void PlacePiece(Player player, Move move, Piece piece, (int, int) to)
+        public void PlacePiece(Player player, Piece piece, (int, int) to)
         {
             // first piece on the board. Place it on the origin (0, 0)
             _AddPiece(to, piece);
             // Does not remove on the first turn
-            player.Pieces.Remove(move.MovingPiece);
+            // player.Pieces.Remove(move.MovingPiece);
+            player.Pieces.Remove(piece.ToString());
             // PrintAvailableMovesForThePiece(piece);
         }
 

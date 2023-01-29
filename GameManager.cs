@@ -211,7 +211,7 @@ namespace GameCore
                                 // Board._AddPiece(to, piece);
                                 // // Remove it from the player
                                 // player.Pieces.Remove(move.MovingPiece);
-                                Board.PlacePiece(player, move, piece, to);
+                                Board.PlacePiece(player, piece, to);
                             }
                         }
                         else
@@ -243,7 +243,7 @@ namespace GameCore
                             // // Does not remove on the first turn
                             // player.Pieces.Remove(move.MovingPiece);
                             // // PrintAvailableMovesForThePiece(piece);
-                            Board.PlacePiece(player, move, piece, to);
+                            Board.PlacePiece(player, piece, to);
                         }
                     }
                 }
