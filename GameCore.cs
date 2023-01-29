@@ -44,7 +44,7 @@ namespace GameCore
             {
                 PrintPlayerHeader(_whitePlayer);
                 // if (Game.MakeMove(ref _whitePlayer))
-                if (_whitePlayer.MakeMove(Game.Board))
+                if (_whitePlayer.MakeMove(Game.Board, _blackPlayer))
                 {
                     _isBlackPlayerTurn = true;
                     ++_whitePlayer.TurnCount;
