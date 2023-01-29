@@ -6,7 +6,7 @@ namespace GameCore
 
         private const int _MAX_DEPTH = 5;
 
-        public void MakeMove(Board board)
+        public override bool MakeMove(Board board)
         {
             /**
             // Place it on the board
@@ -20,10 +20,15 @@ namespace GameCore
             (int, int) to = (1, 1);
             board.MovePiece(board.Pieces[from].Peek(), to);
             **/
+
+            // if everything went well
+            return true;
         }
 
-        public (int, Move) alpha_beta(Board board, int alpha, int beta, int depth)
+        public (int, Move?) alpha_beta(Board board, int alpha, int beta, int depth)
         {
+            Color whoseTurn = this.Color;
+            Move? myMove = null;
 
             if (depth > _MAX_DEPTH || board.IsAQueenSurrounded())
             {
@@ -32,43 +37,89 @@ namespace GameCore
             }
 
             // if AI turn
+            if (whoseTurn == this.Color)
+            {
                 int maxValue = -1000000;
                 // For every movable/placeable piece for AI color
 
                 // first movable
+                // for current piece
+                foreach(var piece in board.Pieces)
+                {
+                    // for every available move 
+                    foreach(var moving in piece.Value.Peek().GetMovingSpots(ref board))
+                    {
+                        Piece oldPieceState = piece.Value.Peek();
 
+                        // Make move 
+                        board.MovePiece(oldPieceState, moving);
 
+                        // switch whose turn
+                        whoseTurn = whoseTurn == Color.White ? Color.Black : Color.White;
 
+                        ++depth;
+
+                        (int min, Move? move) = alpha_beta(board, alpha, beta, depth);
+
+                        if (min > maxValue)
+                        {
+                            maxValue = min;
+                            myMove = move;
+                        }
+
+                        // set game state back to what is was before making move
+                        board.MovePiece(oldPieceState, oldPieceState.Point);
+
+                        // If alpha catches up to beta, kill kids
+                        if (maxValue >= beta)
+                            return (maxValue, myMove);
+
+                        // new value is greater than alpha? update alpha
+                        if (maxValue > alpha)
+                            alpha = maxValue;
+                    }
+                }
 
                 // then placeable
                 var placeables = GetPlacingSpots(board.Pieces, board._color_pieces, board.IsAQueenSurrounded());
-                // for every available move 
-                foreach (var placing in placeables)
+                // for current piece
+                foreach (string myPiece in Pieces)
                 {
-                    // for current piece
-                    foreach (string myPiece in Pieces)
+                    // for every available move 
+                    foreach (var placing in placeables)
                     {
+                        Piece piece = new(myPiece, placing);
+
                         // Make move 
-                        board.PlacePiece(this, new Piece(myPiece, placing), placing);
+                        board.PlacePiece(this, piece, placing);
 
-                        // switch whose turn, depth + 1
-                        // (min, move) = alpha_beta(alpha, beta, depth)
+                        // switch whose turn
+                        whoseTurn = whoseTurn == Color.White ? Color.Black : Color.White;
 
-                        // if (min > maxValue)
-                            // maxValue = min
-                            // myMove = move
+                        ++depth;
 
-                        // set game state back to wehat is was before making move
+                        (int min, Move? move) = alpha_beta(board, alpha, beta, depth);
+
+                        if (min > maxValue)
+                        {
+                            maxValue = min;
+                            myMove = move;
+                        }
+
+                        // set game state back to what is was before making move
+                        board.UndoPlacing(this, piece);
 
                         // If alpha catches up to beta, kill kids
-                        // if (maxValue >= beta)
-                            // return (maxValue, myMove)
+                        if (maxValue >= beta)
+                            return (maxValue, myMove);
 
                         // new value is greater than alpha? update alpha
-                        // if (maxValue > alpha)
-                            // alpha = maxValue
+                        if (maxValue > alpha)
+                            alpha = maxValue;
                     }
                 }
+                return (maxValue, myMove);
+            }
 
             // if Player turn
                 // int minValue = 1000000
@@ -93,6 +144,8 @@ namespace GameCore
                             // beta = minValue
 
                 // Return (minValue, myMove)
+
+            // Not relevant. Just so the compiler is happy
             return (-1, new Move("somemove"));
         }
     }
@@ -100,6 +153,7 @@ namespace GameCore
 
 
 
+// Original pseudocode
 // namespace GameCore
 // {
 //     public class AI : Player

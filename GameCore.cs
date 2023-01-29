@@ -14,7 +14,7 @@ namespace GameCore
         {
             Game = new GameManager();
             _blackPlayer = new Player(Color.Black);
-            _whitePlayer = new Player(Color.White);
+            _whitePlayer = new AI(Color.White);
             _isBlackPlayerTurn = false;
         }
 
@@ -37,16 +37,17 @@ namespace GameCore
                 if (Game.MakeMove(ref _blackPlayer))
                 {
                     _isBlackPlayerTurn = false;
-                    _blackPlayer.TurnCount++;
+                    ++_blackPlayer.TurnCount;
                 }
             }
             else
             {
                 PrintPlayerHeader(_whitePlayer);
-                if (Game.MakeMove(ref _whitePlayer))
+                // if (Game.MakeMove(ref _whitePlayer))
+                if (_whitePlayer.MakeMove(Game.Board))
                 {
                     _isBlackPlayerTurn = true;
-                    _whitePlayer.TurnCount++;
+                    ++_whitePlayer.TurnCount;
                 }
             }
             Game.PrintFormatted();

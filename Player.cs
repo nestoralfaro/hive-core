@@ -92,6 +92,11 @@ namespace GameCore
             // Checked each side, and no opponent's pieces were found
             return false;
         }
+
+        public virtual bool MakeMove(Board board)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class Move

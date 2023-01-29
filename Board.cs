@@ -132,6 +132,12 @@ namespace GameCore
             // PrintAvailableMovesForThePiece(piece);
         }
 
+        public void UndoPlacing(Player player, Piece piece)
+        {
+            player.Pieces.Add(piece.ToString());
+            _RemovePiece(piece);
+        }
+
         public void MovePiece(Piece piece, (int, int) to)
         {
             // Move such existing piece
