@@ -93,7 +93,7 @@ namespace GameCore
             return false;
         }
 
-        public virtual bool MakeMove(Board board)
+        public virtual bool MakeMove(Board board, Player player)
         {
             throw new NotImplementedException();
         }
