@@ -51,16 +51,19 @@ namespace GameCore
             // Maybe keep track of the visited ones with a hashmap and also pass it to the hasopponent neighbor?
             List<(int, int)> positions = new();
 
-            // iterate through the current player's color's pieces
-            foreach ((int, int) point in board._color_pieces[this.Color])
+            if (!board.IsAQueenSurrounded())
             {
-                // iterate through this piece's available spots
-                foreach ((int, int) spot in board.pieces[point].Peek().SpotsAround)
+                // iterate through the current player's color's pieces
+                foreach ((int, int) point in board._color_pieces[this.Color])
                 {
-                    //      Not been visited        It is not neighboring an opponent
-                    if (!positions.Contains(spot) && !_HasOpponentNeighbor(spot, board.pieces))
+                    // iterate through this piece's available spots
+                    foreach ((int, int) spot in board.pieces[point].Peek().SpotsAround)
                     {
-                            positions.Add(spot);
+                        //      Not been visited        It is not neighboring an opponent
+                        if (!positions.Contains(spot) && !_HasOpponentNeighbor(spot, board.pieces))
+                        {
+                                positions.Add(spot);
+                        }
                     }
                 }
             }

@@ -59,15 +59,15 @@ namespace GameCore
         public List<(int, int)> GetMovingSpots(Board board)
         {
             _board = board;
-            return Insect switch
+            return !board.IsAQueenSurrounded() ? Insect switch
             {
                 Insect.Ant => _GetAntMovingSpots(),
                 Insect.Beetle => _GetBeetleMovingSpots(),
                 Insect.Grasshopper => _GetGrasshopperMovingSpots(),
                 Insect.Spider => _GetSpiderMovingSpots(),
                 Insect.QueenBee => _GetQueenMovingSpots(),
-                _ => new List<(int, int)>() { (1, 2) },// this is an invalid position
-            };
+                _ => new List<(int, int)>(),
+            } : new List<(int, int)>();
         }
 
         // This should be used for the pieces that have an expensive move generation–i.e., For now, only the Ant
@@ -122,14 +122,6 @@ namespace GameCore
                     foreach((int x, int y) sideOffset in SIDE_OFFSETS_LIST)
                     {
                         (int, int) adjacentSpot = (spot.x + sideOffset.x, spot.y + sideOffset.y);
-
-                        // for testing only!
-                        if (Color == Color.White && Point.x == 4 && Point.y == 2 && adjacentSpot.Item1 == 5 && adjacentSpot.Item2 == 1 && Neighbors.Count == 1 && Neighbors.Contains(new KeyValuePair<string, (int, int)>("bA1", (3, 1))))
-                        {
-                            // break point!
-                            Console.WriteLine("break point!");
-                        }
-
                         if (!results.Contains(adjacentSpot) && spots.Contains(adjacentSpot) && _IsValidPath(spot, adjacentSpot))
                         {
                             results.Add(adjacentSpot);
@@ -137,7 +129,6 @@ namespace GameCore
                     }
                 }
             }
-
 
             stopwatch.Stop();
             PrintRed("Generating Ant Moves took: " + stopwatch.Elapsed.Milliseconds + "ms");
@@ -274,21 +265,35 @@ namespace GameCore
             Piece oldPieceSpot = new(ToString(), Point);
             Piece newPieceSpot = new(ToString(), to);
             _board._RemovePiece(this);
-            _board._AddPiece(to, newPieceSpot);
 
             if (!_board.IsAllConnected())
             {
-                // Put it back
-                _board._RemovePiece(newPieceSpot);
+                // put it back
                 _board._AddPiece(oldPieceSpot.Point, oldPieceSpot);
 
-                // it breaks the hive
+                // this move breaks the hive
                 return false;
+            }
+            else
+            {
+                // Temporarily move it the new spot
+                _board._AddPiece(to, newPieceSpot);
+                if (!_board.IsAllConnected())
+                {
+                    // Put it back
+                    _board._RemovePiece(newPieceSpot);
+                    _board._AddPiece(oldPieceSpot.Point, oldPieceSpot);
+
+                    // this move breaks the hive
+                    return false;
+                }
+                _board._RemovePiece(newPieceSpot);
             }
 
             // Put it back
-            _board._RemovePiece(newPieceSpot);
             _board._AddPiece(oldPieceSpot.Point, oldPieceSpot);
+
+            // this move does not break the hive
             return true;
         }
 

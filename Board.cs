@@ -39,6 +39,37 @@ namespace GameCore
                 }
             }
         }
+
+        public Piece GetTopPieceByStringName(string piece)
+        {
+            return pieces[_piece_point[piece]].Peek();
+        }
+
+        public bool IsAQueenSurrounded()
+        {
+            return (_piece_point.ContainsKey("wQ1") && GetTopPieceByStringName("wQ1").IsSurrounded()) || (_piece_point.ContainsKey("bQ1") && GetTopPieceByStringName("bQ1").IsSurrounded());
+        }
+
+        public Piece GetTopPieceByPoint((int, int) point)
+        {
+            return pieces[point].Peek();
+        }
+
+        public Piece GetPieceByStringName(string piece)
+        {
+            return pieces[_piece_point[piece]].First(piece => piece.ToString().Equals(piece));
+        }
+
+        public Piece GetPieceByPoint((int x, int y) point)
+        {
+            return pieces[point].First(piece => piece.Point.x == point.x && piece.Point.y == point.y);
+        }
+
+        public List<Piece> GetPiecesByColor(Color color)
+        {
+            return _color_pieces[color].ConvertAll(piecePoint => pieces[piecePoint].Peek());
+        }
+
         private void PopulateNeighborsFor(Piece piece)
         {
             piece.Neighbors.Clear();
@@ -131,11 +162,18 @@ namespace GameCore
         public bool IsAllConnected()
         {
             var visited = new Dictionary<(int, int), bool>();
-            (int, int) start = pieces.Keys.First();
+            if (pieces.Count > 0)
+            {
+                (int, int) start = pieces.Keys.First();
 
-            _DFS(ref visited, start);
+                _DFS(ref visited, start);
 
-            return visited.Count == pieces.Count;
+                return visited.Count == pieces.Count;
+            }
+            else
+            {
+                return true;
+            }
         }
     }
 }
