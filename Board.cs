@@ -98,12 +98,12 @@ namespace GameCore
 
         public Piece? GetTopPieceByStringName(string piece)
         {
-            return Pieces[_piece_point[piece]].TryPeek(out Piece p) ?  p : null;
+            return _piece_point.ContainsKey(piece) ? (Pieces[_piece_point[piece]].TryPeek(out Piece p) ?  p : null) : null;
         }
 
         public bool IsAQueenSurrounded()
         {
-            return (_piece_point.ContainsKey("wQ1") && GetTopPieceByStringName("wQ1").IsSurrounded()) || (_piece_point.ContainsKey("bQ1") && GetTopPieceByStringName("bQ1").IsSurrounded());
+            return (GetTopPieceByStringName("wQ1")?.IsSurrounded() == true) || (GetTopPieceByStringName("bQ1")?.IsSurrounded() == true);
         }
 
         public Piece GetTopPieceByPoint((int, int) point)
@@ -121,10 +121,20 @@ namespace GameCore
             return Pieces[point].First(piece => piece.Point.x == point.x && piece.Point.y == point.y);
         }
 
-        public List<Piece?> GetPiecesByColor(Color color)
+        public List<Piece> GetPiecesByColor(Color color)
         {
+            List<Piece> res = new();
+            foreach(var entry in _color_pieces[color])
+            {
+                if (Pieces[entry].TryPeek(out Piece topPiece))
+                {
+                    res.Add(topPiece);
+                }
+            }
+
+            return res;
             // return _color_pieces[color].ConvertAll(piecePoint => Pieces[piecePoint].Peek());
-            return _color_pieces[color].ConvertAll(piecePoint => Pieces[piecePoint].TryPeek(out Piece piece) ? piece : null);
+            // return _color_pieces[color].ConvertAll(piecePoint => Pieces[piecePoint].TryPeek(out Piece piece) ? piece : null);
         }
 
         public bool IsOnBoard(string piece)
@@ -166,10 +176,14 @@ namespace GameCore
                 {
                         // let it crawl on top
                         Pieces[point].Push(piece);
-                        _piece_point.Add(piece.ToString(), point);
-                        _color_pieces[piece.Color].Add(point);
-                        UpdateAllNeighbors();
                 }
+
+                Pieces[point].Clear();
+                Pieces[point].Push(piece);
+                _piece_point[piece.ToString()] = point;
+                _color_pieces[piece.Color].Remove(piece.Point);
+                _color_pieces[piece.Color].Add(point);
+                UpdateAllNeighbors();
                 // else, do not add this move, because only the beetle is allowed to get pushed on the stack
             }
             else
@@ -191,7 +205,7 @@ namespace GameCore
             {
                 (int, int) piecePointToRemove = _piece_point[piece.ToString()];
 
-                // If this is an empty stack
+                // if no one is there
                 if (Pieces[piecePointToRemove].Count == 0)
                 {
                     // Delete the reference, as it is now an open spot
@@ -199,7 +213,14 @@ namespace GameCore
                 }
                 else
                 {
+                    // Someone is there, so remove it
                     Pieces[piecePointToRemove].Pop();
+                    // if no remains there
+                    if (Pieces[piecePointToRemove].Count == 0)
+                    {
+                        // Delete the reference too, as it is now an open spot
+                        Pieces.Remove(piecePointToRemove);
+                    }
                 }
 
                 _piece_point.Remove(piece.ToString());
@@ -251,7 +272,7 @@ namespace GameCore
             _RemovePiece(piece);
             // re-add it
             piece.Point = to;
-            _AddPiece(to, piece);
+            _AddPiece(to, piece, false);
             // PrintAvailableMovesForThePiece(piece);
         }
 
@@ -278,9 +299,9 @@ namespace GameCore
             }
         }
 
-        public void AIMove (Player player, Piece piece, (int, int) to)
+        public void AIMove (Player player, Piece piece, (int, int) to, bool isMoving)
         {
-            if (IsOnBoard(piece.ToString()))
+            if (isMoving)
             {
                 // treat it as moving
                 MovePiece(piece, to);

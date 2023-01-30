@@ -52,18 +52,45 @@ namespace GameCore
 
         public List<(int, int)> GetMovingSpots(ref Board board)
         {
-            return (board.IsOnBoard("wQ1") || board.IsOnBoard("bQ1")) && !board.IsAQueenSurrounded()
-            ? Insect switch
+            if (!board.IsOnBoard($"{char.ToLower(Color.ToString()[0])}Q1"))
             {
-                Insect.Ant => _GetAntMovingSpots(ref board),
-                Insect.Beetle => _GetBeetleMovingSpots(ref board),
-                Insect.Grasshopper => _GetGrasshopperMovingSpots(ref board),
-                Insect.Spider => _GetSpiderMovingSpots(ref board),
-                Insect.QueenBee => _GetQueenMovingSpots(ref board),
-                _ => throw new ArgumentException("This piece is not valid."),
+                return new List<(int, int)>();
             }
-            // No moving spots because the game is over
-            : new List<(int, int)>();
+            else if (board.GetPiecesByColor(Color).Count == 3 && !board.IsOnBoard($"{Color.ToString()[0]}Q1"))
+            {
+                return _GetQueenMovingSpots(ref board);
+            }
+            else
+            {
+                return Insect switch
+                {
+                    Insect.Ant => _GetAntMovingSpots(ref board),
+                    Insect.Beetle => _GetBeetleMovingSpots(ref board),
+                    Insect.Grasshopper => _GetGrasshopperMovingSpots(ref board),
+                    Insect.Spider => _GetSpiderMovingSpots(ref board),
+                    Insect.QueenBee => _GetQueenMovingSpots(ref board),
+                    _ => throw new ArgumentException("This piece is not valid."),
+                };
+            }
+
+            // return
+            // // If the queen has not been played
+            // !board.IsOnBoard($"{char.ToLower(Color.ToString()[0])}Q1")
+            // // There are no valid moving spots
+            // ? new List<(int, int)>()
+            // // If the piece about to be placed is the fourth one, and the queen has not been played, then the queen has to be played 
+            // : board.GetPiecesByColor(Color).Count == 3 && !board.IsOnBoard($"{Color.ToString()[0]}Q1")
+            // ? _GetQueenMovingSpots(ref board)
+            // // Return this piece's valid moving spots
+            // : Insect switch
+            // {
+            //     Insect.Ant => _GetAntMovingSpots(ref board),
+            //     Insect.Beetle => _GetBeetleMovingSpots(ref board),
+            //     Insect.Grasshopper => _GetGrasshopperMovingSpots(ref board),
+            //     Insect.Spider => _GetSpiderMovingSpots(ref board),
+            //     Insect.QueenBee => _GetQueenMovingSpots(ref board),
+            //     _ => throw new ArgumentException("This piece is not valid."),
+            // };
         }
 
         // This should be used for the pieces that have an expensive move generation–i.e., for now, only the Ant
@@ -289,21 +316,21 @@ namespace GameCore
 
             if (!board.IsAllConnected())
             {
-                // put it back
-                board._AddPiece(oldPieceSpot.Point, oldPieceSpot);
+                // place it back
+                board._AddPiece(oldPieceSpot.Point, oldPieceSpot, false);
 
                 // this move breaks the hive
                 return false;
             }
             else
             {
-                // Temporarily move it the new spot
-                board._AddPiece(to, newPieceSpot);
+                // Temporarily place this piece to the `to` point
+                board._AddPiece(to, newPieceSpot, false);
                 if (!board.IsAllConnected())
                 {
-                    // Put it back
                     board._RemovePiece(newPieceSpot);
-                    board._AddPiece(oldPieceSpot.Point, oldPieceSpot);
+                    // place it back
+                    board._AddPiece(oldPieceSpot.Point, oldPieceSpot, false);
 
                     // this move breaks the hive
                     return false;
@@ -311,8 +338,8 @@ namespace GameCore
                 board._RemovePiece(newPieceSpot);
             }
 
-            // Put it back
-            board._AddPiece(oldPieceSpot.Point, oldPieceSpot);
+            // Place it back
+            board._AddPiece(oldPieceSpot.Point, oldPieceSpot, false);
 
             // this move does not break the hive
             return true;

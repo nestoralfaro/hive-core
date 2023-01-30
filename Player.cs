@@ -56,15 +56,25 @@ namespace GameCore
             // Maybe keep track of the visited ones with a hashmap and also pass it to the hasopponent neighbor?
             List<(int, int)> positions = new();
 
+            // If nothing has been played
             if (board.IsEmpty())
             {
+                // Origin is the only first valid placing spot
                 return new List<(int, int)>(){(0, 0)};
             }
+            // If there is only one piece on the board
+            else if (board.Pieces.Count == 1)
+            {
+                // the available placing spots will be the such piece's surrounding spots
+                return board.Pieces[(0, 0)].Peek().SpotsAround;
+            }
+            // Make sure the game is still going
             else if (!board.IsAQueenSurrounded())
             {
-                // iterate through the current player's color's pieces
-                // foreach (Piece? piece in board.GetPiecesByColor(this.Color))
-                foreach (Piece? piece in Pieces)
+                // from here on out, only the spots that do not neighbor an opponent are valid  
+
+                // iterate through the current player's pieces on the board
+                foreach (Piece? piece in board.GetPiecesByColor(this.Color))
                 {
                     if (piece != null)
                     {
@@ -79,21 +89,7 @@ namespace GameCore
                         }
                     }
                 }
-                // // iterate through the current player's color's pieces
-                // foreach ((int, int) point in board._color_pieces[this.Color])
-                // {
-                //     // iterate through this piece's available spots
-                //     foreach ((int, int) spot in board.Pieces[point].Peek().SpotsAround)
-                //     {
-                //         //      Not been visited        It is not neighboring an opponent
-                //         if (!positions.Contains(spot) && !_HasOpponentNeighbor(spot, board.Pieces))
-                //         {
-                //                 positions.Add(spot);
-                //         }
-                //     }
-                // }
             }
-
 
             stopwatch.Stop();
             PrintRed($"Generating Available Spots for Player {Color} took: {stopwatch.Elapsed.Milliseconds} ms");
@@ -190,10 +186,13 @@ namespace GameCore
     {
         public Piece Piece { get; set; }
         public (int x, int y) To { get; set; }
-        public AIAction (Piece piece, (int x, int y) to)
+
+        public bool IsMoving {get; set;}
+        public AIAction (Piece piece, (int x, int y) to, bool isMoving)
         {
             Piece = piece;
             To = to;
+            IsMoving = isMoving;
         }
     }
 
