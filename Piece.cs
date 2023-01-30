@@ -16,21 +16,22 @@ namespace GameCore
         public Dictionary<string, (int, int)> Sides { get {
             return new Dictionary<string, (int, int)>()
                 {
-                    { "NT", (Point.x + 1, Point.y + 1) },         // [0] North
-                    { "NW", (Point.x + (-1), Point.y + 1) },      // [1] Northwest
-                    { "SW", (Point.x + (-2), Point.y + 0) },      // [2] Southwest
-                    { "ST", (Point.x + (-1), Point.y + (-1)) },   // [3] South
-                    { "SE", (Point.x + 1, Point.y + (-1)) },      // [4] Southeast
-                    { "NE", (Point.x + 2, Point.y + 0) },         // [5] Northeast
+                    { "NT", (Point.x + SIDE_OFFSETS_ARRAY[0].x, Point.y + SIDE_OFFSETS_ARRAY[0].y) },  // [0] North
+                    { "NW", (Point.x + SIDE_OFFSETS_ARRAY[1].x, Point.y + SIDE_OFFSETS_ARRAY[1].y) },  // [1] Northwest
+                    { "SW", (Point.x + SIDE_OFFSETS_ARRAY[2].x, Point.y + SIDE_OFFSETS_ARRAY[2].y) },  // [2] Southwest
+                    { "ST", (Point.x + SIDE_OFFSETS_ARRAY[3].x, Point.y + SIDE_OFFSETS_ARRAY[3].y) },  // [3] South
+                    { "SE", (Point.x + SIDE_OFFSETS_ARRAY[4].x, Point.y + SIDE_OFFSETS_ARRAY[4].y) },  // [4] Southeast
+                    { "NE", (Point.x + SIDE_OFFSETS_ARRAY[5].x, Point.y + SIDE_OFFSETS_ARRAY[5].y) },  // [5] Northeast
                 };
         } }
+
         public Dictionary<string, (int, int)> Neighbors { get; set; }
         public List<(int, int)> SpotsAround { get { return Sides.Except(Neighbors).Select(spot => spot.Value).ToList(); } }
         public int ManyNeighbors { get{ return Neighbors.Count; } }
         public override string ToString() { return _piece; }
         public bool IsSurrounded() { return Neighbors.Count == _MANY_SIDES; }
 
-        public Piece(string piece, (int, int) piecePoint)
+        public Piece(string piece)
         {
             _piece = piece;
             Color = piece[0] == 'b' ? Color.Black : Color.White;
@@ -46,12 +47,12 @@ namespace GameCore
             : Insect.Ant;
             Number = piece[2] - '0';
             Neighbors = new Dictionary<string, (int, int)>();
-            Point = piecePoint;
+            Point = (0, 0);
         }
 
         public List<(int, int)> GetMovingSpots(ref Board board)
         {
-            return !board.IsAQueenSurrounded()
+            return (board.IsOnBoard("wQ1") || board.IsOnBoard("bQ1")) && !board.IsAQueenSurrounded()
             ? Insect switch
             {
                 Insect.Ant => _GetAntMovingSpots(ref board),
@@ -102,11 +103,14 @@ namespace GameCore
                 // Get all the open spots
                 foreach (KeyValuePair<(int, int), Stack<Piece>> p in board.Pieces)
                 {
-                    foreach ((int, int) spot in p.Value.Peek().SpotsAround)
+                    if (p.Value.TryPeek(out Piece topPiece))
                     {
-                        if (!spots.Contains(spot))
+                        foreach ((int, int) spot in topPiece.SpotsAround)
                         {
-                            spots.Add(spot);
+                            if (!spots.Contains(spot))
+                            {
+                                spots.Add(spot);
+                            }
                         }
                     }
                 }
@@ -271,8 +275,16 @@ namespace GameCore
 
         private bool _DoesNotBreakHive(ref Board board, (int x, int y) to)
         {
-            Piece oldPieceSpot = new(ToString(), Point);
-            Piece newPieceSpot = new(ToString(), to);
+            Piece oldPieceSpot = new(ToString())
+            {
+                Point = Point
+            };
+
+            Piece newPieceSpot = new(ToString())
+            {
+                Point = to
+            };
+
             board._RemovePiece(this);
 
             if (!board.IsAllConnected())

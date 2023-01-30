@@ -6,20 +6,12 @@ namespace GameCore
     public class GameManager
     {
         public Board Board;
-        // *******************************************
-        // For testing
-        public Dictionary<(int, int), Stack<Piece>> GetAllPieces() { return Board.Pieces; }
-        public Dictionary<string, (int, int)> GetPiecePoint() { return Board._piece_point; }
-        public Dictionary<Color, List<(int, int)>> GetColorPieces() { return Board._color_pieces; }
-        // For testing
-        // *******************************************
-
         public GameManager()
         {
             Board = new();
         }
 
-        public static bool IsValidInput(Color color, Move move)
+        public static bool IsValidInput(Color color, Action move)
         {
             char c = char.ToLower(color.ToString()[0]);
             if (!move.ToString().Equals("invalid"))
@@ -38,16 +30,16 @@ namespace GameCore
             }
         }
 
-        public bool IsPlacingValid(Player player, Move move, Piece activePiece, (int x, int y) point)
+        public bool IsPlacingValid(Player player, Action move, Piece activePiece, (int x, int y) point)
         {
             if (player.TurnCount > 1)
             {
-                if (player.TurnCount == 4 && player.HasNotPlayedQueen() && !activePiece.ToString().Equals($"{player.Color}Q1"))
+                if (player.TurnCount == 4 && player.HasNotPlayedQueen && !activePiece.ToString().Equals($"{player.Color}Q1"))
                 {
                     throw new ArgumentException("It is your 4th turn. You have to play your queen.");
                 }
 
-                List<(int, int)> availablePlacingSpots = player.GetPlacingSpots(Board.Pieces, Board._color_pieces, Board.IsAQueenSurrounded());
+                List<(int, int)> availablePlacingSpots = player.GetPlacingSpots(ref Board);
                 if (availablePlacingSpots.Count != 0)
                 {
                     if (availablePlacingSpots.Contains(point))
@@ -72,7 +64,7 @@ namespace GameCore
             else
             {
                 // If the reference piece exist
-                if (Board._piece_point.ContainsKey(move.DestinationPiece))
+                if (Board.IsOnBoard(move.DestinationPiece))
                 {
                     return true;
                 }
@@ -83,9 +75,9 @@ namespace GameCore
             }
         }
 
-        public bool IsPieceMoveOnBoardValid(Player player, Move move, Piece piece, (int, int) to)
+        public bool IsMovingValid(Player player, Action move, Piece piece, (int, int) to)
         {
-            if (player.TurnCount == 4 && player.HasNotPlayedQueen())
+            if (player.TurnCount == 4 && player.HasNotPlayedQueen)
             {
                 throw new ArgumentException("You have to play your queen before you are able to move your pieces.");
             }
@@ -116,7 +108,7 @@ namespace GameCore
             }
         }
 
-        private (int, int) GetNewPoint(Move move)
+        private (int, int) GetNewPoint(Action move)
         {
             // It is the first piece being placed
             if (String.IsNullOrEmpty(move.DestinationSide))
@@ -125,9 +117,9 @@ namespace GameCore
             }
             else
             {
-                if (Board._piece_point.ContainsKey(move.DestinationPiece))
+                if (Board.IsOnBoard(move.DestinationPiece))
                 {
-                    (int x, int y) = Board._piece_point[move.DestinationPiece];
+                    (int x, int y) = Board.GetPointByString(move.DestinationPiece);
                     (int x, int y) sideOffset = SIDE_OFFSETS[move.DestinationSide];
                     return (x + sideOffset.x, y + sideOffset.y);
                 }
@@ -138,20 +130,20 @@ namespace GameCore
             }
         }
 
-        private bool IsPlacingMove(Player player, Move move)
+        private bool IsPlacingMove(Player player, Action move, Piece piece)
         {
             // if (!player.Pieces.Contains(move.MovingPiece))
             // {
             //     throw new ArgumentException($"Piece {move.MovingPiece} has already been played.");
             // }
             // return !_piece_point.ContainsKey(move.MovingPiece);
-            return player.Pieces.Contains(move.MovingPiece) && !Board._piece_point.ContainsKey(move.MovingPiece);
+            return player.Pieces.Any(p => p.ToString().Equals(piece.ToString())) && !Board.IsOnBoard(move.MovingPiece);
         }
 
         private bool IsFirstMove(Piece piece)
         {
             // Nothing has been played
-            if (Board.Pieces.Count == 0 && Board._piece_point.Count == 0)
+            if (Board.IsEmpty())
             {
                 if (piece.Insect == Insect.QueenBee)
                 {
@@ -175,7 +167,7 @@ namespace GameCore
                 Console.WriteLine(point);
             }
             Console.WriteLine("--------------------Available Placings--------------------");
-            foreach ((int, int) point in player.GetPlacingSpots(Board.Pieces, Board._color_pieces, Board.IsAQueenSurrounded()))
+            foreach ((int, int) point in player.GetPlacingSpots(ref Board))
             {
                 Console.WriteLine(point);
             }
@@ -187,23 +179,26 @@ namespace GameCore
             // temporarily disabled for testing
             // try
             // {
-                Move move = Player.GetMove();
+                Action move = Player.GetMove();
                 if (IsValidInput(player.Color, move))
                 {
                     (int, int) to = GetNewPoint(move);
                     Piece piece;
-                    if (Board._piece_point.ContainsKey(move.MovingPiece))
+                    if (Board.IsOnBoard(move.MovingPiece))
                     {
-                        (int, int) curPiecePoint = Board._piece_point[move.MovingPiece];
+                        (int, int) curPiecePoint = Board.GetPointByString(move.MovingPiece);
                         piece = Board.Pieces[curPiecePoint].Peek();
                     }
                     else
                     {
-                        piece = new(move.MovingPiece, to);
+                        piece = new(move.MovingPiece)
+                        {
+                            Point = to
+                        };
                     }
                     if (move.IsMoveWithDestination())
                     {
-                        if (IsPlacingMove(player, move))
+                        if (IsPlacingMove(player, move, piece))
                         {
                             if (IsPlacingValid(player, move, piece, to))
                             {
@@ -217,7 +212,7 @@ namespace GameCore
                         else
                         {
                             // Possibly moving pieces already on the board
-                            if (IsPieceMoveOnBoardValid(player, move, piece, to))
+                            if (IsMovingValid(player, move, piece, to))
                             {
                                 // // Move such existing piece
                                 // // remove piece
@@ -266,11 +261,11 @@ namespace GameCore
             // Check if the game is over based on the game's rules
             // For example, check if a player has no more valid moves,
             // or if a player's queen bee has been surrounded
-            if (Board._piece_point.ContainsKey("wQ1") && Board.Pieces.ContainsKey(Board._piece_point["wQ1"]) && Board.Pieces[Board._piece_point["wQ1"]].Peek().IsSurrounded())
+            if (Board.IsOnBoard("wQ1") && Board.GetPieceByStringName("wQ1").IsSurrounded())
             {
                 PrintGreen("Black won!");
             }
-            else if (Board._piece_point.ContainsKey("bQ1") && Board.Pieces.ContainsKey(Board._piece_point["bQ1"]) && Board.Pieces[Board._piece_point["bQ1"]].Peek().IsSurrounded())
+            else if (Board.IsOnBoard("bQ1") && Board.GetPieceByStringName("bQ1").IsSurrounded())
             {
                 PrintGreen("White won!");
             }

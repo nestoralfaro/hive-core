@@ -18,17 +18,6 @@ namespace GameCore
             _isBlackPlayerTurn = false;
         }
 
-        private static void _PrintRemainingPieces(Player player)
-        {
-            string Output = "";
-            foreach (string piece in player.Pieces)
-            {
-                // Maybe we should use the String builder for performance improvement
-                Output += $"{piece[1]}{piece[2]}|";
-            }
-            Console.Write($" | Remaining pieces: {Output}");
-        }
-
         public void Play()
         {
             if (_isBlackPlayerTurn)
@@ -44,7 +33,7 @@ namespace GameCore
             {
                 PrintPlayerHeader(_whitePlayer);
                 // if (Game.MakeMove(ref _whitePlayer))
-                if (_whitePlayer.MakeMove(Game.Board, _blackPlayer))
+                if (_whitePlayer.MakeMove(ref Game.Board, ref _blackPlayer))
                 {
                     _isBlackPlayerTurn = true;
                     ++_whitePlayer.TurnCount;

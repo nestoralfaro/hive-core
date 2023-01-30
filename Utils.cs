@@ -66,10 +66,10 @@ namespace GameCore
         private static void _PrintRemainingPieces(Player player)
         {
             string Output = "";
-            foreach (string piece in player.Pieces)
+            foreach (Piece piece in player.Pieces)
             {
                 // Maybe we should use the String builder for performance improvement
-                Output += $"{piece[1]}{piece[2]}|";
+                Output += $"{piece.ToString()[1]}{piece.ToString()[2]}|";
             }
             Console.Write($" | Remaining pieces: {Output}");
         }

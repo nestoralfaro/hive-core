@@ -8,42 +8,47 @@ namespace GameCore
     public class Player
     {
         public Color Color { get; set; }
-        public List<string> Pieces { get; set; }
+        public List<Piece> Pieces { get; set; }
         public int TurnCount { get; set; }
+        public bool HasNotPlayedQueen { get; set; }
         public Player(Color color)
         {
+            Color = color;
+            HasNotPlayedQueen = true;
             TurnCount = 1;
             char c = char.ToLower(color.ToString()[0]);
-            Color = color;
-            Pieces = new List<string>()
+            Pieces = new List<Piece>()
             {
-                $"{c}Q1",
-                $"{c}A1",
-                $"{c}A2",
-                $"{c}A3",
-                $"{c}B1",
-                $"{c}B2",
-                $"{c}G1",
-                $"{c}G2",
-                $"{c}G3",
-                $"{c}S1",
-                $"{c}S2",
+               new Piece($"{c}Q1"),
+               new Piece($"{c}A1"),
+               new Piece($"{c}A2"),
+               new Piece($"{c}A3"),
+               new Piece($"{c}B1"),
+               new Piece($"{c}B2"),
+               new Piece($"{c}G1"),
+               new Piece($"{c}G2"),
+               new Piece($"{c}G3"),
+               new Piece($"{c}S1"),
+               new Piece($"{c}S2"),
             };
         }
 
-        public static Move GetMove()
+        public void ReplaceWithState(Player player)
+        {
+            HasNotPlayedQueen = player.HasNotPlayedQueen;
+            TurnCount = player.TurnCount;
+            Pieces.Clear();
+            Pieces.AddRange(player.Pieces);
+        }
+
+        public static Action GetMove()
         {
             Console.WriteLine("Enter move");
             string input = Console.ReadLine()!;
-            return new Move(input!);
+            return new Action(input!);
         }
 
-        public bool HasNotPlayedQueen()
-        {
-            return Pieces.Contains($"{Color}Q1");
-        }
-
-        public List<(int, int)> GetPlacingSpots(Dictionary<(int, int), Stack<Piece>> pieces, Dictionary<Color, List<(int, int)>> colorPieces, bool IsAQueenSurrounded)
+        public List<(int, int)> GetPlacingSpots(ref Board board)
         {
             Stopwatch stopwatch = new();
             stopwatch.Start();
@@ -51,22 +56,44 @@ namespace GameCore
             // Maybe keep track of the visited ones with a hashmap and also pass it to the hasopponent neighbor?
             List<(int, int)> positions = new();
 
-            if (!IsAQueenSurrounded)
+            if (board.IsEmpty())
+            {
+                return new List<(int, int)>(){(0, 0)};
+            }
+            else if (!board.IsAQueenSurrounded())
             {
                 // iterate through the current player's color's pieces
-                foreach ((int, int) point in colorPieces[this.Color])
+                // foreach (Piece? piece in board.GetPiecesByColor(this.Color))
+                foreach (Piece? piece in Pieces)
                 {
-                    // iterate through this piece's available spots
-                    foreach ((int, int) spot in pieces[point].Peek().SpotsAround)
+                    if (piece != null)
                     {
-                        //      Not been visited        It is not neighboring an opponent
-                        if (!positions.Contains(spot) && !_HasOpponentNeighbor(spot, pieces))
+                        // iterate through this piece's available spots
+                        foreach ((int, int) spot in piece.SpotsAround)
                         {
+                            //      Not been visited        It is not neighboring an opponent
+                            if (!positions.Contains(spot) && !_HasOpponentNeighbor(spot, board.Pieces))
+                            {
                                 positions.Add(spot);
+                            }
                         }
                     }
                 }
+                // // iterate through the current player's color's pieces
+                // foreach ((int, int) point in board._color_pieces[this.Color])
+                // {
+                //     // iterate through this piece's available spots
+                //     foreach ((int, int) spot in board.Pieces[point].Peek().SpotsAround)
+                //     {
+                //         //      Not been visited        It is not neighboring an opponent
+                //         if (!positions.Contains(spot) && !_HasOpponentNeighbor(spot, board.Pieces))
+                //         {
+                //                 positions.Add(spot);
+                //         }
+                //     }
+                // }
             }
+
 
             stopwatch.Stop();
             PrintRed($"Generating Available Spots for Player {Color} took: {stopwatch.Elapsed.Milliseconds} ms");
@@ -82,7 +109,8 @@ namespace GameCore
             {
                 (int, int) potentialOpponentNeighborPosition = (point.x + SIDE_OFFSETS_ARRAY[i].x, point.y + SIDE_OFFSETS_ARRAY[i].y);
                 // If piece is on the board                                     And Is not the same color as the piece that is about to be placed
-                if (pieces.ContainsKey(potentialOpponentNeighborPosition) && pieces[potentialOpponentNeighborPosition].Peek().Color != this.Color)
+                // if (pieces.ContainsKey(potentialOpponentNeighborPosition) && pieces[potentialOpponentNeighborPosition].Peek().Color != this.Color)
+                if (pieces.ContainsKey(potentialOpponentNeighborPosition) && pieces[potentialOpponentNeighborPosition].TryPeek(out Piece topPiece) && topPiece.Color != this.Color)
                 {
                     // Has an opponent neighbor
                     return true;
@@ -93,13 +121,13 @@ namespace GameCore
             return false;
         }
 
-        public virtual bool MakeMove(Board board, Player player)
+        public virtual bool MakeMove(ref Board board, ref Player player)
         {
             throw new NotImplementedException();
         }
     }
 
-    public class Move
+    public class Action
     {
         private readonly string _move;
         public string MovingPiece { get; set; }
@@ -119,7 +147,7 @@ namespace GameCore
             return new string(pieceAsChars);
         }
 
-        public Move (string input)
+        public Action (string input)
         {
             // To make the compiler happy so that it does not throw the
             // `Non-nullable property`
@@ -155,6 +183,17 @@ namespace GameCore
         {
             const string validPattern = "^([wbWB])([ABGQSabgqs])([1-3])([NSns])([TWEtwe])([wbWB])([ABGQSabgqs])([1-3])$";
             return Regex.IsMatch(_move, validPattern);
+        }
+    }
+    
+    public class AIAction
+    {
+        public Piece Piece { get; set; }
+        public (int x, int y) To { get; set; }
+        public AIAction (Piece piece, (int x, int y) to)
+        {
+            Piece = piece;
+            To = to;
         }
     }
 
