@@ -1,9 +1,10 @@
-using static GameCore.Utils;
+using static HiveCore.Utils;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using System.Linq;
 #pragma warning disable IDE1006 // Private members naming style
 
-namespace GameCore
+namespace HiveCore
 {
     public class Player
     {
@@ -33,12 +34,21 @@ namespace GameCore
             };
         }
 
-        public void ReplaceWithState(Player player)
+        // public void ReplaceWithState(Player player)
+        // {
+        //     HasNotPlayedQueen = player.HasNotPlayedQueen;
+        //     TurnCount = player.TurnCount;
+        //     Pieces.Clear();
+        //     Pieces.AddRange(player.Pieces);
+        // }
+
+        public Player Clone()
         {
-            HasNotPlayedQueen = player.HasNotPlayedQueen;
-            TurnCount = player.TurnCount;
-            Pieces.Clear();
-            Pieces.AddRange(player.Pieces);
+            return new Player(this.Color) {
+                HasNotPlayedQueen = this.HasNotPlayedQueen,
+                TurnCount = this.TurnCount,
+                Pieces = this.Pieces.ConvertAll(piece => piece.Clone())
+            };
         }
 
         public static Action GetMove()
@@ -74,7 +84,7 @@ namespace GameCore
                 // from here on out, only the spots that do not neighbor an opponent are valid  
 
                 // iterate through the current player's pieces on the board
-                foreach (Piece? piece in board.GetPiecesByColor(this.Color))
+                foreach (Piece? piece in board.GetClonePiecesByColor(this.Color))
                 {
                     if (piece != null)
                     {
@@ -186,13 +196,12 @@ namespace GameCore
     {
         public Piece Piece { get; set; }
         public (int x, int y) To { get; set; }
-
-        public bool IsMoving {get; set;}
-        public AIAction (Piece piece, (int x, int y) to, bool isMoving)
+        public ActionKind Action {get; set;}
+        public AIAction (Piece piece, (ActionKind action, (int x, int y) to) move)
         {
             Piece = piece;
-            To = to;
-            IsMoving = isMoving;
+            Action = move.action;
+            To = move.to;
         }
     }
 
@@ -200,5 +209,11 @@ namespace GameCore
     {
         Black,
         White
+    }
+
+    public enum ActionKind
+    {
+        Moving,
+        Placing
     }
 }

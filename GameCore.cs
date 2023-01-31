@@ -1,14 +1,13 @@
-using static GameCore.Utils;
+using static HiveCore.Utils;
 #pragma warning disable IDE1006 // Private members naming style
 
-namespace GameCore
+namespace HiveCore
 {
     class GameCore
     {
         private Player _blackPlayer;
         private Player _whitePlayer;
         private bool _isBlackPlayerTurn;
-
         public GameManager Game { get; }
         public GameCore()
         {
@@ -31,10 +30,10 @@ namespace GameCore
             }
             else
             {
-                PrintPlayerHeader(_whitePlayer);
                 // if (Game.MakeMove(ref _whitePlayer))
                 if (_whitePlayer.MakeMove(ref Game.Board, ref _blackPlayer))
                 {
+                    PrintPlayerHeader(_whitePlayer);
                     _isBlackPlayerTurn = true;
                     ++_whitePlayer.TurnCount;
                 }

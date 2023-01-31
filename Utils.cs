@@ -1,4 +1,4 @@
-namespace GameCore
+namespace HiveCore
 #pragma warning disable IDE1006 // Private members naming style
 
 {

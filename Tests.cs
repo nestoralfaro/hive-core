@@ -1,10 +1,10 @@
 using System;
 using System.IO;
 using Xunit;
-using static GameCore.Utils;
+using static HiveCore.Utils;
 #pragma warning disable IDE1006 // Private members naming style
 
-namespace GameCore
+namespace HiveCore
 {
     public class Tests
     {
@@ -851,7 +851,7 @@ namespace GameCore
 
         private void _AssertMovingSpots(string piece, List<(int, int)> spots)
         {
-            var returnedSpots = game.Board.GetTopPieceByStringName(piece).GetMovingSpots(ref game.Board);
+            var returnedSpots = game.Board.GetCloneTopPieceByStringName(piece).GetMovingSpots(ref game.Board);
 
             Console.WriteLine($"////////////////Actual Moving Spots For {piece}////////////////");
             foreach (var s in returnedSpots)

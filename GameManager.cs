@@ -1,15 +1,12 @@
-using static GameCore.Utils;
+using static HiveCore.Utils;
 #pragma warning disable IDE1006 // Private members naming style
 
-namespace GameCore
+namespace HiveCore
 {
     public class GameManager
     {
         public Board Board;
-        public GameManager()
-        {
-            Board = new();
-        }
+        public GameManager() { Board = new(); }
 
         public static bool IsValidInput(Color color, Action move)
         {
@@ -30,82 +27,14 @@ namespace GameCore
             }
         }
 
-        public bool IsPlacingValid(Player player, Action move, Piece activePiece, (int x, int y) point)
+        public bool IsPlacingValid(Player player, (int x, int y) point)
         {
-            if (player.TurnCount > 1)
-            {
-                if (player.TurnCount == 4 && player.HasNotPlayedQueen && !activePiece.ToString().Equals($"{player.Color}Q1"))
-                {
-                    throw new ArgumentException("It is your 4th turn. You have to play your queen.");
-                }
-
-                List<(int, int)> availablePlacingSpots = player.GetPlacingSpots(ref Board);
-                if (availablePlacingSpots.Count != 0)
-                {
-                    if (availablePlacingSpots.Contains(point))
-                    {
-                        return true;
-                    }
-                    else
-                    {
-                        string availSpots = "";
-                        foreach ((int x, int y) spot in availablePlacingSpots)
-                        {
-                            availSpots += $"({spot.x}, {spot.y})";
-                        }
-                        throw new ArgumentException($"Invalid placing for {move.MovingPiece}. Your available spots are: {availSpots}");
-                    }
-                }
-                else
-                {
-                    throw new ArgumentException($"Piece {move.MovingPiece} has no valid placing spots.");
-                }
-            }
-            else
-            {
-                // If the reference piece exist
-                if (Board.IsOnBoard(move.DestinationPiece))
-                {
-                    return true;
-                }
-                else
-                {
-                    throw new ArgumentException("Invalid Move: Make sure your piece of reference exists on the board.");
-                }
-            }
+            return player.GetPlacingSpots(ref Board).Contains(point);
         }
 
-        public bool IsMovingValid(Player player, Action move, Piece piece, (int, int) to)
+        public bool IsMovingValid(Piece piece, (int, int) to)
         {
-            if (player.TurnCount == 4 && player.HasNotPlayedQueen)
-            {
-                throw new ArgumentException("You have to play your queen before you are able to move your pieces.");
-            }
-            else
-            {
-                List<(int, int)> availableMovingSpots = Board.Pieces[piece.Point].Peek().GetMovingSpots(ref Board);
-                if (availableMovingSpots.Count != 0)
-                {
-                    if (availableMovingSpots.Contains(to))
-                    {
-                        // piece.Point = to;
-                        return true;
-                    }
-                    else
-                    {
-                        string availSpots = "";
-                        foreach ((int x, int y) spot in availableMovingSpots)
-                        {
-                            availSpots += $"({spot.x}, {spot.y})";
-                        }
-                        throw new ArgumentException($"Invalid placing for {move.MovingPiece}. Your available spots are: {availSpots}");
-                    }
-                }
-                else
-                {
-                    throw new ArgumentException($"Piece {move.MovingPiece} has no valid placing spots.");
-                }
-            }
+            return piece.GetMovingSpots(ref Board).Contains(to);
         }
 
         private (int, int) GetNewPoint(Action move)
@@ -132,17 +61,11 @@ namespace GameCore
 
         private bool IsPlacingMove(Player player, Action move, Piece piece)
         {
-            // if (!player.Pieces.Contains(move.MovingPiece))
-            // {
-            //     throw new ArgumentException($"Piece {move.MovingPiece} has already been played.");
-            // }
-            // return !_piece_point.ContainsKey(move.MovingPiece);
             return player.Pieces.Any(p => p.ToString().Equals(piece.ToString())) && !Board.IsOnBoard(move.MovingPiece);
         }
 
         private bool IsFirstMove(Piece piece)
         {
-            // Nothing has been played
             if (Board.IsEmpty())
             {
                 if (piece.Insect == Insect.QueenBee)
@@ -157,28 +80,10 @@ namespace GameCore
             }
         }
 
-        private void PrintAvailableMovesForThePiece(Player player, Piece piece)
-        {
-            // Improvement idea:
-            // Parallelized both of these in the background (MovingPositions, PlacingPositions)
-            Console.WriteLine("--------------------Available Moves--------------------");
-            foreach ((int, int) point in piece.GetMovingSpots(ref Board))
-            {
-                Console.WriteLine(point);
-            }
-            Console.WriteLine("--------------------Available Placings--------------------");
-            foreach ((int, int) point in player.GetPlacingSpots(ref Board))
-            {
-                Console.WriteLine(point);
-            }
-            Console.WriteLine("----------------------------------------------------------");
-        }
-
         public bool MakeMove(ref Player player)
         {
-            // temporarily disabled for testing
-            // try
-            // {
+            try
+            {
                 Action move = Player.GetMove();
                 if (IsValidInput(player.Color, move))
                 {
@@ -200,27 +105,15 @@ namespace GameCore
                     {
                         if (IsPlacingMove(player, move, piece))
                         {
-                            if (IsPlacingValid(player, move, piece, to))
+                            if (IsPlacingValid(player, to))
                             {
-                                // // Add the new piece
-                                // Board._AddPiece(to, piece);
-                                // // Remove it from the player
-                                // player.Pieces.Remove(move.MovingPiece);
                                 Board.PlacePiece(player, piece, to);
                             }
                         }
                         else
                         {
-                            // Possibly moving pieces already on the board
-                            if (IsMovingValid(player, move, piece, to))
+                            if (IsMovingValid(piece, to))
                             {
-                                // // Move such existing piece
-                                // // remove piece
-                                // Board._RemovePiece(piece);
-                                // // re-add it
-                                // piece.Point = to;
-                                // Board._AddPiece(to, piece);
-                                // // PrintAvailableMovesForThePiece(piece);
                                 Board.MovePiece(piece, to);
                             }
                             else
@@ -233,11 +126,6 @@ namespace GameCore
                     {
                         if (IsFirstMove(piece))
                         {
-                            // // first piece on the board. Place it on the origin (0, 0)
-                            // Board._AddPiece(to, piece);
-                            // // Does not remove on the first turn
-                            // player.Pieces.Remove(move.MovingPiece);
-                            // // PrintAvailableMovesForThePiece(piece);
                             Board.PlacePiece(player, piece, to);
                         }
                     }
@@ -246,26 +134,24 @@ namespace GameCore
                 {
                     throw new ArgumentException("Invalid Move: Make sure you follow the appropriate notation, and it is an existing piece-e.g., wQ1");
                 }
-            // }
-            // catch (ArgumentException ex)
-            // {
-            //     // something went wrong
-            //     _PrintWarning(ex.Message);
-            //     return false;
-            // }
+            }
+            catch (ArgumentException ex)
+            {
+                // something went wrong
+                _PrintWarning(ex.Message);
+                return false;
+            }
             return true;
         }
 
         public bool IsGameOver()
         {
-            // Check if the game is over based on the game's rules
-            // For example, check if a player has no more valid moves,
-            // or if a player's queen bee has been surrounded
-            if (Board.IsOnBoard("wQ1") && Board.GetPieceByStringName("wQ1").IsSurrounded())
+            // This considers if a queen has been surrounded, but what about when the player has no more moves?
+            if (Board.IsOnBoard("wQ1") && Board.GetClonePieceByStringName("wQ1").IsSurrounded())
             {
                 PrintGreen("Black won!");
             }
-            else if (Board.IsOnBoard("bQ1") && Board.GetPieceByStringName("bQ1").IsSurrounded())
+            else if (Board.IsOnBoard("bQ1") && Board.GetClonePieceByStringName("bQ1").IsSurrounded())
             {
                 PrintGreen("White won!");
             }

@@ -1,29 +1,30 @@
-namespace GameCore
+namespace HiveCore
 {
     public class AI : Player
     {
         private const int _MAX_DEPTH = 5;
 
         public AI(Color color) : base(color) {}
-
         public override bool MakeMove(ref Board board, ref Player opponent)
         {
-            Board playgroundBoard = new();
-            playgroundBoard.ReplaceWithState(board);
-
-            Player playgroundOpponent = new(opponent.Color);
-            playgroundOpponent.ReplaceWithState(opponent);
-
-            Player playgroundAI = new (this.Color);
-            playgroundAI.ReplaceWithState(this);
-
-            (int maxVal, AIAction? move) = alpha_beta(ref playgroundBoard, ref playgroundAI, ref playgroundOpponent, this.Color);
-
+            Board dummyBoard = board.Clone();
+            Player dummyOpponent = opponent.Clone();
+            Player dummyAI = this.Clone();
+            (int maxVal, AIAction? move) = alpha_beta(ref dummyBoard, ref dummyAI, ref dummyOpponent, this.Color);
             if (move != null)
-                board.AIMove(this, move.Piece, move.To, move.IsMoving);
-
+                board.AIMove(this, move.Action, move.Piece, move.To);
             // if everything went well
             return true;
+        }
+
+        // merging randomly
+        private static void _merge<T> (ref List<T> destination, List<T> source)
+        {
+            // Look into Fisher-Yates shuffle algorithm or a more significant way to merge both of these lists
+            // https://stackoverflow.com/questions/273313/randomize-a-listt
+            destination.AddRange(source);
+            Random rand = new();
+            destination = destination.OrderBy(_ => rand.Next()).Select(p => p).ToList();
         }
 
         public (int, AIAction?) alpha_beta(ref Board board, ref Player AI, ref Player opponent, Color whoseTurn, int alpha = int.MinValue, int beta = int.MaxValue, int depth = 1)
@@ -44,53 +45,62 @@ namespace GameCore
                 List<Piece> aiPieces = new();
 
                 // AI's pieces on the board
-                aiPieces.AddRange(board.GetPiecesByColor(AI.Color));
+                aiPieces.AddRange(board.GetClonePiecesByColor(AI.Color));
                 // AI's pieces on hand
-                aiPieces.AddRange(AI.Pieces);
+                aiPieces.AddRange(AI.Pieces.ConvertAll(piece => piece.Clone()));
 
                 // For every AI piece
                 foreach (var piece in aiPieces)
                 {
-                    Dictionary<(int, int), bool> availableMoves = new();
+                    HashSet<(ActionKind action, (int, int) to)> availableMoves = new();
 
                     // if this piece is on the board
                     if (board.IsOnBoard(piece.ToString()) && !AI.Pieces.Contains(piece))
                     {
-
                         // get its moving spots
-                        foreach (var move in piece.GetMovingSpots(ref board))
+                        foreach (var to in piece.GetMovingSpots(ref board))
                         {
-                            availableMoves.Add(move, true);
+                            availableMoves.Add((ActionKind.Moving, to));
                         }
                     }
 
-                    // if AI has this piece
-                    if (AI.Pieces.Contains(piece) && !board.IsOnBoard(piece.ToString()))
+                    // if AI has pieces to play
+                    if (AI.Pieces.Count > 0)
                     {
                         // get AI's placing spots
                         // availableMoves.AddRange(GetPlacingSpots(ref board));
-                        foreach (var move in GetPlacingSpots(ref board))
+                        foreach (var to in GetPlacingSpots(ref board))
                         {
-                            availableMoves.Add(move, false);
+                            availableMoves.Add((ActionKind.Placing, to));
                         }
                     }
 
                     // for every available move for current piece
-                    foreach (var to in availableMoves)
+                    foreach (var availableMove in availableMoves)
                     {
+                        Board temp = board.Clone();
+
                         // make move
-                        board.AIMove(AI, piece, to.Key, to.Value);
+                        if (availableMove.action == ActionKind.Moving && board.IsOnBoard(piece.ToString()))
+                        {
+                            board.MovePiece(piece, availableMove.to);
+                        }
+                        else if (availableMove.action == ActionKind.Placing && AI.Pieces.Any(p => p.ToString().Equals(piece)))
+                        {
+                            board.PlacePiece(AI, piece, availableMove.to);
+                        }
+
                                                                                                 // switch whose turn
                         (int min, AIAction? move) = alpha_beta(ref board, ref AI, ref opponent, whoseTurn == Color.White ? Color.Black : Color.White, alpha, beta, depth + 1);
 
                         if (min > maxValue)
                         {
                             maxValue = min;
-                            myMove = new AIAction(piece, to.Key, to.Value);
+                            myMove = new AIAction(piece, availableMove);
                         }
 
                         // set game state back to what is was before making move
-                        board.Undo();
+                        board = temp;
 
                         // If alpha catches up to beta, kill kids
                         if (maxValue >= beta)
@@ -112,59 +122,62 @@ namespace GameCore
                 List<Piece> opponentPieces = new();
 
                 // opponent's pieces on the board
-                opponentPieces.AddRange(board.GetPiecesByColor(opponent.Color));
+                opponentPieces.AddRange(board.GetClonePiecesByColor(opponent.Color));
                 // opponent's pieces on hand
-                opponentPieces.AddRange(opponent.Pieces);
+                opponentPieces.AddRange(opponent.Pieces.ConvertAll(piece => piece.Clone()));
 
                 // For every OPPONENT's piece
                 foreach (var piece in opponentPieces)
                 {
-                    // List<(int, int)> availableMoves = new();
-                    Dictionary<(int, int), bool> availableMoves = new();
-
-                    if (piece.ToString().Equals("bQ1"))
-                    {
-                        Console.WriteLine("breakpoing!");
-                    }
+                    HashSet<(ActionKind action, (int, int) to)> availableMoves = new();
 
                     // // if this piece is on the board
                     if (board.IsOnBoard(piece.ToString()) && !opponent.Pieces.Contains(piece))
                     {
                         // get its moving spots
-                        // availableMoves.AddRange(piece.GetMovingSpots(ref board));
-                        foreach (var move in piece.GetMovingSpots(ref board))
+                        foreach (var to in piece.GetMovingSpots(ref board))
                         {
-                            availableMoves.Add(move, true);
+                            availableMoves.Add((ActionKind.Moving, to));
                         }
                     }
 
-                    // // if opponent has this piece
-                    if (opponent.Pieces.Contains(piece) && !board.IsOnBoard(piece.ToString()))
+                    // if opponent has pieces to play
+                    if (opponent.Pieces.Count > 0)
                     {
                         // get opponent's placing spots
                         // availableMoves.AddRange(opponent.GetPlacingSpots(ref board));
-                        foreach (var move in opponent.GetPlacingSpots(ref board))
+                        foreach (var to in opponent.GetPlacingSpots(ref board))
                         {
-                            availableMoves.Add(move, false);
+                            availableMoves.Add((ActionKind.Placing, to));
                         }
                     }
 
                     // for every available move for current piece
-                    foreach (var to in availableMoves)
+                    foreach (var availableMove in availableMoves)
                     {
+                        Board temp = board.Clone();
+
                         // make move
-                        board.AIMove(opponent, piece, to.Key, to.Value);
+                        if (availableMove.action == ActionKind.Moving && board.IsOnBoard(piece.ToString()))
+                        {
+                            board.MovePiece(piece, availableMove.to);
+                        }
+                        else if (availableMove.action == ActionKind.Placing && AI.Pieces.Contains(piece))
+                        {
+                            board.PlacePiece(opponent, piece, availableMove.to);
+                        }
                                                                                                 // switch whose turn
                         (int max, AIAction? move) = alpha_beta(ref board, ref AI, ref opponent, whoseTurn == Color.White ? Color.Black : Color.White, alpha, beta, depth + 1);
 
                         if (max < minValue)
                         {
                             minValue = max;
-                            myMove = new AIAction(piece, to.Key, to.Value);
+                            myMove = new AIAction(piece, availableMove);
                         }
 
                         // set game state back to what is was before making move
-                        board.Undo();
+                        // board.Undo();
+                        board = temp;
 
                         // If alpha catches up to beta, kill kids
                         if (minValue <= beta)
@@ -180,8 +193,6 @@ namespace GameCore
         }
     }
 }
-
-
 
 // Original pseudocode
 // namespace GameCore
@@ -249,10 +260,6 @@ namespace GameCore
 //                             // beta = minValue
 
 //                 // Return (minValue, myMove)
-
-
-                        
-
 //         }
 //     }
 // }

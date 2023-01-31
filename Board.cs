@@ -1,18 +1,12 @@
 #pragma warning disable IDE1006 // Private members naming style
 #nullable enable
-namespace GameCore
+namespace HiveCore
 {
     public class Board
     {
         private Dictionary<string, (int, int)> _piece_point;
         public Dictionary<(int, int), Stack<Piece>> Pieces;
         private Dictionary<Color, List<(int, int)> > _color_pieces;
-
-        private Dictionary<string, (int, int)> _last_piece_point;
-        private Dictionary<(int, int), Stack<Piece>> _last_Pieces;
-        private Dictionary<Color, List<(int, int)> > _last_color_pieces;
-
-        // public readonly Dictionary<Player, List<Piece>> _player_pieces;
 
         public Board()
         {
@@ -21,13 +15,9 @@ namespace GameCore
             // This is an approach that should help performance
             Pieces = new Dictionary<(int, int), Stack<Piece>>();
             Pieces.EnsureCapacity(22);
-            _last_Pieces = new Dictionary<(int, int), Stack<Piece>>();
-            _last_Pieces.EnsureCapacity(22);
 
             _piece_point = new Dictionary<string, (int, int)>();
             _piece_point.EnsureCapacity(22);
-            _last_piece_point = new Dictionary<string, (int, int)>();
-            _last_piece_point.EnsureCapacity(22);
 
             _color_pieces = new Dictionary< Color, List<(int, int)> >()
             {
@@ -35,54 +25,16 @@ namespace GameCore
                 {Color.White, new List<(int, int)>()},
             };
             _color_pieces.EnsureCapacity(2);
-            _last_color_pieces = new Dictionary< Color, List<(int, int)> >()
-            {
-                {Color.Black, new List<(int, int)>()},
-                {Color.White, new List<(int, int)>()},
-            };
-            _last_color_pieces.EnsureCapacity(2);
         }
 
-        public void ReplaceWithState(Board board)
+        public Board Clone()
         {
-            Pieces.Clear();
-            foreach(KeyValuePair<(int, int), Stack<Piece>> kvp in board.Pieces)
+            return new Board()
             {
-                Pieces.Add(kvp.Key, kvp.Value);
-            }
-
-            _piece_point.Clear();
-            foreach(KeyValuePair<string, (int, int)> kvp in board._piece_point)
-            {
-                _piece_point.Add(kvp.Key, kvp.Value);
-            }
-
-            _color_pieces[Color.Black].Clear();
-            _color_pieces[Color.White].Clear();
-            foreach (KeyValuePair<Color, List<(int, int)>> kvp in board._color_pieces)
-            {
-                _color_pieces[kvp.Key].AddRange(kvp.Value);
-            }
-
-            _last_Pieces.Clear();
-            foreach (KeyValuePair<(int, int), Stack<Piece>> kvp in board._last_Pieces)
-            {
-                _last_Pieces.Add(kvp.Key, kvp.Value);
-            }
-
-
-            _last_piece_point.Clear();
-            foreach (KeyValuePair<string, (int, int)> kvp in board._last_piece_point)
-            {
-                _last_piece_point.Add(kvp.Key, kvp.Value);
-            }
-
-            _last_color_pieces[Color.Black].Clear();
-            _last_color_pieces[Color.White].Clear();
-            foreach (KeyValuePair<Color, List<(int, int)>> kvp in board._last_color_pieces)
-            {
-                _last_color_pieces[kvp.Key].AddRange(kvp.Value);
-            }
+                Pieces = this.Pieces.ToDictionary(point => point.Key, stack => new Stack<Piece>(stack.Value.Select(piece => piece.Clone()))),
+                _color_pieces = this._color_pieces.ToDictionary(color => color.Key, pieces => new List<(int, int)>(pieces.Value)),
+                _piece_point = new Dictionary<string, (int, int)>(this._piece_point),
+            };
         }
 
         public void UpdateAllNeighbors()
@@ -96,32 +48,65 @@ namespace GameCore
             }
         }
 
-        public Piece? GetTopPieceByStringName(string piece)
+        public Piece? GetCloneTopPieceByStringName(string piece)
+        {
+            return _piece_point.ContainsKey(piece) ? (Pieces[_piece_point[piece]].TryPeek(out Piece p) ?  p.Clone() : null) : null;
+        }
+
+        public Piece? GetRefTopPieceByStringName(string piece)
         {
             return _piece_point.ContainsKey(piece) ? (Pieces[_piece_point[piece]].TryPeek(out Piece p) ?  p : null) : null;
         }
 
         public bool IsAQueenSurrounded()
         {
-            return (GetTopPieceByStringName("wQ1")?.IsSurrounded() == true) || (GetTopPieceByStringName("bQ1")?.IsSurrounded() == true);
+            return (GetRefTopPieceByStringName("wQ1")?.IsSurrounded() == true) || (GetRefTopPieceByStringName("bQ1")?.IsSurrounded() == true);
         }
 
-        public Piece GetTopPieceByPoint((int, int) point)
+        public Piece GetCloneTopPieceByPoint((int, int) point)
+        {
+            return Pieces[point].Peek().Clone();
+        }
+
+        public Piece GetRefTopPieceByPoint((int, int) point)
         {
             return Pieces[point].Peek();
         }
 
-        public Piece GetPieceByStringName(string piece)
+        public Piece GetClonePieceByStringName(string piece)
+        {
+            return Pieces[_piece_point[piece]].First(p => p.ToString().Equals(piece)).Clone();
+        }
+
+        public Piece GetRefPieceByStringName(string piece)
         {
             return Pieces[_piece_point[piece]].First(p => p.ToString().Equals(piece));
         }
 
-        public Piece GetPieceByPoint((int x, int y) point)
+        public Piece GetClonePieceByPoint((int x, int y) point)
+        {
+            return Pieces[point].First(piece => piece.Point.x == point.x && piece.Point.y == point.y).Clone();
+        }
+
+        public Piece GetRefPieceByPoint((int x, int y) point)
         {
             return Pieces[point].First(piece => piece.Point.x == point.x && piece.Point.y == point.y);
         }
 
-        public List<Piece> GetPiecesByColor(Color color)
+        public List<Piece> GetClonePiecesByColor(Color color)
+        {
+            List<Piece> res = new();
+            foreach(var entry in _color_pieces[color])
+            {
+                if (Pieces[entry].TryPeek(out Piece topPiece))
+                {
+                    res.Add(topPiece.Clone());
+                }
+            }
+            return res;
+        }
+
+        public List<Piece> GetRefPiecesByColor(Color color)
         {
             List<Piece> res = new();
             foreach(var entry in _color_pieces[color])
@@ -131,10 +116,7 @@ namespace GameCore
                     res.Add(topPiece);
                 }
             }
-
             return res;
-            // return _color_pieces[color].ConvertAll(piecePoint => Pieces[piecePoint].Peek());
-            // return _color_pieces[color].ConvertAll(piecePoint => Pieces[piecePoint].TryPeek(out Piece piece) ? piece : null);
         }
 
         public bool IsOnBoard(string piece)
@@ -231,84 +213,31 @@ namespace GameCore
 
         public void PlacePiece(Player player, Piece piece, (int, int) to)
         {
-            _BackUpPreviousState();
             // first piece on the board. Place it on the origin (0, 0)
             piece.Point = to;
             _AddPiece(to, piece, false);
-            // Does not remove on the first turn
-            // player.Pieces.Remove(move.MovingPiece);
-            player.Pieces.Remove(piece);
-            // PrintAvailableMovesForThePiece(piece);
-        }
-
-        public void _BackUpPreviousState()
-        {
-            _last_Pieces.Clear();
-            foreach (KeyValuePair<(int, int), Stack<Piece>> kvp in Pieces)
-            {
-                _last_Pieces.Add(kvp.Key, kvp.Value);
-            }
-
-
-            _last_piece_point.Clear();
-            foreach (KeyValuePair<string, (int, int)> kvp in _piece_point)
-            {
-                _last_piece_point.Add(kvp.Key, kvp.Value);
-            }
-
-            _last_color_pieces[Color.Black].Clear();
-            _last_color_pieces[Color.White].Clear();
-            foreach (KeyValuePair<Color, List<(int, int)>> kvp in _color_pieces)
-            {
-                _last_color_pieces[kvp.Key].AddRange(kvp.Value);
-            }
+            int i = player.Pieces.FindIndex(p => p.ToString().Equals(piece.ToString()));
+            player.Pieces.RemoveAt(i);
         }
 
         public void MovePiece(Piece piece, (int, int) to)
         {
-            _BackUpPreviousState();
-            // Move such existing piece
             // remove piece
             _RemovePiece(piece);
             // re-add it
             piece.Point = to;
             _AddPiece(to, piece, false);
-            // PrintAvailableMovesForThePiece(piece);
         }
 
-        public void Undo()
+        public void AIMove (Player player, ActionKind action, Piece piece, (int, int) to)
         {
-            Pieces.Clear();
-            foreach(KeyValuePair<(int, int), Stack<Piece>> kvp in _last_Pieces)
+            if (action == ActionKind.Moving)
             {
-                Pieces.Add(kvp.Key, kvp.Value);
-            }
-
-
-            _piece_point.Clear();
-            foreach(KeyValuePair<string, (int, int)> kvp in _last_piece_point)
-            {
-                _piece_point.Add(kvp.Key, kvp.Value);
-            }
-
-            _color_pieces[Color.Black].Clear();
-            _color_pieces[Color.White].Clear();
-            foreach (KeyValuePair<Color, List<(int, int)>> kvp in _last_color_pieces)
-            {
-                _color_pieces[kvp.Key].AddRange(kvp.Value);
-            }
-        }
-
-        public void AIMove (Player player, Piece piece, (int, int) to, bool isMoving)
-        {
-            if (isMoving)
-            {
-                // treat it as moving
                 MovePiece(piece, to);
             }
-            else
+
+            if (action == ActionKind.Placing)
             {
-                // treat it as a placing
                 PlacePiece(player, piece, to);
             }
         }
@@ -334,9 +263,7 @@ namespace GameCore
             if (Pieces.Count > 0)
             {
                 (int, int) start = Pieces.Keys.First();
-
                 _DFS(ref visited, start);
-
                 return visited.Count == Pieces.Count;
             }
             else

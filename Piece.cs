@@ -1,8 +1,8 @@
 using System.Diagnostics;
-using static GameCore.Utils;
+using static HiveCore.Utils;
 #pragma warning disable IDE1006 // Private members naming style
 
-namespace GameCore
+namespace HiveCore
 {
     public class Piece
     {
@@ -50,18 +50,34 @@ namespace GameCore
             Point = (0, 0);
         }
 
+        public Piece Clone()
+        {
+            return new Piece(this._piece) {
+                Color = this.Color,
+                Insect = this.Insect,
+                Number = this.Number,
+                Point = this.Point,
+                Neighbors = new Dictionary<string, (int, int)>(this.Neighbors),
+            };
+        }
+
         public List<(int, int)> GetMovingSpots(ref Board board)
         {
+            // // If the queen has not been played
             if (!board.IsOnBoard($"{char.ToLower(Color.ToString()[0])}Q1"))
             {
+            // This piece cannot move
                 return new List<(int, int)>();
             }
-            else if (board.GetPiecesByColor(Color).Count == 3 && !board.IsOnBoard($"{Color.ToString()[0]}Q1"))
+            // If the piece about to be placed is the fourth one, and the queen has not been played
+            else if (board.GetRefPiecesByColor(Color).Count == 3 && !board.IsOnBoard($"{Color.ToString()[0]}Q1"))
             {
+                // then the queen has to be played
                 return _GetQueenMovingSpots(ref board);
             }
             else
             {
+            // Return this piece's valid moving spots
                 return Insect switch
                 {
                     Insect.Ant => _GetAntMovingSpots(ref board),
@@ -72,25 +88,6 @@ namespace GameCore
                     _ => throw new ArgumentException("This piece is not valid."),
                 };
             }
-
-            // return
-            // // If the queen has not been played
-            // !board.IsOnBoard($"{char.ToLower(Color.ToString()[0])}Q1")
-            // // There are no valid moving spots
-            // ? new List<(int, int)>()
-            // // If the piece about to be placed is the fourth one, and the queen has not been played, then the queen has to be played 
-            // : board.GetPiecesByColor(Color).Count == 3 && !board.IsOnBoard($"{Color.ToString()[0]}Q1")
-            // ? _GetQueenMovingSpots(ref board)
-            // // Return this piece's valid moving spots
-            // : Insect switch
-            // {
-            //     Insect.Ant => _GetAntMovingSpots(ref board),
-            //     Insect.Beetle => _GetBeetleMovingSpots(ref board),
-            //     Insect.Grasshopper => _GetGrasshopperMovingSpots(ref board),
-            //     Insect.Spider => _GetSpiderMovingSpots(ref board),
-            //     Insect.QueenBee => _GetQueenMovingSpots(ref board),
-            //     _ => throw new ArgumentException("This piece is not valid."),
-            // };
         }
 
         // This should be used for the pieces that have an expensive move generation–i.e., for now, only the Ant
@@ -121,7 +118,7 @@ namespace GameCore
 
             List<(int x, int y)> results = new();
 
-            // Before getting all the open spots (which is an expensive computation)
+            // Before getting all the open spots (which could be an expensive computation)
             // Make sure this piece is not pinned
             if (!IsPinned(board))
             {
@@ -271,7 +268,7 @@ namespace GameCore
             // int index = SIDE_OFFSETS_LIST.IndexOf(offset); // direction we're going
 
             int index = 0;
-            for (; index < 6; ++index)
+            for (; index < _MANY_SIDES; ++index)
             {
                 if (SIDE_OFFSETS_ARRAY[index].x == offsetX && SIDE_OFFSETS_ARRAY[index].y == offsetY)
                 {

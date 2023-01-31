@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
-using static GameCore.Utils;
+using static HiveCore.Utils;
 
-namespace GameCore
+namespace HiveCore
 {
     public static class Program
     {
