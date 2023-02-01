@@ -4,6 +4,7 @@ namespace HiveCore
 {
     public static class Utils
     {
+        public const int MANY_SIDES = 6;
         public static readonly Dictionary<string, (int, int)> SIDE_OFFSETS = new()
         {
             // Notice how each side is only valid if it adds up to an even number
@@ -35,15 +36,15 @@ namespace HiveCore
             Console.WriteLine();
         }
 
-        // public static void PrintPlayerHeader(Board board)
-        // {
-        //         Console.BackgroundColor = player.Color == Color.Black ? ConsoleColor.Blue : ConsoleColor.White;
-        //         Console.ForegroundColor = player.Color == Color.Black ? ConsoleColor.White : ConsoleColor.Black;
-        //         Console.Write($"It is {player.Color}'s turn.");
-        //         _PrintRemainingPieces(player);
-        //         Console.ResetColor();
-        //         Console.WriteLine();
-        // }
+        public static void PrintPlayerHeader(Color color)
+        {
+                Console.BackgroundColor = color == Color.Black ? ConsoleColor.DarkGray : ConsoleColor.White;
+                Console.ForegroundColor = color == Color.Black ? ConsoleColor.White : ConsoleColor.Black;
+                Console.Write($"It is {color}'s turn.");
+                // _PrintRemainingPieces(player);
+                Console.ResetColor();
+                Console.WriteLine();
+        }
 
         public static void PrintRed (string message)
         {

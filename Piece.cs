@@ -6,7 +6,6 @@ namespace HiveCore
 {
     public class Piece
     {
-        private const int _MANY_SIDES = 6;
         private const int _SPIDER_MAX_STEP_COUNT = 3;
         private readonly string _piece;
         public Color Color { get; set; }
@@ -14,23 +13,23 @@ namespace HiveCore
         public bool IsOnBoard { get; set; }
         public Insect Insect { get; set; }
         public (int x, int y) Point { get; set; }
-        public Dictionary<string, (int, int)> Sides { get {
-            return new Dictionary<string, (int, int)>()
+        public Dictionary<(int, int), string> Sides { get {
+            return new Dictionary<(int, int), string>()
                 {
-                    { "NT", (Point.x + SIDE_OFFSETS_ARRAY[0].x, Point.y + SIDE_OFFSETS_ARRAY[0].y) },  // [0] North
-                    { "NW", (Point.x + SIDE_OFFSETS_ARRAY[1].x, Point.y + SIDE_OFFSETS_ARRAY[1].y) },  // [1] Northwest
-                    { "SW", (Point.x + SIDE_OFFSETS_ARRAY[2].x, Point.y + SIDE_OFFSETS_ARRAY[2].y) },  // [2] Southwest
-                    { "ST", (Point.x + SIDE_OFFSETS_ARRAY[3].x, Point.y + SIDE_OFFSETS_ARRAY[3].y) },  // [3] South
-                    { "SE", (Point.x + SIDE_OFFSETS_ARRAY[4].x, Point.y + SIDE_OFFSETS_ARRAY[4].y) },  // [4] Southeast
-                    { "NE", (Point.x + SIDE_OFFSETS_ARRAY[5].x, Point.y + SIDE_OFFSETS_ARRAY[5].y) },  // [5] Northeast
+                    { (Point.x + SIDE_OFFSETS_ARRAY[0].x, Point.y + SIDE_OFFSETS_ARRAY[0].y), "NT" },  // [0] North
+                    { (Point.x + SIDE_OFFSETS_ARRAY[1].x, Point.y + SIDE_OFFSETS_ARRAY[1].y), "NW" },  // [1] Northwest
+                    { (Point.x + SIDE_OFFSETS_ARRAY[2].x, Point.y + SIDE_OFFSETS_ARRAY[2].y), "SW" },  // [2] Southwest
+                    { (Point.x + SIDE_OFFSETS_ARRAY[3].x, Point.y + SIDE_OFFSETS_ARRAY[3].y), "ST" },  // [3] South
+                    { (Point.x + SIDE_OFFSETS_ARRAY[4].x, Point.y + SIDE_OFFSETS_ARRAY[4].y), "SE" },  // [4] Southeast
+                    { (Point.x + SIDE_OFFSETS_ARRAY[5].x, Point.y + SIDE_OFFSETS_ARRAY[5].y), "NE" },  // [5] Northeast
                 };
         } }
 
-        public Dictionary<string, (int, int)> Neighbors { get; set; }
-        public List<(int, int)> SpotsAround { get { return Sides.Except(Neighbors).Select(spot => spot.Value).ToList(); } }
+        public List<(int, int)> Neighbors { get; set; }
+        public List<(int, int)> SpotsAround { get { return Sides.Where(side => !Neighbors.Contains(side.Key)).Select(s => s.Key).ToList(); } }
         public int ManyNeighbors { get{ return Neighbors.Count; } }
         public override string ToString() { return _piece; }
-        public bool IsSurrounded() { return Neighbors.Count == _MANY_SIDES; }
+        public bool IsSurrounded() { return Neighbors.Count == MANY_SIDES; }
         public Piece(string piece)
         {
             _piece = piece;
@@ -46,7 +45,8 @@ namespace HiveCore
             // piece[1] == 'A'
             : Insect.Ant;
             Number = piece[2] - '0';
-            Neighbors = new Dictionary<string, (int, int)>();
+            Neighbors = new List<(int, int)>();
+            Neighbors.EnsureCapacity(MANY_SIDES);
             Point = (0, 0);
             IsOnBoard = false;
         }
@@ -132,7 +132,7 @@ namespace HiveCore
         private bool _HasOpponentNeighbor((int x, int y) point, Dictionary<(int, int), Stack<Piece>> pieces)
         {
             // foreach ((int, int) side in SIDE_OFFSETS.Values)
-            for (int i = 0; i < 6; ++i)
+            for (int i = 0; i < MANY_SIDES; ++i)
             {
                 (int, int) potentialOpponentNeighborPosition = (point.x + SIDE_OFFSETS_ARRAY[i].x, point.y + SIDE_OFFSETS_ARRAY[i].y);
                 // If piece is on the board                                     And Is not the same color as the piece that is about to be placed
@@ -155,7 +155,10 @@ namespace HiveCore
         // (which probably does not because it would be validating its surroundings twice) 
         public bool IsPinned(Board board, bool isBeetle = false)
         {
-            foreach((int, int) side in Sides.Values)
+            if (IsSurrounded())
+                return true;
+
+            foreach((int, int) side in Sides.Keys)
             {
                 // If there is at least one valid path
                 if (_IsValidPath(ref board, Point, side, isBeetle))
@@ -202,7 +205,7 @@ namespace HiveCore
                 // Validate each moving from `spot` to `adjacentSpot`
                 for(int s = 0; s < spots.Count; ++s)
                 {
-                    for(int i = 0; i < _MANY_SIDES; ++i)
+                    for(int i = 0; i < MANY_SIDES; ++i)
                     {
                         (int x, int y) adjacentSpot = (spots[s].x + SIDE_OFFSETS_ARRAY[i].x, spots[s].y + SIDE_OFFSETS_ARRAY[i].y);
                         if (!results.Contains(adjacentSpot) && spots.Contains(adjacentSpot) && _IsValidPath(ref board, spots[s], adjacentSpot))
@@ -226,7 +229,7 @@ namespace HiveCore
 
             List<(int, int)> validMoves = new();
 
-            foreach ((int, int) side in Sides.Values)
+            foreach ((int, int) side in Sides.Keys)
             {
                 // Keep the valid "paths" (from point -> to side)
                 if (_IsValidPath(ref board, this.Point, side, true))
@@ -248,7 +251,7 @@ namespace HiveCore
 
             List<(int x, int y)> positions = new();
             // foreach ((int x, int y) sideOffset in SIDE_OFFSETS.Values)
-            for (int s = 0; s < _MANY_SIDES; ++s)
+            for (int s = 0; s < MANY_SIDES; ++s)
             {
                 (int x, int y) nextSpot = (this.Point.x + SIDE_OFFSETS_ARRAY[s].x, this.Point.y + SIDE_OFFSETS_ARRAY[s].y);
                 bool firstIsValid = false;
@@ -324,18 +327,19 @@ namespace HiveCore
         #region Helper Methods For Finding Valid Spots
         private bool _IsFreedomOfMovement(ref Board board, (int x, int y) from, (int x, int y) to, bool isBeetle = false)
         {
-            (int offsetX, int offsetY) = (to.x - from.x, to.y - from.y);
-            // int index = SIDE_OFFSETS_LIST.IndexOf(offset); // direction we're going
+            (int offsetX, int offsetY) offset= (to.x - from.x, to.y - from.y);
 
-            int index = 0;
-            for (; index < _MANY_SIDES; ++index)
-            {
-                if (SIDE_OFFSETS_ARRAY[index].x == offsetX && SIDE_OFFSETS_ARRAY[index].y == offsetY)
-                {
-                    // direction we are going
-                    break;
-                }
-            }
+            int index = Array.IndexOf(SIDE_OFFSETS_ARRAY, offset); // direction we're going
+
+            // int index = 0;
+            // for (; index < MANY_SIDES; ++index)
+            // {
+            //     if (SIDE_OFFSETS_ARRAY[index].x == offsetX && SIDE_OFFSETS_ARRAY[index].y == offsetY)
+            //     {
+            //         // direction we are going
+            //         break;
+            //     }
+            // }
 
             (int x, int y) leftOffset = index == 0 ? SIDE_OFFSETS_ARRAY[5] : SIDE_OFFSETS_ARRAY[index - 1];
             (int x, int y) rightOffset = index == 5 ? SIDE_OFFSETS_ARRAY[0] : SIDE_OFFSETS_ARRAY[index + 1];
@@ -352,8 +356,8 @@ namespace HiveCore
             bool checkThatTheOppositePeripheralExists = (!peripheralRightIsNotItself && board.Pieces.ContainsKey(peripheralLeftSpot)) || (!peripheralLeftIsNotItself && board.Pieces.ContainsKey(peripheralRightSpot));
 
             return noneOfThePeripheralsIsItself
-                    // If it is a beetle, check it can crawl     OR Treat it as a normal piece
-                    ? ((isBeetle && board.Pieces.ContainsKey(to)) || onlyOneSpotIsOpen)
+                    // If it is a beetle, check it can crawl on   OR get off of piece at to/from point   OR Treat it as a normal piece
+                    ? ((isBeetle && (board.Pieces.ContainsKey(to) || board.Pieces.ContainsKey(from))) || onlyOneSpotIsOpen)
                     : checkThatTheOppositePeripheralExists;
         }
 
@@ -374,7 +378,7 @@ namespace HiveCore
             if (!board.IsAllConnected())
             {
                 // place it back
-                board.AddPiece(oldPieceSpot, oldPieceSpot.Point, false);
+                board.AddPiece(oldPieceSpot, oldPieceSpot.Point);
 
                 // this move breaks the hive
                 return false;
@@ -382,12 +386,12 @@ namespace HiveCore
             else
             {
                 // Temporarily place this piece to the `to` point
-                board.AddPiece(newPieceSpot, to, false);
+                board.AddPiece(newPieceSpot, to);
                 if (!board.IsAllConnected())
                 {
                     board._RemovePiece(newPieceSpot);
                     // place it back
-                    board.AddPiece(oldPieceSpot, oldPieceSpot.Point, false);
+                    board.AddPiece(oldPieceSpot, oldPieceSpot.Point);
 
                     // this move breaks the hive
                     return false;
@@ -396,7 +400,7 @@ namespace HiveCore
             }
 
             // Place it back
-            board.AddPiece(oldPieceSpot, oldPieceSpot.Point, false);
+            board.AddPiece(oldPieceSpot, oldPieceSpot.Point);
 
             // this move does not break the hive
             return true;
@@ -423,7 +427,7 @@ namespace HiveCore
 
             visited[curSpot] = true;
 
-            for (int i = 0; i < 6; ++i)
+            for (int i = 0; i < MANY_SIDES; ++i)
             {
                 (int x, int y) nextSpot = (curSpot.x + SIDE_OFFSETS_ARRAY[i].x, curSpot.y + SIDE_OFFSETS_ARRAY[i].y);
                 bool hasNotBeenVisited = !visited.ContainsKey(nextSpot) || (visited.ContainsKey(nextSpot) && !visited[nextSpot]);

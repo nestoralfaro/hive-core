@@ -1,14 +1,15 @@
 #pragma warning disable IDE1006 // Private members naming style
+using static HiveCore.Utils;
 #nullable enable
 namespace HiveCore
 {
     public class Board
     {
         public Dictionary<(int, int), Stack<Piece>> Pieces;
-        private Dictionary<string, (int, int)> _piece_point;
+        private readonly Dictionary<string, (int, int)> _piece_point;
 
-        // TODO: Change from List<(int, int)> to Set
-        private Dictionary<Color, List<(int, int)> > _color_pieces;
+        // TODO: Look into changing from `List<(int, int)>` to `HashSet<(int, int)>`
+        private readonly Dictionary<Color, List<(int, int)> > _color_pieces;
 
         public List<Piece> WhitePieces { get; set; }
         public List<Piece> BlackPieces { get; set; }
@@ -111,17 +112,6 @@ namespace HiveCore
         //     };
         // }
 
-        public void UpdateAllNeighbors()
-        {
-            // TODO: Update only the neighbors around the moving and reference piece
-            foreach (KeyValuePair<(int, int), Stack<Piece>> stack in Pieces)
-            {
-                foreach (Piece piece in stack.Value)
-                {
-                    PopulateNeighborsFor(piece);
-                }
-            }
-        }
 
         // public Piece? GetCloneTopPieceByStringName(string piece)
         // {
@@ -212,102 +202,122 @@ namespace HiveCore
         private void PopulateNeighborsFor(Piece piece)
         {
             piece.Neighbors.Clear();
-            foreach (KeyValuePair<string, (int, int)> side in piece.Sides)
+            foreach ((int, int) sidePoint in piece.Sides.Keys)
             {
-                // bool IsNeighbour = (point % side == (0, 0));
+                // bool IsNeighbor = (point % side == (0, 0));
                 // (int, int) neighborPoint = (point.x + side.Value.Item1, point.y + side.Value.Item2);
-                bool neighbourExists = Pieces.ContainsKey(side.Value);
-                if (neighbourExists)
+                bool neighborExists = Pieces.ContainsKey(sidePoint);
+                if (neighborExists && !piece.Neighbors.Contains(sidePoint))
                 {
-                    piece.Neighbors[side.Key] = side.Value;
+                    piece.Neighbors.Add(sidePoint);
                 }
             }
         }
 
-        public void AddPiece(Piece piece, (int, int) to, bool isMoving = true)
+        public void UpdateNeighborsAt((int x, int y) point)
         {
-            piece.Point = to;
-            piece.IsOnBoard = true;
-            if (isMoving)
+            // if this is a busy spot
+            if (Pieces.ContainsKey(point))
             {
-                // if there are pieces at such point                    AND it is a beetle
-                if (Pieces.ContainsKey(to) && Pieces[to].Count > 0 && piece.Insect == Insect.Beetle)
+                // for each piece at this spot
+                foreach (Piece piece in Pieces[point])
                 {
-                        // let it crawl on top
-                        Pieces[to].Push(piece);
-                }
+                    // re-populate its neighbors
+                    PopulateNeighborsFor(piece);
 
-                // Pieces[point].Clear();
+                    // go around its new neighbouring spots
+                    foreach ((int, int) neighborSpot in piece.Neighbors)
+                    {
+                        // and let the pieces at this spot know 
+                        foreach (Piece neighborPiece in Pieces[neighborSpot])
+                        {
+                            // that `piece` is their new neighbor
+                            if (!neighborPiece.Neighbors.Contains(piece.Point))
+                            {
+                                neighborPiece.Neighbors.Add(piece.Point);
+                            }
+                        }
+                    }
+                }
+            }
+            // this is an open spot
+            else
+            {
+                // so for every neighboring point
+                for (int i = 0; i < MANY_SIDES; ++i)
+                {
+                    (int, int) neighborPoint = (point.x + SIDE_OFFSETS_ARRAY[i].x, point.y + SIDE_OFFSETS_ARRAY[i].y);
+
+                    // if there are pieces to update
+                    if (Pieces.ContainsKey(neighborPoint))
+                    {
+                        // for each piece at this spot
+                        foreach (Piece piece in Pieces[neighborPoint])
+                        {
+                            // let them know that `point` is now an open spot
+                            piece.Neighbors.Remove(point);
+                        }
+                    }
+                }
+            }
+
+            // instead of making it a method that updates when called,
+            // just update it now, so that it doesn't add to the call stack? idk wdyt
+            // piece.IsSurrounded = piece.Neighbors.Count == MANY_SIDES
+        }
+
+        public void AddPiece(Piece piece, (int, int) to)
+        {
+            // if there are pieces at such point              AND it is a beetle
+            if (Pieces.ContainsKey(to) && Pieces[to].Count > 0 && piece.Insect == Insect.Beetle)
+            {
+                // let it crawl on top
                 Pieces[to].Push(piece);
                 _piece_point[piece.ToString()] = to;
                 _color_pieces[piece.Color].Remove(piece.Point);
                 _color_pieces[piece.Color].Add(to);
-                UpdateAllNeighbors();
             }
             else
             {
-                if (!Pieces.ContainsKey(to))
-                {
-                    Pieces.Add(to, new Stack<Piece>());
-                    Pieces[to].Push(piece);
-                    _piece_point.Add(piece.ToString(), to);
-                    _color_pieces[piece.Color].Add(to);
-                    UpdateAllNeighbors();
-                }
+                // create a new point -> stack ref
+                Pieces.Add(to, new Stack<Piece>());
+                // push the reference to this piece
+                Pieces[to].Push(piece);
+                // update helper dictionaries
+                _piece_point.Add(piece.ToString(), to);
+                _color_pieces[piece.Color].Add(to);
             }
+            piece.Point = to;
+            piece.IsOnBoard = true;
+            UpdateNeighborsAt(to);
         }
 
         public void _RemovePiece(Piece piece)
         {
-            if (_piece_point.ContainsKey(piece.ToString()))
+            (int, int) removingSpot = piece.Point;
+            // remove it
+            Pieces[removingSpot].Pop();
+            // if the stack is empty
+            if (Pieces[removingSpot].Count == 0)
             {
-                (int, int) piecePointToRemove = _piece_point[piece.ToString()];
-
-                // if no one is there
-                if (Pieces[piecePointToRemove].Count == 0)
-                {
-                    // Delete the reference, as it is now an open spot
-                    Pieces.Remove(piecePointToRemove);
-                }
-                else
-                {
-                    // Someone is there, so remove it
-                    Pieces[piecePointToRemove].Pop();
-                    // if no remains there
-                    if (Pieces[piecePointToRemove].Count == 0)
-                    {
-                        // Delete the reference too, as it is now an open spot
-                        Pieces.Remove(piecePointToRemove);
-                    }
-                }
-
-                _piece_point.Remove(piece.ToString());
-                _color_pieces[piece.Color].Remove(piecePointToRemove);
-                // Update for new neighbors only
-                UpdateAllNeighbors();
+                // Delete the reference too, as it is now an open spot
+                Pieces.Remove(removingSpot);
             }
+
+            // Also remove the references from the helper dictionaries
+            _piece_point.Remove(piece.ToString());
+            _color_pieces[piece.Color].Remove(removingSpot);
+            piece.IsOnBoard = false;
+            UpdateNeighborsAt(removingSpot);
         }
 
         public void MovePiece(Piece piece, (int, int) to)
         {
             // remove piece
             _RemovePiece(piece);
-            // re-add it
-            AddPiece(piece, to, true);
+            // add it to the new point
+            AddPiece(piece, to);
         }
-
-        // public void AIMove (Player player, ActionKind action, Piece piece, (int, int) to)
-        // {
-        //     if (action == ActionKind.Moving)
-        //     {
-        //         MovePiece(piece, to);
-        //     }
-
-        //     if (action == ActionKind.Placing)
-        //     {
-        //         PlacePiece(player, piece, to);
-        //     }
-        // }
 
         private void _DFS(ref Dictionary<(int, int), bool> visited, (int, int) piecePoint)
         {
@@ -316,11 +326,15 @@ namespace HiveCore
             {
                 return;
             }
-            Piece curPiece = Pieces[piecePoint].Peek();
-            foreach ((int, int) neighbor in curPiece.Neighbors.Values)
+
+            // for each piece in the stack
+            foreach (Piece curPiece in Pieces[piecePoint])
             {
-                if ((!visited.ContainsKey(neighbor) || (visited.ContainsKey(neighbor) && !visited[neighbor])) && Pieces.ContainsKey(neighbor))
-                    _DFS(ref visited, neighbor);
+                foreach ((int, int) neighbor in curPiece.Neighbors)
+                {
+                    if ((!visited.ContainsKey(neighbor) || (visited.ContainsKey(neighbor) && !visited[neighbor])) && Pieces.ContainsKey(neighbor))
+                        _DFS(ref visited, neighbor);
+                }
             }
         }
 

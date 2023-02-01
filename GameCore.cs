@@ -22,7 +22,7 @@ namespace HiveCore
             if (_isFirstPlayersTurn)
             {
                 // PrintPlayerHeader(Game.Board);
-                PrintGreen($"It's {player1}'s turn");
+                PrintPlayerHeader(player1);
                 if (GameManager.HumanMove(player1))
                     _isFirstPlayersTurn = false;
             }
@@ -32,7 +32,7 @@ namespace HiveCore
                 // GameManager.AIMove(player2);
                 // _isHumanPlayersTurn = true;
                 // PrintPlayerHeader(Game.Board);
-                PrintGreen($"It's {player2}'s turn");
+                PrintPlayerHeader(player2);
                 if (GameManager.HumanMove(player2))
                     _isFirstPlayersTurn = true;
             }

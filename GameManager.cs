@@ -9,7 +9,6 @@ namespace HiveCore
         White
     }
 
-
     public class GameManager
     {
         public Board Board;
@@ -124,7 +123,7 @@ namespace HiveCore
                     {
                         if (IsPlacingMove(piece, to))
                         {
-                            Board.AddPiece(piece, to, false);
+                            Board.AddPiece(piece, to);
                         }
                         else
                         {
@@ -142,7 +141,7 @@ namespace HiveCore
                     {
                         if (IsFirstMove(piece))
                         {
-                            Board.AddPiece(piece, to, false);
+                            Board.AddPiece(piece, to);
                         }
                     }
                 }
@@ -163,6 +162,21 @@ namespace HiveCore
         public void AIMove(Color color)
         {
 
+
+
+
+
+
+
+        //     if (action == ActionKind.Moving)
+        //     {
+        //         MovePiece(piece, to);
+        //     }
+
+        //     if (action == ActionKind.Placing)
+        //     {
+        //         PlacePiece(player, piece, to);
+        //     }
         }
 
         public bool IsGameOver()
@@ -204,12 +218,14 @@ namespace HiveCore
 
         public static void PrintAsHexagon(Piece piece)
         {
-            string NT = piece.Neighbors.ContainsKey("NT") ? ("\t\t" + piece.Neighbors["NT"].ToString() + Environment.NewLine + "\t\t-----------") : "\t\t-----------";
-            string NW = piece.Neighbors.ContainsKey("NW") ? ("\t  " + piece.Neighbors["NW"].ToString() + "/") : "\t\t/";
-            string SW = piece.Neighbors.ContainsKey("SW") ? ("\t  " + piece.Neighbors["SW"].ToString() +  "\\") : "\t\t\\";
-            string ST = piece.Neighbors.ContainsKey("ST") ? ("\t\t-----------" + Environment.NewLine + "\t\t" + piece.Neighbors["ST"].ToString()) : "\t\t-----------";
-            string SE = piece.Neighbors.ContainsKey("SE") ? ("\t /" + piece.Neighbors["SE"].ToString()) : "\t /";
-            string NE = piece.Neighbors.ContainsKey("NE") ? ("\t \\" + piece.Neighbors["NE"].ToString()) : "\t \\";
+            var point = (string dir) => piece.Sides.First(s => s.Value.Equals(dir)).Key;
+            string NT = piece.Neighbors.Contains(point("NT")) ? ("\t\t" + point("NT") + Environment.NewLine + "\t\t-----------") : "\t\t-----------";
+            string NW = piece.Neighbors.Contains(point("NW")) ? ("\t  " + point("NW") + "/") : "\t\t/";
+            string SW = piece.Neighbors.Contains(point("SW")) ? ("\t  " + point("SW") +  "\\") : "\t\t\\";
+            string ST = piece.Neighbors.Contains(point("ST")) ? ("\t\t-----------" + Environment.NewLine + "\t\t" + point("ST")) : "\t\t-----------";
+            string SE = piece.Neighbors.Contains(point("SE")) ? ("\t /" + point("SE")) : "\t /";
+            string NE = piece.Neighbors.Contains(point("NE")) ? ("\t \\" + point("NE")) : "\t \\";
+
             Console.WriteLine(NT);
             Console.WriteLine(NW + NE);
             Console.WriteLine($"\t\t{piece} {piece.Point}");
