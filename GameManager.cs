@@ -46,15 +46,19 @@ namespace HiveCore
             }
         }
 
+        private bool IsPlacingValid(Piece piece, (int, int) to)
+        {
+            return piece.GetPlacingSpots(ref Board).Contains(to);
+        }
+
         private bool IsPlacingMove(Piece piece, (int, int) to)
         {
-            bool isValid = piece.GetPlacingSpots(ref Board).Contains(to);
-            return !piece.IsOnBoard && isValid;
+            return !piece.IsOnBoard;
         }
 
         public bool IsMovingValid(Piece piece, (int, int) to)
         {
-            return piece.GetMovingSpots(ref Board).Contains(to);
+            return piece.IsOnBoard && piece.GetMovingSpots(ref Board).Contains(to);
         }
 
         private bool IsFirstMove(Piece piece)
@@ -121,20 +125,17 @@ namespace HiveCore
 
                     if (move.IsMoveWithDestination())
                     {
-                        if (IsPlacingMove(piece, to))
+                        if (!piece.IsOnBoard && piece.GetPlacingSpots(ref Board).Contains(to))
                         {
                             Board.AddPiece(piece, to);
                         }
+                        else if (piece.IsOnBoard && piece.GetMovingSpots(ref Board).Contains(to))
+                        {
+                            Board.MovePiece(piece, to);
+                        }
                         else
                         {
-                            if (IsMovingValid(piece, to))
-                            {
-                                Board.MovePiece(piece, to);
-                            }
-                            else
-                            {
-                                throw new ArgumentException("Invalid Move: Make sure your moving piece and piece of reference exist on the board.");
-                            }
+                            throw new ArgumentException("Invalid Move: Make sure your moving piece and piece of reference exist on the board.");
                         }
                     }
                     else
@@ -158,6 +159,7 @@ namespace HiveCore
             }
             return true;
         }
+
 
         public void AIMove(Color color)
         {

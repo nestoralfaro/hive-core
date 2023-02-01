@@ -51,6 +51,11 @@ namespace HiveCore
             IsOnBoard = false;
         }
 
+        public override bool Equals(object? obj)
+        {
+            return obj is Piece p && _piece == p._piece;
+        }
+
         public List<(int, int)> GetMovingSpots(ref Board board)
         {
             // // If the queen has not been played
@@ -80,6 +85,8 @@ namespace HiveCore
             }
         }
 
+        // Maybe this should become a static method in the `Board` class with a `Color` parameter
+        // That way the `Board` tells `Manager` where `Color` can play?
         public List<(int, int)> GetPlacingSpots(ref Board board)
         {
             Stopwatch stopwatch = new();
@@ -183,6 +190,7 @@ namespace HiveCore
 
             // Before getting all the open spots (which could be an expensive computation)
             // Make sure this piece is not pinned
+            // Benchmark whether this actually speeds up performance or not
             if (!IsPinned(board))
             {
                 List<(int x, int y)> spots = new();

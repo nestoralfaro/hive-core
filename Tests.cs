@@ -25,6 +25,19 @@ namespace HiveCore
         //     _BlackMove("bS2NTbA1");
         //     _WhiteMove("wB1SEwQ1"); // get it off of wQ1
         // }
+        [Fact]
+        public void DummyTest()
+        {
+            _WhiteMove("wG1");
+            _BlackMove("bB1NWwG1");
+            _WhiteMove("wA1NEwG1");
+            _BlackMove("bQ1NWbB1");
+            _WhiteMove("wQ1STwA1");
+            _BlackMove("bG1SWbQ1");
+            _WhiteMove("wA1SWbG1");
+            _BlackMove("bA1NTbQ1");
+            _WhiteMove("wS1NTbA1");
+        }
 
         [Fact]
         public void NewBoardIsEmptyTest()
