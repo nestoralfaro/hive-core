@@ -185,49 +185,37 @@ namespace HiveCore
         {
             Stopwatch stopwatch = new();
             stopwatch.Start();
-
-            List<(int x, int y)> results = new();
-
+            List<(int x, int y)> positions = new();
             // Before getting all the open spots (which could be an expensive computation)
             // Make sure this piece is not pinned
             // Benchmark whether this actually speeds up performance or not
-            if (!IsPinned(board))
-            {
-                List<(int x, int y)> spots = new();
-
-                // Get all the open spots
-                foreach (KeyValuePair<(int, int), Stack<Piece>> p in board.Pieces)
-                {
-                    if (p.Value.TryPeek(out Piece topPiece))
-                    {
-                        foreach ((int, int) spot in topPiece.SpotsAround)
-                        {
-                            if (!spots.Contains(spot))
-                            {
-                                spots.Add(spot);
-                            }
-                        }
-                    }
-                }
-
-                // Validate each moving from `spot` to `adjacentSpot`
-                for(int s = 0; s < spots.Count; ++s)
-                {
-                    for(int i = 0; i < MANY_SIDES; ++i)
-                    {
-                        (int x, int y) adjacentSpot = (spots[s].x + SIDE_OFFSETS_ARRAY[i].x, spots[s].y + SIDE_OFFSETS_ARRAY[i].y);
-                        if (!results.Contains(adjacentSpot) && spots.Contains(adjacentSpot) && _IsValidPath(ref board, spots[s], adjacentSpot))
-                        {
-                            results.Add(adjacentSpot);
-                        }
-                    }
-                }
-            }
-
+            // if (!IsPinned(board))
+            Dictionary<(int x, int y), bool> visited = new();
+            _AntDFS(ref board, ref positions, ref visited, Point);
             stopwatch.Stop();
             PrintRed("Generating Ant Moves took: " + stopwatch.Elapsed.Milliseconds + "ms");
+            return positions;
+        }
 
-            return results;
+        private void _AntDFS(ref Board board, ref List<(int x, int y)> positions, ref Dictionary<(int x, int y), bool> visited, (int x, int y) curSpot)
+        {
+            visited[curSpot] = true;
+
+            for (int i = 0; i < MANY_SIDES; ++i)
+            {
+                (int x, int y) nextSpot = (curSpot.x + SIDE_OFFSETS_ARRAY[i].Item1, curSpot.y + SIDE_OFFSETS_ARRAY[i].Item2);
+                bool hasNotBeenVisited = !visited.ContainsKey(nextSpot) || (visited.ContainsKey(nextSpot) && !visited[nextSpot]);
+                if (hasNotBeenVisited && _IsValidPath(ref board, curSpot, nextSpot))
+                {
+                    positions.Add(nextSpot);
+                    _AntDFS(ref board, ref positions, ref visited, nextSpot);
+                }
+                else
+                {
+                    visited[nextSpot] = true;
+                }
+            }
+            return;
         }
 
         private List<(int, int)> _GetBeetleMovingSpots(ref Board board)
@@ -294,20 +282,48 @@ namespace HiveCore
 
             List<(int x, int y)> positions = new();
             Dictionary<(int x, int y), bool> visited = new();
+            // On the first call you can also just call its spots around
             // foreach ((int x, int y) side in SpotsAround)
-            for (int s = 0; s < SpotsAround.Count; ++s)
-            {
-                bool hasNotBeenVisited = !visited.ContainsKey(SpotsAround[s]) || (visited.ContainsKey(SpotsAround[s]) && !visited[SpotsAround[s]]);
-                if (hasNotBeenVisited && _IsValidPath(ref board, Point, SpotsAround[s]))
-                {
-                    _SpiderDFS(ref board, ref positions, ref visited, SpotsAround[s], 1, _SPIDER_MAX_STEP_COUNT);
-                }
-            }
+            // for (int s = 0; s < SpotsAround.Count; ++s)
+            // {
+            //     bool hasNotBeenVisited = !visited.ContainsKey(SpotsAround[s]) || (visited.ContainsKey(SpotsAround[s]) && !visited[SpotsAround[s]]);
+            //     if (hasNotBeenVisited && _IsValidPath(ref board, Point, SpotsAround[s]))
+            //     {
+            //         _SpiderDFS(ref board, ref positions, ref visited, SpotsAround[s], 1, _SPIDER_MAX_STEP_COUNT);
+            //     }
+            // }
+            _SpiderDFS(ref board, ref positions, ref visited, Point, 0, _SPIDER_MAX_STEP_COUNT);
 
             stopwatch.Stop();
             PrintRed("Generating spider moves took: " + stopwatch.Elapsed.Milliseconds + "ms");
 
             return positions;
+        }
+
+        private void _SpiderDFS(ref Board board, ref List<(int x, int y)> positions, ref Dictionary<(int x, int y), bool> visited, (int x, int y) curSpot, int curDepth, int maxDepth)
+        {
+            if (curDepth == maxDepth)
+            {
+                // No one is at that position
+                if (!board.Pieces.ContainsKey(curSpot))
+                {
+                    visited[curSpot] = true;
+                    positions.Add(curSpot);
+                }
+                return;
+            }
+
+            visited[curSpot] = true;
+
+            for (int i = 0; i < MANY_SIDES; ++i)
+            {
+                (int x, int y) nextSpot = (curSpot.x + SIDE_OFFSETS_ARRAY[i].x, curSpot.y + SIDE_OFFSETS_ARRAY[i].y);
+                bool hasNotBeenVisited = !visited.ContainsKey(nextSpot) || (visited.ContainsKey(nextSpot) && !visited[nextSpot]);
+                if (hasNotBeenVisited && _IsValidPath(ref board, curSpot, nextSpot))
+                {
+                    _SpiderDFS(ref board, ref positions, ref visited, nextSpot, curDepth + 1, maxDepth);
+                }
+            }
         }
 
         private List<(int, int)> _GetQueenMovingSpots(ref Board board)
@@ -335,19 +351,19 @@ namespace HiveCore
         #region Helper Methods For Finding Valid Spots
         private bool _IsFreedomOfMovement(ref Board board, (int x, int y) from, (int x, int y) to, bool isBeetle = false)
         {
-            (int offsetX, int offsetY) offset= (to.x - from.x, to.y - from.y);
+            (int offsetX, int offsetY) = (to.x - from.x, to.y - from.y);
 
-            int index = Array.IndexOf(SIDE_OFFSETS_ARRAY, offset); // direction we're going
+            // int index = Array.IndexOf(SIDE_OFFSETS_ARRAY, offset); // direction we're going
 
-            // int index = 0;
-            // for (; index < MANY_SIDES; ++index)
-            // {
-            //     if (SIDE_OFFSETS_ARRAY[index].x == offsetX && SIDE_OFFSETS_ARRAY[index].y == offsetY)
-            //     {
-            //         // direction we are going
-            //         break;
-            //     }
-            // }
+            int index = 0;
+            for (; index < MANY_SIDES; ++index)
+            {
+                if (SIDE_OFFSETS_ARRAY[index].x == offsetX && SIDE_OFFSETS_ARRAY[index].y == offsetY)
+                {
+                    // direction we are going
+                    break;
+                }
+            }
 
             (int x, int y) leftOffset = index == 0 ? SIDE_OFFSETS_ARRAY[5] : SIDE_OFFSETS_ARRAY[index - 1];
             (int x, int y) rightOffset = index == 5 ? SIDE_OFFSETS_ARRAY[0] : SIDE_OFFSETS_ARRAY[index + 1];
@@ -418,32 +434,6 @@ namespace HiveCore
         {
             //      Only beetle can crawl on top of                 One Hive Rule                       Physically Fits
             return (isBeetle || !board.Pieces.ContainsKey(to)) && _DoesNotBreakHive(ref board, to) && _IsFreedomOfMovement(ref board, from, to, isBeetle);
-        }
-
-        private void _SpiderDFS(ref Board board, ref List<(int x, int y)> positions, ref Dictionary<(int x, int y), bool> visited, (int x, int y) curSpot, int curDepth, int maxDepth)
-        {
-            if (curDepth == maxDepth)
-            {
-                // No one is at that position
-                if (!board.Pieces.ContainsKey(curSpot))
-                {
-                    visited[curSpot] = true;
-                    positions.Add(curSpot);
-                }
-                return;
-            }
-
-            visited[curSpot] = true;
-
-            for (int i = 0; i < MANY_SIDES; ++i)
-            {
-                (int x, int y) nextSpot = (curSpot.x + SIDE_OFFSETS_ARRAY[i].x, curSpot.y + SIDE_OFFSETS_ARRAY[i].y);
-                bool hasNotBeenVisited = !visited.ContainsKey(nextSpot) || (visited.ContainsKey(nextSpot) && !visited[nextSpot]);
-                if (hasNotBeenVisited && _IsValidPath(ref board, curSpot, nextSpot))
-                {
-                    _SpiderDFS(ref board, ref positions, ref visited, nextSpot, curDepth + 1, maxDepth);
-                }
-            }
         }
 
         #endregion
