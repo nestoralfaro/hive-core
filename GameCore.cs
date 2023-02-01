@@ -5,45 +5,50 @@ namespace HiveCore
 {
     class GameCore
     {
-        private Player _blackPlayer;
-        private Player _whitePlayer;
-        private bool _isBlackPlayerTurn;
-        public GameManager Game { get; }
+        private bool _isFirstPlayersTurn;
+        private Color player1 {get;}
+        private Color player2 {get;}
+        public GameManager GameManager { get; }
         public GameCore()
         {
-            Game = new GameManager();
-            _blackPlayer = new Player(Color.Black);
-            _whitePlayer = new AI(Color.White);
-            _isBlackPlayerTurn = false;
+            GameManager = new GameManager();
+            _isFirstPlayersTurn = true;
+            player1 = Color.White;
+            player2 = Color.Black;
         }
 
         public void Play()
         {
-            if (_isBlackPlayerTurn)
+            if (_isFirstPlayersTurn)
             {
-                PrintPlayerHeader(_blackPlayer);
-                if (Game.MakeMove(ref _blackPlayer))
-                {
-                    _isBlackPlayerTurn = false;
-                    ++_blackPlayer.TurnCount;
-                }
+                // PrintPlayerHeader(Game.Board);
+                PrintGreen($"It's {player1}'s turn");
+                if (GameManager.HumanMove(player1))
+                    _isFirstPlayersTurn = false;
             }
             else
             {
-                // if (Game.MakeMove(ref _whitePlayer))
-                if (_whitePlayer.MakeMove(ref Game.Board, ref _blackPlayer))
-                {
-                    PrintPlayerHeader(_whitePlayer);
-                    _isBlackPlayerTurn = true;
-                    ++_whitePlayer.TurnCount;
-                }
+                // PrintPlayerHeader(Game.Board);
+                // GameManager.AIMove(player2);
+                // _isHumanPlayersTurn = true;
+                // PrintPlayerHeader(Game.Board);
+                PrintGreen($"It's {player2}'s turn");
+                if (GameManager.HumanMove(player2))
+                    _isFirstPlayersTurn = true;
             }
-            Game.PrintFormatted();
+
+            GameManager.PrintFormatted();
         }
 
         public bool IsGameOver()
         {
-            return Game.IsGameOver();
+            if (GameManager.IsGameOver())
+            {
+                Console.WriteLine(GameManager.Winner);
+                return true;
+            }
+            return false;
         }
+
     }
 }

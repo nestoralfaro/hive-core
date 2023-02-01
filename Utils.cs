@@ -35,15 +35,15 @@ namespace HiveCore
             Console.WriteLine();
         }
 
-        public static void PrintPlayerHeader(Player player)
-        {
-                Console.BackgroundColor = player.Color == Color.Black ? ConsoleColor.Blue : ConsoleColor.White;
-                Console.ForegroundColor = player.Color == Color.Black ? ConsoleColor.White : ConsoleColor.Black;
-                Console.Write($"It is {player.Color}'s turn.");
-                _PrintRemainingPieces(player);
-                Console.ResetColor();
-                Console.WriteLine();
-        }
+        // public static void PrintPlayerHeader(Board board)
+        // {
+        //         Console.BackgroundColor = player.Color == Color.Black ? ConsoleColor.Blue : ConsoleColor.White;
+        //         Console.ForegroundColor = player.Color == Color.Black ? ConsoleColor.White : ConsoleColor.Black;
+        //         Console.Write($"It is {player.Color}'s turn.");
+        //         _PrintRemainingPieces(player);
+        //         Console.ResetColor();
+        //         Console.WriteLine();
+        // }
 
         public static void PrintRed (string message)
         {
@@ -63,15 +63,15 @@ namespace HiveCore
             Console.WriteLine();
         }
 
-        private static void _PrintRemainingPieces(Player player)
-        {
-            string Output = "";
-            foreach (Piece piece in player.Pieces)
-            {
-                // Maybe we should use the String builder for performance improvement
-                Output += $"{piece.ToString()[1]}{piece.ToString()[2]}|";
-            }
-            Console.Write($" | Remaining pieces: {Output}");
-        }
+        // private static void _PrintRemainingPieces(Color player)
+        // {
+        //     string Output = "";
+        //     foreach (Piece piece in player.Pieces)
+        //     {
+        //         // Maybe we should use the String builder for performance improvement
+        //         Output += $"{piece.ToString()[1]}{piece.ToString()[2]}|";
+        //     }
+        //     Console.Write($" | Remaining pieces: {Output}");
+        // }
     }
 }

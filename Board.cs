@@ -4,9 +4,14 @@ namespace HiveCore
 {
     public class Board
     {
-        private Dictionary<string, (int, int)> _piece_point;
         public Dictionary<(int, int), Stack<Piece>> Pieces;
+        private Dictionary<string, (int, int)> _piece_point;
+
+        // TODO: Change from List<(int, int)> to Set
         private Dictionary<Color, List<(int, int)> > _color_pieces;
+
+        public List<Piece> WhitePieces { get; set; }
+        public List<Piece> BlackPieces { get; set; }
 
         public Board()
         {
@@ -25,20 +30,90 @@ namespace HiveCore
                 {Color.White, new List<(int, int)>()},
             };
             _color_pieces.EnsureCapacity(2);
-        }
 
-        public Board Clone()
-        {
-            return new Board()
+            WhitePieces = new List<Piece>()
             {
-                Pieces = this.Pieces.ToDictionary(point => point.Key, stack => new Stack<Piece>(stack.Value.Select(piece => piece.Clone()))),
-                _color_pieces = this._color_pieces.ToDictionary(color => color.Key, pieces => new List<(int, int)>(pieces.Value)),
-                _piece_point = new Dictionary<string, (int, int)>(this._piece_point),
+               new Piece("wQ1"),
+               new Piece("wA1"),
+               new Piece("wA2"),
+               new Piece("wA3"),
+               new Piece("wB1"),
+               new Piece("wB2"),
+               new Piece("wG1"),
+               new Piece("wG2"),
+               new Piece("wG3"),
+               new Piece("wS1"),
+               new Piece("wS2"),
+            };
+
+            BlackPieces = new List<Piece>()
+            {
+               new Piece("bQ1"),
+               new Piece("bA1"),
+               new Piece("bA2"),
+               new Piece("bA3"),
+               new Piece("bB1"),
+               new Piece("bB2"),
+               new Piece("bG1"),
+               new Piece("bG2"),
+               new Piece("bG3"),
+               new Piece("bS1"),
+               new Piece("bS2"),
             };
         }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // public Board Clone()
+        // {
+        //     return new Board()
+        //     {
+        //         Pieces = this.Pieces.ToDictionary(point => point.Key, stack => new Stack<Piece>(stack.Value.Select(piece => piece.Clone()))),
+        //         _color_pieces = this._color_pieces.ToDictionary(color => color.Key, pieces => new List<(int, int)>(pieces.Value)),
+        //         _piece_point = new Dictionary<string, (int, int)>(this._piece_point),
+        //     };
+        // }
+
         public void UpdateAllNeighbors()
         {
+            // TODO: Update only the neighbors around the moving and reference piece
             foreach (KeyValuePair<(int, int), Stack<Piece>> stack in Pieces)
             {
                 foreach (Piece piece in stack.Value)
@@ -48,10 +123,10 @@ namespace HiveCore
             }
         }
 
-        public Piece? GetCloneTopPieceByStringName(string piece)
-        {
-            return _piece_point.ContainsKey(piece) ? (Pieces[_piece_point[piece]].TryPeek(out Piece p) ?  p.Clone() : null) : null;
-        }
+        // public Piece? GetCloneTopPieceByStringName(string piece)
+        // {
+        //     return _piece_point.ContainsKey(piece) ? (Pieces[_piece_point[piece]].TryPeek(out Piece p) ?  p.Clone() : null) : null;
+        // }
 
         public Piece? GetRefTopPieceByStringName(string piece)
         {
@@ -63,48 +138,48 @@ namespace HiveCore
             return (GetRefTopPieceByStringName("wQ1")?.IsSurrounded() == true) || (GetRefTopPieceByStringName("bQ1")?.IsSurrounded() == true);
         }
 
-        public Piece GetCloneTopPieceByPoint((int, int) point)
-        {
-            return Pieces[point].Peek().Clone();
-        }
+        // public Piece GetCloneTopPieceByPoint((int, int) point)
+        // {
+        //     return Pieces[point].Peek().Clone();
+        // }
 
         public Piece GetRefTopPieceByPoint((int, int) point)
         {
             return Pieces[point].Peek();
         }
 
-        public Piece GetClonePieceByStringName(string piece)
-        {
-            return Pieces[_piece_point[piece]].First(p => p.ToString().Equals(piece)).Clone();
-        }
+        // public Piece GetClonePieceByStringName(string piece)
+        // {
+        //     return Pieces[_piece_point[piece]].First(p => p.ToString().Equals(piece)).Clone();
+        // }
 
         public Piece GetRefPieceByStringName(string piece)
         {
             return Pieces[_piece_point[piece]].First(p => p.ToString().Equals(piece));
         }
 
-        public Piece GetClonePieceByPoint((int x, int y) point)
-        {
-            return Pieces[point].First(piece => piece.Point.x == point.x && piece.Point.y == point.y).Clone();
-        }
+        // public Piece GetClonePieceByPoint((int x, int y) point)
+        // {
+        //     return Pieces[point].First(piece => piece.Point.x == point.x && piece.Point.y == point.y).Clone();
+        // }
 
         public Piece GetRefPieceByPoint((int x, int y) point)
         {
             return Pieces[point].First(piece => piece.Point.x == point.x && piece.Point.y == point.y);
         }
 
-        public List<Piece> GetClonePiecesByColor(Color color)
-        {
-            List<Piece> res = new();
-            foreach(var entry in _color_pieces[color])
-            {
-                if (Pieces[entry].TryPeek(out Piece topPiece))
-                {
-                    res.Add(topPiece.Clone());
-                }
-            }
-            return res;
-        }
+        // public List<Piece> GetClonePiecesByColor(Color color)
+        // {
+        //     List<Piece> res = new();
+        //     foreach((int, int) point in _color_pieces[color])
+        //     {
+        //         if (Pieces[point].TryPeek(out Piece topPiece))
+        //         {
+        //             res.Add(topPiece.Clone());
+        //         }
+        //     }
+        //     return res;
+        // }
 
         public List<Piece> GetRefPiecesByColor(Color color)
         {
@@ -149,33 +224,34 @@ namespace HiveCore
             }
         }
 
-        public void _AddPiece((int x, int y) point, Piece piece, bool isMoving = true)
+        public void AddPiece(Piece piece, (int, int) to, bool isMoving = true)
         {
+            piece.Point = to;
+            piece.IsOnBoard = true;
             if (isMoving)
             {
                 // if there are pieces at such point                    AND it is a beetle
-                if (Pieces.ContainsKey(point) && Pieces[point].Count > 0 && piece.Insect == Insect.Beetle)
+                if (Pieces.ContainsKey(to) && Pieces[to].Count > 0 && piece.Insect == Insect.Beetle)
                 {
                         // let it crawl on top
-                        Pieces[point].Push(piece);
+                        Pieces[to].Push(piece);
                 }
 
-                Pieces[point].Clear();
-                Pieces[point].Push(piece);
-                _piece_point[piece.ToString()] = point;
+                // Pieces[point].Clear();
+                Pieces[to].Push(piece);
+                _piece_point[piece.ToString()] = to;
                 _color_pieces[piece.Color].Remove(piece.Point);
-                _color_pieces[piece.Color].Add(point);
+                _color_pieces[piece.Color].Add(to);
                 UpdateAllNeighbors();
-                // else, do not add this move, because only the beetle is allowed to get pushed on the stack
             }
             else
             {
-                if (!Pieces.ContainsKey(point))
+                if (!Pieces.ContainsKey(to))
                 {
-                    Pieces.Add(point, new Stack<Piece>());
-                    Pieces[point].Push(piece);
-                    _piece_point.Add(piece.ToString(), point);
-                    _color_pieces[piece.Color].Add(point);
+                    Pieces.Add(to, new Stack<Piece>());
+                    Pieces[to].Push(piece);
+                    _piece_point.Add(piece.ToString(), to);
+                    _color_pieces[piece.Color].Add(to);
                     UpdateAllNeighbors();
                 }
             }
@@ -207,17 +283,9 @@ namespace HiveCore
 
                 _piece_point.Remove(piece.ToString());
                 _color_pieces[piece.Color].Remove(piecePointToRemove);
+                // Update for new neighbors only
                 UpdateAllNeighbors();
             }
-        }
-
-        public void PlacePiece(Player player, Piece piece, (int, int) to)
-        {
-            // first piece on the board. Place it on the origin (0, 0)
-            piece.Point = to;
-            _AddPiece(to, piece, false);
-            int i = player.Pieces.FindIndex(p => p.ToString().Equals(piece.ToString()));
-            player.Pieces.RemoveAt(i);
         }
 
         public void MovePiece(Piece piece, (int, int) to)
@@ -225,22 +293,21 @@ namespace HiveCore
             // remove piece
             _RemovePiece(piece);
             // re-add it
-            piece.Point = to;
-            _AddPiece(to, piece, false);
+            AddPiece(piece, to, true);
         }
 
-        public void AIMove (Player player, ActionKind action, Piece piece, (int, int) to)
-        {
-            if (action == ActionKind.Moving)
-            {
-                MovePiece(piece, to);
-            }
+        // public void AIMove (Player player, ActionKind action, Piece piece, (int, int) to)
+        // {
+        //     if (action == ActionKind.Moving)
+        //     {
+        //         MovePiece(piece, to);
+        //     }
 
-            if (action == ActionKind.Placing)
-            {
-                PlacePiece(player, piece, to);
-            }
-        }
+        //     if (action == ActionKind.Placing)
+        //     {
+        //         PlacePiece(player, piece, to);
+        //     }
+        // }
 
         private void _DFS(ref Dictionary<(int, int), bool> visited, (int, int) piecePoint)
         {

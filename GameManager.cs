@@ -3,65 +3,59 @@ using static HiveCore.Utils;
 
 namespace HiveCore
 {
+    public enum Color
+    {
+        Black,
+        White
+    }
+
+
     public class GameManager
     {
         public Board Board;
-        public GameManager() { Board = new(); }
+        public Color Winner;
 
-        public static bool IsValidInput(Color color, Action move)
+        public GameManager()
         {
-            char c = char.ToLower(color.ToString()[0]);
-            if (!move.ToString().Equals("invalid"))
+            Board = new();
+        }
+
+        public static Action GetMove()
+        {
+            Console.WriteLine("Enter move");
+            string input = Console.ReadLine()!;
+            return new Action(input);
+        }
+
+        public static bool IsValidInput(Action move, Color color)
+        {
+            Color playedColor = char.ToLower(move.MovingPiece[0]) == 'b' ? Color.Black : Color.White;
+            if (playedColor != color)
             {
-                if (move.ToString()[0] == c)
+                throw new ArgumentException($"It is {color}'s turn.");
+            }
+            else
+            {
+                if (playedColor == color && !move.ToString().Equals("invalid"))
                 {
                     return true;
                 }
                 else
                 {
-                    throw new ArgumentException($"It is {color}'s turn.");
+                    throw new ArgumentException($"Invalid move.");
                 }
-            }
-            {
-                return false;
             }
         }
 
-        public bool IsPlacingValid(Player player, (int x, int y) point)
+        private bool IsPlacingMove(Piece piece, (int, int) to)
         {
-            return player.GetPlacingSpots(ref Board).Contains(point);
+            bool isValid = piece.GetPlacingSpots(ref Board).Contains(to);
+            return !piece.IsOnBoard && isValid;
         }
 
         public bool IsMovingValid(Piece piece, (int, int) to)
         {
             return piece.GetMovingSpots(ref Board).Contains(to);
-        }
-
-        private (int, int) GetNewPoint(Action move)
-        {
-            // It is the first piece being placed
-            if (String.IsNullOrEmpty(move.DestinationSide))
-            {
-                return (0, 0);
-            }
-            else
-            {
-                if (Board.IsOnBoard(move.DestinationPiece))
-                {
-                    (int x, int y) = Board.GetPointByString(move.DestinationPiece);
-                    (int x, int y) sideOffset = SIDE_OFFSETS[move.DestinationSide];
-                    return (x + sideOffset.x, y + sideOffset.y);
-                }
-                else
-                {
-                    throw new ArgumentException($"Invalid placing for {move.DestinationPiece}. This piece does not exist on the board.");
-                }
-            }
-        }
-
-        private bool IsPlacingMove(Player player, Action move, Piece piece)
-        {
-            return player.Pieces.Any(p => p.ToString().Equals(piece.ToString())) && !Board.IsOnBoard(move.MovingPiece);
         }
 
         private bool IsFirstMove(Piece piece)
@@ -80,35 +74,57 @@ namespace HiveCore
             }
         }
 
-        public bool MakeMove(ref Player player)
+        private (int, int) GetNewPoint(Action move)
+        {
+            // It is the first piece being placed
+            if (String.IsNullOrEmpty(move.DestinationSide))
+            {
+                return (0, 0);
+            }
+            else
+            {
+                if (Board.IsOnBoard(move.DestinationPiece))
+                {
+                    // Grab reference's piece point
+                    (int x, int y) = Board.GetPointByString(move.DestinationPiece);
+                    // Grab the offset point
+                    (int x, int y) sideOffset = SIDE_OFFSETS[move.DestinationSide];
+                    return (x + sideOffset.x, y + sideOffset.y);
+                }
+                else
+                {
+                    throw new ArgumentException($"Invalid placing for {move.DestinationPiece}. This piece does not exist on the board.");
+                }
+            }
+        }
+
+        public bool HumanMove(Color color)
         {
             try
             {
-                Action move = Player.GetMove();
-                if (IsValidInput(player.Color, move))
+                Action move = GetMove();
+                if (IsValidInput(move, color))
                 {
                     (int, int) to = GetNewPoint(move);
                     Piece piece;
                     if (Board.IsOnBoard(move.MovingPiece))
                     {
+                        // Grab the piece from the board
                         (int, int) curPiecePoint = Board.GetPointByString(move.MovingPiece);
                         piece = Board.Pieces[curPiecePoint].Peek();
                     }
                     else
                     {
-                        piece = new(move.MovingPiece)
-                        {
-                            Point = to
-                        };
+                        piece = color == Color.White
+                        ? Board.WhitePieces.First(p => p.ToString().Equals(move.MovingPiece))
+                        : Board.BlackPieces.First(p => p.ToString().Equals(move.MovingPiece));
                     }
+
                     if (move.IsMoveWithDestination())
                     {
-                        if (IsPlacingMove(player, move, piece))
+                        if (IsPlacingMove(piece, to))
                         {
-                            if (IsPlacingValid(player, to))
-                            {
-                                Board.PlacePiece(player, piece, to);
-                            }
+                            Board.AddPiece(piece, to, false);
                         }
                         else
                         {
@@ -126,7 +142,7 @@ namespace HiveCore
                     {
                         if (IsFirstMove(piece))
                         {
-                            Board.PlacePiece(player, piece, to);
+                            Board.AddPiece(piece, to, false);
                         }
                     }
                 }
@@ -144,42 +160,27 @@ namespace HiveCore
             return true;
         }
 
+        public void AIMove(Color color)
+        {
+
+        }
+
         public bool IsGameOver()
         {
             // This considers if a queen has been surrounded, but what about when the player has no more moves?
-            if (Board.IsOnBoard("wQ1") && Board.GetClonePieceByStringName("wQ1").IsSurrounded())
+            if (Board.IsOnBoard("wQ1") && Board.GetRefPieceByStringName("wQ1").IsSurrounded())
             {
-                PrintGreen("Black won!");
+                Winner = Color.White;
             }
-            else if (Board.IsOnBoard("bQ1") && Board.GetClonePieceByStringName("bQ1").IsSurrounded())
+            else if (Board.IsOnBoard("bQ1") && Board.GetRefPieceByStringName("bQ1").IsSurrounded())
             {
-                PrintGreen("White won!");
+                Winner = Color.Black;
             }
             else
             {
                 return false;
             }
             return true;
-        }
-
-        public void Print()
-        {
-            // Print the board
-            if (Board.Pieces.Count != 0)
-            {
-                Console.WriteLine("/*********************************/");
-                Console.WriteLine("Current board state:");
-                foreach (var entry in Board.Pieces)
-                {
-                    Console.WriteLine($"{entry.Key}: {entry.Value.Peek().Number} {entry.Value.Peek().Color} {entry.Value.Peek().Insect}");
-                    //Print the neighbours
-                    foreach (var neighbour in entry.Value.Peek().Neighbors)
-                    {
-                        Console.WriteLine($"{neighbour.Key}: {neighbour.Value}");
-                    }
-                }
-                Console.WriteLine("/*********************************/");
-            }
         }
 
         public void PrintFormatted()

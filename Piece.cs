@@ -11,6 +11,7 @@ namespace HiveCore
         private readonly string _piece;
         public Color Color { get; set; }
         public int Number { get; set; }
+        public bool IsOnBoard { get; set; }
         public Insect Insect { get; set; }
         public (int x, int y) Point { get; set; }
         public Dictionary<string, (int, int)> Sides { get {
@@ -30,7 +31,6 @@ namespace HiveCore
         public int ManyNeighbors { get{ return Neighbors.Count; } }
         public override string ToString() { return _piece; }
         public bool IsSurrounded() { return Neighbors.Count == _MANY_SIDES; }
-
         public Piece(string piece)
         {
             _piece = piece;
@@ -48,17 +48,7 @@ namespace HiveCore
             Number = piece[2] - '0';
             Neighbors = new Dictionary<string, (int, int)>();
             Point = (0, 0);
-        }
-
-        public Piece Clone()
-        {
-            return new Piece(this._piece) {
-                Color = this.Color,
-                Insect = this.Insect,
-                Number = this.Number,
-                Point = this.Point,
-                Neighbors = new Dictionary<string, (int, int)>(this.Neighbors),
-            };
+            IsOnBoard = false;
         }
 
         public List<(int, int)> GetMovingSpots(ref Board board)
@@ -66,11 +56,11 @@ namespace HiveCore
             // // If the queen has not been played
             if (!board.IsOnBoard($"{char.ToLower(Color.ToString()[0])}Q1"))
             {
-            // This piece cannot move
+                // This piece cannot move
                 return new List<(int, int)>();
             }
             // If the piece about to be placed is the fourth one, and the queen has not been played
-            else if (board.GetRefPiecesByColor(Color).Count == 3 && !board.IsOnBoard($"{Color.ToString()[0]}Q1"))
+            else if (board.GetRefPiecesByColor(Color).Count == 3 && !board.IsOnBoard($"{char.ToLower(Color.ToString()[0])}Q1"))
             {
                 // then the queen has to be played
                 return _GetQueenMovingSpots(ref board);
@@ -89,6 +79,76 @@ namespace HiveCore
                 };
             }
         }
+
+        public List<(int, int)> GetPlacingSpots(ref Board board)
+        {
+            Stopwatch stopwatch = new();
+            stopwatch.Start();
+
+            // Maybe keep track of the visited ones with a hashmap and also pass it to the hasopponent neighbor?
+            List<(int, int)> positions = new();
+
+            // If nothing has been played
+            if (board.IsEmpty())
+            {
+                // Origin is the only first valid placing spot
+                return new List<(int, int)>(){(0, 0)};
+            }
+            // If there is only one piece on the board
+            else if (board.Pieces.Count == 1)
+            {
+                // the available placing spots will be the such piece's surrounding spots
+                return board.Pieces[(0, 0)].Peek().SpotsAround;
+            }
+            // Make sure the game is still going
+            else if (!board.IsAQueenSurrounded())
+            {
+                // from here on out, only the spots that do not neighbor an opponent are valid  
+
+                // iterate through the current player's pieces on the board
+                foreach (Piece? piece in board.GetRefPiecesByColor(this.Color))
+                {
+                    if (piece != null)
+                    {
+                        // iterate through this piece's available spots
+                        foreach ((int, int) spot in piece.SpotsAround)
+                        {
+                            //      Not been visited        It is not neighboring an opponent
+                            if (!positions.Contains(spot) && !_HasOpponentNeighbor(spot, board.Pieces))
+                            {
+                                positions.Add(spot);
+                            }
+                        }
+                    }
+                }
+            }
+
+            stopwatch.Stop();
+            PrintRed($"Generating Available Spots for Player {Color} took: {stopwatch.Elapsed.Milliseconds} ms");
+
+            return positions;
+        }
+
+        private bool _HasOpponentNeighbor((int x, int y) point, Dictionary<(int, int), Stack<Piece>> pieces)
+        {
+            // foreach ((int, int) side in SIDE_OFFSETS.Values)
+            for (int i = 0; i < 6; ++i)
+            {
+                (int, int) potentialOpponentNeighborPosition = (point.x + SIDE_OFFSETS_ARRAY[i].x, point.y + SIDE_OFFSETS_ARRAY[i].y);
+                // If piece is on the board                                     And Is not the same color as the piece that is about to be placed
+                // if (pieces.ContainsKey(potentialOpponentNeighborPosition) && pieces[potentialOpponentNeighborPosition].Peek().Color != this.Color)
+                if (pieces.ContainsKey(potentialOpponentNeighborPosition) && pieces[potentialOpponentNeighborPosition].TryPeek(out Piece topPiece) && topPiece.Color != this.Color)
+                {
+                    // Has an opponent neighbor
+                    return true;
+                }
+            }
+
+            // Checked each side, and no opponent's pieces were found
+            return false;
+        }
+
+
 
         // This should be used for the pieces that have an expensive move generation–i.e., for now, only the Ant
         // TODO: Test whether adding this validation actually improves performance on other pieces
@@ -314,7 +374,7 @@ namespace HiveCore
             if (!board.IsAllConnected())
             {
                 // place it back
-                board._AddPiece(oldPieceSpot.Point, oldPieceSpot, false);
+                board.AddPiece(oldPieceSpot, oldPieceSpot.Point, false);
 
                 // this move breaks the hive
                 return false;
@@ -322,12 +382,12 @@ namespace HiveCore
             else
             {
                 // Temporarily place this piece to the `to` point
-                board._AddPiece(to, newPieceSpot, false);
+                board.AddPiece(newPieceSpot, to, false);
                 if (!board.IsAllConnected())
                 {
                     board._RemovePiece(newPieceSpot);
                     // place it back
-                    board._AddPiece(oldPieceSpot.Point, oldPieceSpot, false);
+                    board.AddPiece(oldPieceSpot, oldPieceSpot.Point, false);
 
                     // this move breaks the hive
                     return false;
@@ -336,7 +396,7 @@ namespace HiveCore
             }
 
             // Place it back
-            board._AddPiece(oldPieceSpot.Point, oldPieceSpot, false);
+            board.AddPiece(oldPieceSpot, oldPieceSpot.Point, false);
 
             // this move does not break the hive
             return true;
