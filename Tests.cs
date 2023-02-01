@@ -41,6 +41,24 @@ namespace HiveCore
         }
         
         [Fact]
+        public void SpiderGateTest()
+        {
+            _WhiteMove("wG1");
+            _BlackMove("bG1NTwG1");
+            _WhiteMove("wS1SEwG1");
+            _BlackMove("bQ1NEbG1");
+            _WhiteMove("wQ1NEwS1");
+            _BlackMove("bA1NEbQ1");
+            _WhiteMove("wA1NEwQ1");
+            _BlackMove("bB1NTbQ1");
+            _WhiteMove("wA2NEwA1");
+            _BlackMove("bB2NEbA1");
+            _WhiteMove("wG2STwA2");
+            _BlackMove("bG2NTbA1");
+            _WhiteMove("wG1NTwA2"); // created a circle
+        }
+
+        [Fact]
         public void NewBoardIsEmptyTest()
         {
             Assert.Empty(game.Board.Pieces);
