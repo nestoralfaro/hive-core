@@ -38,6 +38,7 @@ namespace HiveCore
             _BlackMove("bA1NTbQ1");
             _WhiteMove("wS1NTbA1");
         }
+        
 
         [Fact]
         public void AntCircleGateTest()
