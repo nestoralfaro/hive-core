@@ -374,14 +374,27 @@ namespace HiveCore
             bool peripheralLeftIsNotItself = peripheralLeftSpot.x != Point.x || peripheralLeftSpot.y != Point.y;
             bool peripheralRightIsNotItself = peripheralRightSpot.x != Point.x || peripheralRightSpot.y != Point.y;
 
-            bool noneOfThePeripheralsIsItself = peripheralLeftIsNotItself && peripheralRightIsNotItself;
-            bool onlyOneSpotIsOpen = board.Pieces.ContainsKey(peripheralLeftSpot) ^ board.Pieces.ContainsKey(peripheralRightSpot);
-            //                                              Right is itself             Someone MUST be there on the left             OR    Left is itself                    Someone MUST be there on the right 
-            bool checkThatTheOppositePeripheralExists = (!peripheralRightIsNotItself && board.Pieces.ContainsKey(peripheralLeftSpot)) || (!peripheralLeftIsNotItself && board.Pieces.ContainsKey(peripheralRightSpot));
+            
+            int LeftStackCount = board.Pieces.ContainsKey(peripheralLeftSpot) ? board.Pieces[peripheralLeftSpot].Count() : 0;
+            int RightStackCount = board.Pieces.ContainsKey(peripheralRightSpot) ? board.Pieces[peripheralRightSpot].Count() : 0;
+            int FromStackCount = board.Pieces.ContainsKey(from) ? board.Pieces[from].Count() : 0;
+            int ToStackCount = board.Pieces.ContainsKey(to) ? board.Pieces[to].Count : 0;
+            if(isBeetle){
+                return FromStackCount >= (ToStackCount + 1)
+                ? !(LeftStackCount >= FromStackCount && RightStackCount >= FromStackCount)
+                : !(LeftStackCount >= ToStackCount && RightStackCount >= ToStackCount);
+            }
+
+
+             bool noneOfThePeripheralsIsItself = peripheralLeftIsNotItself && peripheralRightIsNotItself;
+             bool onlyOneSpotIsOpen = board.Pieces.ContainsKey(peripheralLeftSpot) ^ board.Pieces.ContainsKey(peripheralRightSpot);
+             //                                              Right is itself             Someone MUST be there on the left             OR    Left is itself                    Someone MUST be there on the right 
+             bool checkThatTheOppositePeripheralExists = (!peripheralRightIsNotItself && board.Pieces.ContainsKey(peripheralLeftSpot)) || (!peripheralLeftIsNotItself && board.Pieces.ContainsKey(peripheralRightSpot));
 
             return noneOfThePeripheralsIsItself
                     // If it is a beetle, check it can crawl on   OR get off of piece at to/from point   OR Treat it as a normal piece
-                    ? ((isBeetle && (board.Pieces.ContainsKey(to) || board.Pieces.ContainsKey(from))) || onlyOneSpotIsOpen)
+                    // ? ((isBeetle && (board.Pieces.ContainsKey(to) || board.Pieces.ContainsKey(from))) || onlyOneSpotIsOpen)
+                    ? (onlyOneSpotIsOpen)
                     : checkThatTheOppositePeripheralExists;
         }
 
