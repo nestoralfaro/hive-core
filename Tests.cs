@@ -38,7 +38,93 @@ namespace HiveCore
             _BlackMove("bA1NTbQ1");
             _WhiteMove("wS1NTbA1");
         }
-        
+
+        [Fact]
+        public void AntCircleGateTest()
+        {
+            _WhiteMove("wG1");
+            _BlackMove("bG1NTwG1");
+            _WhiteMove("wA1SEwG1");
+            _BlackMove("bA1NTbG1");
+            _WhiteMove("wQ1SEwA1");
+            _BlackMove("bS1NEbA1");
+            _WhiteMove("wS1NEwQ1"); // get it on top of wQ1
+            _BlackMove("bQ1NEbS1");
+            _WhiteMove("wG2NEwS1"); // get it off of wQ1
+            _BlackMove("bA2SEbQ1");
+            _WhiteMove("wG3NTwG2");
+            _BlackMove("bB1NEbA2");
+            _WhiteMove("wB1SWwG1"); // get it on top of wQ1
+            _BlackMove("bB1SEbA2");
+            _WhiteMove("wB1STwG1"); // get it on top of wQ1
+            _BlackMove("bA1NWwG2");
+        }
+
+        [Fact]
+        public void SpiderCircleGateTest()
+        {
+            _WhiteMove("wG1");
+            _BlackMove("bG1NTwG1");
+            _WhiteMove("wA1SEwG1");
+            _BlackMove("bS1NTbG1");
+            _WhiteMove("wQ1SEwA1");
+            _BlackMove("bA1NEbS1");
+            _WhiteMove("wS1NEwQ1"); // get it on top of wQ1
+            _BlackMove("bQ1NEbA1");
+            _WhiteMove("wG2NEwS1"); // get it off of wQ1
+            _BlackMove("bA2SEbQ1");
+            _WhiteMove("wG3NTwG2");
+            _BlackMove("bB1NEbA2");
+            _WhiteMove("wB1SWwG1"); // get it on top of wQ1
+            _BlackMove("bB1SEbA2");
+            _WhiteMove("wB1STwG1"); // get it on top of wQ1
+            _BlackMove("bS1NTbQ1");
+
+        }
+                       [Fact]
+
+        public void BeetleGateTest()
+        {
+            _WhiteMove("wG1");
+            _BlackMove("bG1NTwG1");
+            _WhiteMove("wA1SEwG1");
+            _BlackMove("bS1NTbG1");
+            _WhiteMove("wQ1SEwA1");
+            _BlackMove("bA1NEbS1");
+            _WhiteMove("wS1NEwQ1"); // get it on top of wQ1
+            _BlackMove("bQ1NEbA1");
+            _WhiteMove("wG2NEwS1"); // get it off of wQ1
+            _BlackMove("bA2SEbQ1");
+            _WhiteMove("wG3NTwG2");
+            _BlackMove("bB1NEbA2");
+            _WhiteMove("wB1SWwG1"); // get it on top of wQ1
+            _BlackMove("bB1SEbA2");
+            _WhiteMove("wB1STwG1"); // get it on top of wQ1
+            _BlackMove("bB1STbA2");
+
+        }
+
+
+        public void AntCircleTest()
+        {
+            _WhiteMove("wG1");
+            _BlackMove("bG1NTwG1");
+            _WhiteMove("wA1SEwG1");
+            _BlackMove("bA1NTbG1");
+            _WhiteMove("wQ1SEwA1");
+            _BlackMove("bS1NEbA1");
+            _WhiteMove("wS1NEwQ1"); // get it on top of wQ1
+            _BlackMove("bQ1NEbS1");
+            _WhiteMove("wG2NEwS1"); // get it off of wQ1
+             _BlackMove("bA2SEbQ1");
+            _WhiteMove("wG3NTwG2");
+            _BlackMove("bB1NEbA2");
+            _WhiteMove("wB1SWwG1"); // get it on top of wQ1
+             _BlackMove("bB1SEbA2");
+            _WhiteMove("wA1NEwG1"); // get it on top of wQ1
+        }
+
+
         [Fact]
         public void NewBoardIsEmptyTest()
         {
