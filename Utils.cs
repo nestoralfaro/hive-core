@@ -4,7 +4,10 @@ namespace HiveCore
 {
     public static class Utils
     {
+        public enum Color { Black, White }
+        public enum Insect { QueenBee, Beetle, Grasshopper, Spider, Ant }
         public const int MANY_SIDES = 6;
+        public const int _SPIDER_MAX_STEP_COUNT = 3;
         public static readonly Dictionary<string, (int, int)> SIDE_OFFSETS = new()
         {
             // Notice how each side is only valid if it adds up to an even number

@@ -6,7 +6,6 @@ namespace HiveCore
 {
     public class Piece
     {
-        private const int _SPIDER_MAX_STEP_COUNT = 3;
         private readonly string _piece;
         public Color Color { get; set; }
         public int Number { get; set; }
@@ -25,11 +24,15 @@ namespace HiveCore
                 };
         } }
 
-        public List<(int, int)> Neighbors { get; set; }
-        public List<(int, int)> SpotsAround { get { return Sides.Where(side => !Neighbors.Contains(side.Key)).Select(s => s.Key).ToList(); } }
+        public HashSet<(int, int)> Neighbors { get; set; }
+
+                                                        // If `Sides` is another HashSet, we could use `ExceptWith` instead, which would
+                                                        // not require LINQ, that way using a more native way from `HashSet`.
+                                                        // We need to discover whether we need the mapping to the letters before tho–e.g., "NT"
+        public HashSet<(int, int)> OpenSpotsAround { get { return Sides.Select(s => s.Key).ToHashSet().Except(Neighbors).ToHashSet(); } }
         public int ManyNeighbors { get{ return Neighbors.Count; } }
         public override string ToString() { return _piece; }
-        public bool IsSurrounded() { return Neighbors.Count == MANY_SIDES; }
+        public bool IsSurrounded { get; set; }
         public Piece(string piece)
         {
             _piece = piece;
@@ -45,395 +48,47 @@ namespace HiveCore
             // piece[1] == 'A'
             : Insect.Ant;
             Number = piece[2] - '0';
-            Neighbors = new List<(int, int)>();
+            Neighbors = new HashSet<(int, int)>();
             Neighbors.EnsureCapacity(MANY_SIDES);
             Point = (0, 0);
             IsOnBoard = false;
+            IsSurrounded = false;
+        }
+        public Piece Clone()
+        {
+            return new Piece(this._piece) {
+                Color = this.Color,
+                Insect = this.Insect,
+                Number = this.Number,
+                Point = this.Point,
+                IsOnBoard = this.IsOnBoard,
+                Neighbors = new HashSet<(int, int)>(this.Neighbors),
+            };
         }
 
         public override bool Equals(object? obj)
         {
-            return obj is Piece p && _piece == p._piece;
+            return
+            // if they are the same type
+            obj is Piece p
+            // and both are either on or off the board
+            && p.IsOnBoard == IsOnBoard
+            // and have the same string (which should validate their Color, Insect, and Number)
+            && _piece == p._piece
+            // and the same point
+            && (p.Point.x == Point.x) && (p.Point.y == p.Point.y)
+
+            // maybe unnecessary? to be benchmarked
+            // and the same amount of spots around
+            && p.OpenSpotsAround == OpenSpotsAround
+            // and the same amount of neighbors
+            && p.ManyNeighbors == ManyNeighbors;
         }
 
-        public HashSet<(int, int)> GetMovingSpots(ref Board board)
+        // hashed by its string form
+        public override int GetHashCode()
         {
-            // // If the queen has not been played
-            if (!board.IsOnBoard($"{char.ToLower(Color.ToString()[0])}Q1"))
-            {
-                // This piece cannot move
-                return new HashSet<(int, int)>();
-            }
-            // If the piece about to be placed is the fourth one, and the queen has not been played
-            else if (board.GetRefPiecesByColor(Color).Count == 3 && !board.IsOnBoard($"{char.ToLower(Color.ToString()[0])}Q1"))
-            {
-                // then the queen has to be played
-                return _GetQueenMovingSpots(ref board);
-            }
-            else
-            {
-            // Return this piece's valid moving spots
-                return Insect switch
-                {
-                    Insect.Ant => _GetAntMovingSpots(ref board),
-                    Insect.Beetle => _GetBeetleMovingSpots(ref board),
-                    Insect.Grasshopper => _GetGrasshopperMovingSpots(ref board),
-                    Insect.Spider => _GetSpiderMovingSpots(ref board),
-                    Insect.QueenBee => _GetQueenMovingSpots(ref board),
-                    _ => throw new ArgumentException("This piece is not valid."),
-                };
-            }
+            return HashCode.Combine(_piece);
         }
-
-        // Maybe this should become a static method in the `Board` class with a `Color` parameter
-        // That way the `Board` tells `Manager` where `Color` can play?
-        public List<(int, int)> GetPlacingSpots(ref Board board)
-        {
-            Stopwatch stopwatch = new();
-            stopwatch.Start();
-
-            // Maybe keep track of the visited ones with a hashmap and also pass it to the hasopponent neighbor?
-            List<(int, int)> positions = new();
-
-            // If nothing has been played
-            if (board.IsEmpty())
-            {
-                // Origin is the only first valid placing spot
-                return new List<(int, int)>(){(0, 0)};
-            }
-            // If there is only one piece on the board
-            else if (board.Pieces.Count == 1)
-            {
-                // the available placing spots will be the such piece's surrounding spots
-                return board.Pieces[(0, 0)].Peek().SpotsAround;
-            }
-            // Make sure the game is still going
-            else if (!board.IsAQueenSurrounded())
-            {
-                // from here on out, only the spots that do not neighbor an opponent are valid  
-
-                // iterate through the current player's pieces on the board
-                foreach (Piece? piece in board.GetRefPiecesByColor(this.Color))
-                {
-                    if (piece != null)
-                    {
-                        // iterate through this piece's available spots
-                        foreach ((int, int) spot in piece.SpotsAround)
-                        {
-                            //      Not been visited        It is not neighboring an opponent
-                            if (!positions.Contains(spot) && !_HasOpponentNeighbor(spot, board.Pieces))
-                            {
-                                positions.Add(spot);
-                            }
-                        }
-                    }
-                }
-            }
-
-            stopwatch.Stop();
-            PrintRed($"Generating Available Spots for Player {Color} took: {stopwatch.Elapsed.Milliseconds} ms");
-
-            return positions;
-        }
-
-        private bool _HasOpponentNeighbor((int x, int y) point, Dictionary<(int, int), Stack<Piece>> pieces)
-        {
-            // foreach ((int, int) side in SIDE_OFFSETS.Values)
-            for (int i = 0; i < MANY_SIDES; ++i)
-            {
-                (int, int) potentialOpponentNeighborPosition = (point.x + SIDE_OFFSETS_ARRAY[i].x, point.y + SIDE_OFFSETS_ARRAY[i].y);
-                // If piece is on the board                                     And Is not the same color as the piece that is about to be placed
-                // if (pieces.ContainsKey(potentialOpponentNeighborPosition) && pieces[potentialOpponentNeighborPosition].Peek().Color != this.Color)
-                if (pieces.ContainsKey(potentialOpponentNeighborPosition) && pieces[potentialOpponentNeighborPosition].TryPeek(out Piece topPiece) && topPiece.Color != this.Color)
-                {
-                    // Has an opponent neighbor
-                    return true;
-                }
-            }
-
-            // Checked each side, and no opponent's pieces were found
-            return false;
-        }
-
-
-
-        // This should be used for the pieces that have an expensive move generation–i.e., for now, only the Ant
-        // TODO: Test whether adding this validation actually improves performance on other pieces
-        // (which probably does not because it would be validating its surroundings twice) 
-        public bool IsPinned(Board board, bool isBeetle = false)
-        {
-            if (IsSurrounded())
-                return true;
-
-            foreach((int, int) side in Sides.Keys)
-            {
-                // If there is at least one valid path
-                if (_IsValidPath(ref board, Point, side, isBeetle))
-                {
-                    // It is not pinned
-                    return false;
-                }
-            }
-
-            // None of its side were a valid path,
-            // So this piece is pinned
-            return true;
-        }
-
-
-        private HashSet<(int, int)> _GetAntMovingSpots(ref Board board)
-        {
-            Stopwatch stopwatch = new();
-            stopwatch.Start();
-            HashSet<(int x, int y)> positions = new();
-            // Before getting all the open spots (which could be an expensive computation)
-            // Make sure this piece is not pinned
-            // Benchmark whether this actually speeds up performance or not
-            // if (!IsPinned(board))
-            _AntDFS(ref board, ref positions, Point);
-            stopwatch.Stop();
-            PrintRed("Generating Ant Moves took: " + stopwatch.Elapsed.Milliseconds + "ms");
-            return positions;
-        }
-
-        private void _AntDFS(ref Board board, ref HashSet<(int x, int y)> positions, (int x, int y) curSpot)
-        {
-            for (int i = 0; i < MANY_SIDES; ++i)
-            {
-                (int x, int y) nextSpot = (curSpot.x + SIDE_OFFSETS_ARRAY[i].x, curSpot.y + SIDE_OFFSETS_ARRAY[i].y);
-                bool hasNotBeenVisited = !positions.Contains(nextSpot);
-                if (hasNotBeenVisited && _IsValidPath(ref board, curSpot, nextSpot))
-                {
-                    positions.Add(nextSpot);
-                    _AntDFS(ref board, ref positions, nextSpot);
-                }
-            }
-            return;
-        }
-
-        private HashSet<(int, int)> _GetBeetleMovingSpots(ref Board board)
-        {
-            Stopwatch stopwatch = new();
-            stopwatch.Start();
-
-            HashSet<(int, int)> validMoves = new();
-
-            foreach ((int, int) side in Sides.Keys)
-            {
-                // Keep the valid "paths" (from point -> to side)
-                if (_IsValidPath(ref board, this.Point, side, true))
-                {
-                    validMoves.Add(side);
-                }
-            }
-
-            stopwatch.Stop();
-            PrintRed("Generating Beetle moves took: " + stopwatch.Elapsed.Milliseconds + "ms");
-
-            return validMoves;
-        }
-
-        private HashSet<(int, int)> _GetGrasshopperMovingSpots(ref Board board)
-        {
-            Stopwatch stopwatch = new();
-            stopwatch.Start();
-
-            HashSet<(int x, int y)> positions = new();
-            for (int s = 0; s < MANY_SIDES; ++s)
-            {
-                (int x, int y) nextSpot = (this.Point.x + SIDE_OFFSETS_ARRAY[s].x, this.Point.y + SIDE_OFFSETS_ARRAY[s].y);
-                bool firstIsValid = false;
-
-                // Keep hopping over pieces
-                while (board.Pieces.ContainsKey(nextSpot))
-                {
-                    // until you find a spot
-                    nextSpot = (nextSpot.x + SIDE_OFFSETS_ARRAY[s].x, nextSpot.y + SIDE_OFFSETS_ARRAY[s].y);
-                    firstIsValid = true;
-                }
-
-                if (firstIsValid)
-                {
-                    if (_DoesNotBreakHive(ref board, nextSpot))
-                    {
-                        positions.Add(nextSpot);
-                    }
-                }
-            }
-
-            stopwatch.Stop();
-            PrintRed("Generating grasshoper moves took: " + stopwatch.Elapsed.Milliseconds + "ms");
-
-            return positions;
-        }
-
-        private HashSet<(int, int)> _GetSpiderMovingSpots(ref Board board)
-        {
-            Stopwatch stopwatch = new();
-            stopwatch.Start();
-
-            HashSet<(int x, int y)> positions = new();
-            // On the first call you can also just call its spots around
-            // foreach ((int x, int y) side in SpotsAround)
-            // for (int s = 0; s < SpotsAround.Count; ++s)
-            // {
-            //     bool hasNotBeenVisited = !visited.ContainsKey(SpotsAround[s]) || (visited.ContainsKey(SpotsAround[s]) && !visited[SpotsAround[s]]);
-            //     if (hasNotBeenVisited && _IsValidPath(ref board, Point, SpotsAround[s]))
-            //     {
-            //         _SpiderDFS(ref board, ref positions, ref visited, SpotsAround[s], 1, _SPIDER_MAX_STEP_COUNT);
-            //     }
-            // }
-            _SpiderDFS(ref board, ref positions, Point, 0, _SPIDER_MAX_STEP_COUNT);
-
-            stopwatch.Stop();
-            PrintRed("Generating spider moves took: " + stopwatch.Elapsed.Milliseconds + "ms");
-
-            return positions;
-        }
-
-        private void _SpiderDFS(ref Board board, ref HashSet<(int x, int y)> positions, (int x, int y) curSpot, int curDepth, int maxDepth)
-        {
-            if (curDepth == maxDepth)
-            {
-                // No one is at that position
-                if (!board.Pieces.ContainsKey(curSpot))
-                {
-                    positions.Add(curSpot);
-                }
-                return;
-            }
-
-            for (int i = 0; i < MANY_SIDES; ++i)
-            {
-                (int x, int y) nextSpot = (curSpot.x + SIDE_OFFSETS_ARRAY[i].x, curSpot.y + SIDE_OFFSETS_ARRAY[i].y);
-                bool hasNotBeenVisited = !positions.Contains(nextSpot); //|| (visited.ContainsKey(nextSpot) && !visited[nextSpot]);
-                if (hasNotBeenVisited && _IsValidPath(ref board, curSpot, nextSpot))
-                {
-                    _SpiderDFS(ref board, ref positions, nextSpot, curDepth + 1, maxDepth);
-                }
-            }
-        }
-
-        private HashSet<(int, int)> _GetQueenMovingSpots(ref Board board)
-        {
-            Stopwatch stopwatch = new();
-            stopwatch.Start();
-
-            HashSet<(int, int)> spots = new();
-            // foreach ((int, int) spot in SpotsAround)
-            for (int s = 0; s < SpotsAround.Count; ++s)
-            {
-                // It is not busy and is valid
-                if (_IsValidPath(ref board, this.Point, SpotsAround[s]))
-                {
-                    spots.Add(SpotsAround[s]);
-                }
-            }
-
-            stopwatch.Stop();
-            PrintRed("Elapsed time: " + stopwatch.Elapsed.Milliseconds + "ms");
-
-            return spots;
-        }
-
-        #region Helper Methods For Finding Valid Spots
-        private bool _IsFreedomOfMovement(ref Board board, (int x, int y) from, (int x, int y) to, bool isBeetle = false)
-        {
-            (int offsetX, int offsetY) offset = (to.x - from.x, to.y - from.y);
-
-            int index = Array.IndexOf(SIDE_OFFSETS_ARRAY, offset); // direction we're going
-
-            (int x, int y) leftOffset = index == 0 ? SIDE_OFFSETS_ARRAY[5] : SIDE_OFFSETS_ARRAY[index - 1];
-            (int x, int y) rightOffset = index == 5 ? SIDE_OFFSETS_ARRAY[0] : SIDE_OFFSETS_ARRAY[index + 1];
-
-            (int x, int y) peripheralLeftSpot = (from.x + leftOffset.x, from.y + leftOffset.y);
-            (int x, int y) peripheralRightSpot = (from.x + rightOffset.x, from.y + rightOffset.y);
-
-            bool peripheralLeftIsNotItself = peripheralLeftSpot.x != Point.x || peripheralLeftSpot.y != Point.y;
-            bool peripheralRightIsNotItself = peripheralRightSpot.x != Point.x || peripheralRightSpot.y != Point.y;
-
-            if(isBeetle){
-                int LeftStackCount = board.Pieces.ContainsKey(peripheralLeftSpot) ? board.Pieces[peripheralLeftSpot].Count : 0;
-                int RightStackCount = board.Pieces.ContainsKey(peripheralRightSpot) ? board.Pieces[peripheralRightSpot].Count : 0;
-                int FromStackCount = board.Pieces.ContainsKey(from) ? board.Pieces[from].Count : 0;
-                int ToStackCount = board.Pieces.ContainsKey(to) ? board.Pieces[to].Count : 0;
-                return FromStackCount >= (ToStackCount + 1)
-                ? !(LeftStackCount >= FromStackCount && RightStackCount >= FromStackCount)
-                : !(LeftStackCount >= ToStackCount && RightStackCount >= ToStackCount);
-            }
-
-             bool noneOfThePeripheralsIsItself = peripheralLeftIsNotItself && peripheralRightIsNotItself;
-             bool onlyOneSpotIsOpen = board.Pieces.ContainsKey(peripheralLeftSpot) ^ board.Pieces.ContainsKey(peripheralRightSpot);
-             //                                              Right is itself             Someone MUST be there on the left             OR    Left is itself                    Someone MUST be there on the right 
-             bool checkThatTheOppositePeripheralExists = (!peripheralRightIsNotItself && board.Pieces.ContainsKey(peripheralLeftSpot)) || (!peripheralLeftIsNotItself && board.Pieces.ContainsKey(peripheralRightSpot));
-
-            return noneOfThePeripheralsIsItself
-                    // If it is a beetle, check it can crawl on   OR get off of piece at to/from point   OR Treat it as a normal piece
-                    // ? ((isBeetle && (board.Pieces.ContainsKey(to) || board.Pieces.ContainsKey(from))) || onlyOneSpotIsOpen)
-                    ? onlyOneSpotIsOpen
-                    : checkThatTheOppositePeripheralExists;
-        }
-
-        private bool _DoesNotBreakHive(ref Board board, (int x, int y) to)
-        {
-            Piece oldPieceSpot = new(ToString())
-            {
-                Point = Point
-            };
-
-            Piece newPieceSpot = new(ToString())
-            {
-                Point = to
-            };
-
-            board._RemovePiece(this);
-
-            if (!board.IsAllConnected())
-            {
-                // place it back
-                board.AddPiece(oldPieceSpot, oldPieceSpot.Point);
-
-                // this move breaks the hive
-                return false;
-            }
-            else
-            {
-                // Temporarily place this piece to the `to` point
-                board.AddPiece(newPieceSpot, to);
-                if (!board.IsAllConnected())
-                {
-                    board._RemovePiece(newPieceSpot);
-                    // place it back
-                    board.AddPiece(oldPieceSpot, oldPieceSpot.Point);
-
-                    // this move breaks the hive
-                    return false;
-                }
-                board._RemovePiece(newPieceSpot);
-            }
-
-            // Place it back
-            board.AddPiece(oldPieceSpot, oldPieceSpot.Point);
-
-            // this move does not break the hive
-            return true;
-        }
-
-        private bool _IsValidPath(ref Board board, (int x, int y) from, (int x, int y) to, bool isBeetle = false)
-        {
-            //      Only beetle can crawl on top of                 One Hive Rule                       Physically Fits
-            return (isBeetle || !board.Pieces.ContainsKey(to)) && _DoesNotBreakHive(ref board, to) && _IsFreedomOfMovement(ref board, from, to, isBeetle);
-        }
-
-        #endregion
-    }
-
-    public enum Insect
-    {
-        QueenBee,
-        Beetle,
-        Grasshopper,
-        Spider,
-        Ant,
     }
 }

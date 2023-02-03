@@ -78,25 +78,25 @@ namespace HiveCore
             _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(1, 3), (3, 3), (4, 2), (5, 1), (4, 0), (3, -1)});
         }
 
-        // [Fact]
-        // public void SpiderCircleTest()
-        // {
-        //     _WhiteMove("wG1");
-        //     _BlackMove("bG1NTwG1");
-        //     _WhiteMove("wA1SEwG1");
-        //     _BlackMove("bA1NTbG1");
-        //     _WhiteMove("wQ1SEwA1");
-        //     _BlackMove("bS1NEbA1");
-        //     _WhiteMove("wS1NEwQ1"); // get it on top of wQ1
-        //     _BlackMove("bQ1NEbS1");
-        //     _WhiteMove("wG2NEwS1"); // get it off of wQ1
-        //      _BlackMove("bA2SEbQ1");
-        //     _WhiteMove("wG3NTwG2");
-        //     _BlackMove("bB1NEbA2");
-        //     _WhiteMove("wB1SWwG1"); // get it on top of wQ1
-        //      _BlackMove("bB1SEbA2");
-        //     _WhiteMove("wS1STbQ1"); // get it on top of wQ1
-        // }
+        [Fact]
+        public void SpiderCircleTest()
+        {
+            _WhiteMove("wG1");
+            _BlackMove("bG1NTwG1");
+            _WhiteMove("wA1SEwG1");
+            _BlackMove("bA1NTbG1");
+            _WhiteMove("wQ1SEwA1");
+            _BlackMove("bS1NEbA1");
+            _WhiteMove("wS1NEwQ1"); // get it on top of wQ1
+            _BlackMove("bQ1NEbS1");
+            _WhiteMove("wG2NEwS1"); // get it off of wQ1
+             _BlackMove("bA2SEbQ1");
+            _WhiteMove("wG3NTwG2");
+            _BlackMove("bB1NEbA2");
+            _WhiteMove("wB1SWwG1"); // get it on top of wQ1
+             _BlackMove("bB1SEbA2");
+            _WhiteMove("wS1STbQ1"); // get it on top of wQ1
+        }
 
         // [Fact]
 
@@ -317,13 +317,12 @@ namespace HiveCore
         {
             var actualPoint = game.Board.GetPointByString(piece);
             Console.WriteLine($"Actual {piece}'s point was {actualPoint}");
-            Assert.True(actualPoint.Item1 == point.Item1 && actualPoint.Item2 == point.Item2);
+            Assert.True(actualPoint.x == point.Item1 && actualPoint.y == point.Item2);
         }
 
         private void _AssertPlacingSpots(Color color, List<(int, int)> spots)
         {
-            var returnedSpots = new Piece($"{char.ToLower(color.ToString()[0])}S1").GetPlacingSpots(ref game.Board);
-
+            var returnedSpots = game.Board.GetPlacingSpotsFor(color);
             Console.WriteLine($"////////////////Actual Placing Spots Returned For Player {color}////////////////");
             foreach (var s in returnedSpots)
             {
@@ -354,7 +353,8 @@ namespace HiveCore
 
         private void _AssertMovingSpots(string piece, HashSet<(int, int)> spots)
         {
-            var returnedSpots = game.Board.GetRefTopPieceByStringName(piece)!.GetMovingSpots(ref game.Board);
+            Piece p = game.Board.GetRefTopPieceByStringName(piece)!;
+            var returnedSpots = game.Board.GetMovingSpotsFor(ref p);
 
             Console.WriteLine($"////////////////Actual Moving Spots For {piece}////////////////");
             foreach (var s in returnedSpots)

@@ -3,12 +3,6 @@ using static HiveCore.Utils;
 
 namespace HiveCore
 {
-    public enum Color
-    {
-        Black,
-        White
-    }
-
     public class GameManager
     {
         public Board Board;
@@ -46,19 +40,9 @@ namespace HiveCore
             }
         }
 
-        private bool IsPlacingValid(Piece piece, (int, int) to)
-        {
-            return piece.GetPlacingSpots(ref Board).Contains(to);
-        }
-
-        private bool IsPlacingMove(Piece piece, (int, int) to)
-        {
-            return !piece.IsOnBoard;
-        }
-
         public bool IsMovingValid(Piece piece, (int, int) to)
         {
-            return piece.IsOnBoard && piece.GetMovingSpots(ref Board).Contains(to);
+            return piece.IsOnBoard && Board.GetMovingSpotsFor(ref piece).Contains(to);
         }
 
         private bool IsFirstMove(Piece piece)
@@ -125,11 +109,11 @@ namespace HiveCore
 
                     if (move.IsMoveWithDestination())
                     {
-                        if (!piece.IsOnBoard && piece.GetPlacingSpots(ref Board).Contains(to))
+                        if (!piece.IsOnBoard && Board.GetPlacingSpotsFor(color).Contains(to))
                         {
-                            Board.AddPiece(piece, to);
+                            Board.PlacePiece(piece, to);
                         }
-                        else if (piece.IsOnBoard && piece.GetMovingSpots(ref Board).Contains(to))
+                        else if (piece.IsOnBoard && Board.GetMovingSpotsFor(ref piece).Contains(to))
                         {
                             Board.MovePiece(piece, to);
                         }
@@ -142,7 +126,7 @@ namespace HiveCore
                     {
                         if (IsFirstMove(piece))
                         {
-                            Board.AddPiece(piece, to);
+                            Board.PlacePiece(piece, to);
                         }
                     }
                 }
@@ -184,11 +168,11 @@ namespace HiveCore
         public bool IsGameOver()
         {
             // This considers if a queen has been surrounded, but what about when the player has no more moves?
-            if (Board.IsOnBoard("wQ1") && Board.GetRefPieceByStringName("wQ1").IsSurrounded())
+            if (Board.IsOnBoard("wQ1") && Board.GetRefPieceByStringName("wQ1").IsSurrounded)
             {
                 Winner = Color.White;
             }
-            else if (Board.IsOnBoard("bQ1") && Board.GetRefPieceByStringName("bQ1").IsSurrounded())
+            else if (Board.IsOnBoard("bQ1") && Board.GetRefPieceByStringName("bQ1").IsSurrounded)
             {
                 Winner = Color.Black;
             }
