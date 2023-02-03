@@ -200,8 +200,8 @@ namespace HiveCore
         {
             for (int i = 0; i < MANY_SIDES; ++i)
             {
-                (int x, int y) nextSpot = (curSpot.x + SIDE_OFFSETS_ARRAY[i].Item1, curSpot.y + SIDE_OFFSETS_ARRAY[i].Item2);
-                bool hasNotBeenVisited = !positions.Contains(nextSpot); //|| (positions.Contains(nextSpot) && !visited[nextSpot]);
+                (int x, int y) nextSpot = (curSpot.x + SIDE_OFFSETS_ARRAY[i].x, curSpot.y + SIDE_OFFSETS_ARRAY[i].y);
+                bool hasNotBeenVisited = !positions.Contains(nextSpot);
                 if (hasNotBeenVisited && _IsValidPath(ref board, curSpot, nextSpot))
                 {
                     positions.Add(nextSpot);
@@ -239,7 +239,6 @@ namespace HiveCore
             stopwatch.Start();
 
             HashSet<(int x, int y)> positions = new();
-            // foreach ((int x, int y) sideOffset in SIDE_OFFSETS.Values)
             for (int s = 0; s < MANY_SIDES; ++s)
             {
                 (int x, int y) nextSpot = (this.Point.x + SIDE_OFFSETS_ARRAY[s].x, this.Point.y + SIDE_OFFSETS_ARRAY[s].y);
@@ -340,19 +339,9 @@ namespace HiveCore
         #region Helper Methods For Finding Valid Spots
         private bool _IsFreedomOfMovement(ref Board board, (int x, int y) from, (int x, int y) to, bool isBeetle = false)
         {
-            (int offsetX, int offsetY) = (to.x - from.x, to.y - from.y);
+            (int offsetX, int offsetY) offset = (to.x - from.x, to.y - from.y);
 
-            // int index = Array.IndexOf(SIDE_OFFSETS_ARRAY, offset); // direction we're going
-
-            int index = 0;
-            for (; index < MANY_SIDES; ++index)
-            {
-                if (SIDE_OFFSETS_ARRAY[index].x == offsetX && SIDE_OFFSETS_ARRAY[index].y == offsetY)
-                {
-                    // direction we are going
-                    break;
-                }
-            }
+            int index = Array.IndexOf(SIDE_OFFSETS_ARRAY, offset); // direction we're going
 
             (int x, int y) leftOffset = index == 0 ? SIDE_OFFSETS_ARRAY[5] : SIDE_OFFSETS_ARRAY[index - 1];
             (int x, int y) rightOffset = index == 5 ? SIDE_OFFSETS_ARRAY[0] : SIDE_OFFSETS_ARRAY[index + 1];
@@ -363,17 +352,15 @@ namespace HiveCore
             bool peripheralLeftIsNotItself = peripheralLeftSpot.x != Point.x || peripheralLeftSpot.y != Point.y;
             bool peripheralRightIsNotItself = peripheralRightSpot.x != Point.x || peripheralRightSpot.y != Point.y;
 
-            
-            int LeftStackCount = board.Pieces.ContainsKey(peripheralLeftSpot) ? board.Pieces[peripheralLeftSpot].Count() : 0;
-            int RightStackCount = board.Pieces.ContainsKey(peripheralRightSpot) ? board.Pieces[peripheralRightSpot].Count() : 0;
-            int FromStackCount = board.Pieces.ContainsKey(from) ? board.Pieces[from].Count() : 0;
-            int ToStackCount = board.Pieces.ContainsKey(to) ? board.Pieces[to].Count : 0;
             if(isBeetle){
+                int LeftStackCount = board.Pieces.ContainsKey(peripheralLeftSpot) ? board.Pieces[peripheralLeftSpot].Count : 0;
+                int RightStackCount = board.Pieces.ContainsKey(peripheralRightSpot) ? board.Pieces[peripheralRightSpot].Count : 0;
+                int FromStackCount = board.Pieces.ContainsKey(from) ? board.Pieces[from].Count : 0;
+                int ToStackCount = board.Pieces.ContainsKey(to) ? board.Pieces[to].Count : 0;
                 return FromStackCount >= (ToStackCount + 1)
                 ? !(LeftStackCount >= FromStackCount && RightStackCount >= FromStackCount)
                 : !(LeftStackCount >= ToStackCount && RightStackCount >= ToStackCount);
             }
-
 
              bool noneOfThePeripheralsIsItself = peripheralLeftIsNotItself && peripheralRightIsNotItself;
              bool onlyOneSpotIsOpen = board.Pieces.ContainsKey(peripheralLeftSpot) ^ board.Pieces.ContainsKey(peripheralRightSpot);
@@ -383,7 +370,7 @@ namespace HiveCore
             return noneOfThePeripheralsIsItself
                     // If it is a beetle, check it can crawl on   OR get off of piece at to/from point   OR Treat it as a normal piece
                     // ? ((isBeetle && (board.Pieces.ContainsKey(to) || board.Pieces.ContainsKey(from))) || onlyOneSpotIsOpen)
-                    ? (onlyOneSpotIsOpen)
+                    ? onlyOneSpotIsOpen
                     : checkThatTheOppositePeripheralExists;
         }
 
