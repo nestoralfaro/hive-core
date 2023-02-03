@@ -33,6 +33,7 @@ namespace HiveCore
         }
 
         [Fact]
+
         public void AntCircleGateTest()
         {
             _WhiteMove("wG1");
@@ -76,6 +77,25 @@ namespace HiveCore
             _BlackMove("bS1NTbQ1");
 
         }
+
+        [Fact]
+        public void AntBiggerCTest()
+        {
+            _WhiteMove("wG1");
+            _BlackMove("bG1NEwG1");
+            _WhiteMove("wQ1STwG1");
+            _BlackMove("bQ1NEbG1");
+            _WhiteMove("wB1STwQ1");
+            _BlackMove("bB1SEbQ1");
+            _WhiteMove("wA1SEwB1"); // get it on top of wQ1
+            _BlackMove("bG2SEbB1");
+            _WhiteMove("wG2SEwA1"); // get it off of wQ1
+            _BlackMove("bA1STbG2");
+            _WhiteMove("wS1NEwG2");
+            _BlackMove("bA1NEwS1");
+
+
+        }
                        [Fact]
 
         public void BeetleGateTest()
@@ -98,6 +118,37 @@ namespace HiveCore
             _BlackMove("bB1STbA2");
 
         }
+
+                               [Fact]
+
+        public void AntBigCTest()
+        {
+            _WhiteMove("wG1");
+            _BlackMove("bG1SEwG1");
+            _WhiteMove("wA1SWwG1");
+            _BlackMove("bS1SEbG1");
+            _WhiteMove("wQ1STwA1");
+            _BlackMove("bA1STbS1");
+            _WhiteMove("wA2STwQ1"); // get it on top of wQ1
+            _BlackMove("bQ1SWbA1");
+            _WhiteMove("wA2SWbQ1"); // get it off of wQ1
+           
+
+        }
+
+                       [Fact]
+
+        public void AntCTest(){
+            _WhiteMove("wG1");
+            _BlackMove("bB1NEwG1");
+            _WhiteMove("wQ1STwG1");
+            _BlackMove("bQ1NTbB1");
+            _WhiteMove("wQ1SWwG1");
+            _BlackMove("bA1NWbQ1");
+            _WhiteMove("wQ1NWwG1");
+            _BlackMove("bA1NTwQ1");
+        }
+
 
 
         public void AntCircleTest()

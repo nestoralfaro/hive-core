@@ -56,13 +56,13 @@ namespace HiveCore
             return obj is Piece p && _piece == p._piece;
         }
 
-        public List<(int, int)> GetMovingSpots(ref Board board)
+        public HashSet<(int, int)> GetMovingSpots(ref Board board)
         {
             // // If the queen has not been played
             if (!board.IsOnBoard($"{char.ToLower(Color.ToString()[0])}Q1"))
             {
                 // This piece cannot move
-                return new List<(int, int)>();
+                return new HashSet<(int, int)>();
             }
             // If the piece about to be placed is the fourth one, and the queen has not been played
             else if (board.GetRefPiecesByColor(Color).Count == 3 && !board.IsOnBoard($"{char.ToLower(Color.ToString()[0])}Q1"))
@@ -181,49 +181,42 @@ namespace HiveCore
         }
 
 
-        private List<(int, int)> _GetAntMovingSpots(ref Board board)
+        private HashSet<(int, int)> _GetAntMovingSpots(ref Board board)
         {
             Stopwatch stopwatch = new();
             stopwatch.Start();
-            List<(int x, int y)> positions = new();
+            HashSet<(int x, int y)> positions = new();
             // Before getting all the open spots (which could be an expensive computation)
             // Make sure this piece is not pinned
             // Benchmark whether this actually speeds up performance or not
             // if (!IsPinned(board))
-            Dictionary<(int x, int y), bool> visited = new();
-            _AntDFS(ref board, ref positions, ref visited, Point);
+            _AntDFS(ref board, ref positions, Point);
             stopwatch.Stop();
             PrintRed("Generating Ant Moves took: " + stopwatch.Elapsed.Milliseconds + "ms");
             return positions;
         }
 
-        private void _AntDFS(ref Board board, ref List<(int x, int y)> positions, ref Dictionary<(int x, int y), bool> visited, (int x, int y) curSpot)
+        private void _AntDFS(ref Board board, ref HashSet<(int x, int y)> positions, (int x, int y) curSpot)
         {
-            visited[curSpot] = true;
-
             for (int i = 0; i < MANY_SIDES; ++i)
             {
                 (int x, int y) nextSpot = (curSpot.x + SIDE_OFFSETS_ARRAY[i].Item1, curSpot.y + SIDE_OFFSETS_ARRAY[i].Item2);
-                bool hasNotBeenVisited = !visited.ContainsKey(nextSpot) || (visited.ContainsKey(nextSpot) && !visited[nextSpot]);
+                bool hasNotBeenVisited = !positions.Contains(nextSpot); //|| (positions.Contains(nextSpot) && !visited[nextSpot]);
                 if (hasNotBeenVisited && _IsValidPath(ref board, curSpot, nextSpot))
                 {
                     positions.Add(nextSpot);
-                    _AntDFS(ref board, ref positions, ref visited, nextSpot);
-                }
-                else
-                {
-                    visited[nextSpot] = true;
+                    _AntDFS(ref board, ref positions, nextSpot);
                 }
             }
             return;
         }
 
-        private List<(int, int)> _GetBeetleMovingSpots(ref Board board)
+        private HashSet<(int, int)> _GetBeetleMovingSpots(ref Board board)
         {
             Stopwatch stopwatch = new();
             stopwatch.Start();
 
-            List<(int, int)> validMoves = new();
+            HashSet<(int, int)> validMoves = new();
 
             foreach ((int, int) side in Sides.Keys)
             {
@@ -240,12 +233,12 @@ namespace HiveCore
             return validMoves;
         }
 
-        private List<(int, int)> _GetGrasshopperMovingSpots(ref Board board)
+        private HashSet<(int, int)> _GetGrasshopperMovingSpots(ref Board board)
         {
             Stopwatch stopwatch = new();
             stopwatch.Start();
 
-            List<(int x, int y)> positions = new();
+            HashSet<(int x, int y)> positions = new();
             // foreach ((int x, int y) sideOffset in SIDE_OFFSETS.Values)
             for (int s = 0; s < MANY_SIDES; ++s)
             {
@@ -275,13 +268,12 @@ namespace HiveCore
             return positions;
         }
 
-        private List<(int, int)> _GetSpiderMovingSpots(ref Board board)
+        private HashSet<(int, int)> _GetSpiderMovingSpots(ref Board board)
         {
             Stopwatch stopwatch = new();
             stopwatch.Start();
 
-            List<(int x, int y)> positions = new();
-            Dictionary<(int x, int y), bool> visited = new();
+            HashSet<(int x, int y)> positions = new();
             // On the first call you can also just call its spots around
             // foreach ((int x, int y) side in SpotsAround)
             // for (int s = 0; s < SpotsAround.Count; ++s)
@@ -292,7 +284,7 @@ namespace HiveCore
             //         _SpiderDFS(ref board, ref positions, ref visited, SpotsAround[s], 1, _SPIDER_MAX_STEP_COUNT);
             //     }
             // }
-            _SpiderDFS(ref board, ref positions, ref visited, Point, 0, _SPIDER_MAX_STEP_COUNT);
+            _SpiderDFS(ref board, ref positions, Point, 0, _SPIDER_MAX_STEP_COUNT);
 
             stopwatch.Stop();
             PrintRed("Generating spider moves took: " + stopwatch.Elapsed.Milliseconds + "ms");
@@ -300,38 +292,35 @@ namespace HiveCore
             return positions;
         }
 
-        private void _SpiderDFS(ref Board board, ref List<(int x, int y)> positions, ref Dictionary<(int x, int y), bool> visited, (int x, int y) curSpot, int curDepth, int maxDepth)
+        private void _SpiderDFS(ref Board board, ref HashSet<(int x, int y)> positions, (int x, int y) curSpot, int curDepth, int maxDepth)
         {
             if (curDepth == maxDepth)
             {
                 // No one is at that position
                 if (!board.Pieces.ContainsKey(curSpot))
                 {
-                    visited[curSpot] = true;
                     positions.Add(curSpot);
                 }
                 return;
             }
 
-            visited[curSpot] = true;
-
             for (int i = 0; i < MANY_SIDES; ++i)
             {
                 (int x, int y) nextSpot = (curSpot.x + SIDE_OFFSETS_ARRAY[i].x, curSpot.y + SIDE_OFFSETS_ARRAY[i].y);
-                bool hasNotBeenVisited = !visited.ContainsKey(nextSpot) || (visited.ContainsKey(nextSpot) && !visited[nextSpot]);
+                bool hasNotBeenVisited = !positions.Contains(nextSpot); //|| (visited.ContainsKey(nextSpot) && !visited[nextSpot]);
                 if (hasNotBeenVisited && _IsValidPath(ref board, curSpot, nextSpot))
                 {
-                    _SpiderDFS(ref board, ref positions, ref visited, nextSpot, curDepth + 1, maxDepth);
+                    _SpiderDFS(ref board, ref positions, nextSpot, curDepth + 1, maxDepth);
                 }
             }
         }
 
-        private List<(int, int)> _GetQueenMovingSpots(ref Board board)
+        private HashSet<(int, int)> _GetQueenMovingSpots(ref Board board)
         {
             Stopwatch stopwatch = new();
             stopwatch.Start();
 
-            List<(int, int)> spots = new();
+            HashSet<(int, int)> spots = new();
             // foreach ((int, int) spot in SpotsAround)
             for (int s = 0; s < SpotsAround.Count; ++s)
             {
