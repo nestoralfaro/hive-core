@@ -6,6 +6,7 @@ namespace HiveCore
     {
         public enum Color { Black, White }
         public enum Insect { QueenBee, Beetle, Grasshopper, Spider, Ant }
+        public enum ActionKind { Moving, Placing }
         public const int MANY_SIDES = 6;
         public const int _SPIDER_MAX_STEP_COUNT = 3;
         public static readonly Dictionary<string, (int, int)> SIDE_OFFSETS = new()

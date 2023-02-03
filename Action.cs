@@ -1,8 +1,9 @@
+using static HiveCore.Utils;
 using System.Text.RegularExpressions;
 
 namespace HiveCore
 {
-    public class Action
+    public class HumanAction
     {
         private readonly string _move;
         public string MovingPiece { get; set; }
@@ -22,7 +23,7 @@ namespace HiveCore
             return new string(pieceAsChars);
         }
 
-        public Action (string input)
+        public HumanAction (string input)
         {
             // To make the compiler happy so that it does not throw the
             // `Non-nullable property`
@@ -59,6 +60,19 @@ namespace HiveCore
         {
             const string validPattern = "^([wbWB])([ABGQSabgqs])([1-3])([NSns])([TWEtwe])([wbWB])([ABGQSabgqs])([1-3])$";
             return Regex.IsMatch(_move, validPattern);
+        }
+    }
+
+    public class AIAction
+    {
+        public Piece Piece { get; set; }
+        public (int x, int y) To { get; set; }
+        public ActionKind Action {get; set;}
+        public AIAction (Piece piece, (ActionKind action, (int x, int y) to) move)
+        {
+            Piece = piece;
+            Action = move.action;
+            To = move.to;
         }
     }
 }

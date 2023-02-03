@@ -13,14 +13,14 @@ namespace HiveCore
             Board = new();
         }
 
-        public static Action GetMove()
+        public static HumanAction GetMove()
         {
             Console.WriteLine("Enter move");
             string input = Console.ReadLine()!;
-            return new Action(input);
+            return new HumanAction(input);
         }
 
-        public static bool IsValidInput(Action move, Color color)
+        public static bool IsValidInput(HumanAction move, Color color)
         {
             Color playedColor = char.ToLower(move.MovingPiece[0]) == 'b' ? Color.Black : Color.White;
             if (playedColor != color)
@@ -61,7 +61,7 @@ namespace HiveCore
             }
         }
 
-        private (int, int) GetNewPoint(Action move)
+        private (int, int) GetNewPoint(HumanAction move)
         {
             // It is the first piece being placed
             if (String.IsNullOrEmpty(move.DestinationSide))
@@ -89,7 +89,7 @@ namespace HiveCore
         {
             try
             {
-                Action move = GetMove();
+                HumanAction move = GetMove();
                 if (IsValidInput(move, color))
                 {
                     (int, int) to = GetNewPoint(move);
