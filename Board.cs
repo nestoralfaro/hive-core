@@ -138,7 +138,7 @@ namespace HiveCore
         private void _PopulateNeighborsFor(Piece piece)
         {
             piece.Neighbors.Clear();
-            foreach ((int, int) sidePoint in piece.Sides.Keys)
+            foreach ((int, int) sidePoint in piece.Sides)
             {
                 // bool IsNeighbor = (point % side == (0, 0));
                 // (int, int) neighborPoint = (point.x + side.Value.Item1, point.y + side.Value.Item2);
@@ -173,6 +173,7 @@ namespace HiveCore
                                 neighborPiece.Neighbors.Add(piece.Point);
                             }
                             piece.IsSurrounded = piece.Neighbors.Count == MANY_SIDES;
+                            // or update piece.IsPinned as soon as a piece is added/removed?
                         }
                     }
                 }
@@ -381,7 +382,7 @@ namespace HiveCore
             Stopwatch stopwatch = new();
             stopwatch.Start();
             HashSet<(int, int)> validMoves = new();
-            foreach ((int, int) side in piece.Sides.Keys)
+            foreach ((int, int) side in piece.Sides)
             {
                 // Keep the valid "paths" (from point -> to side)
                 if (_IsValidMove(ref piece, piece.Point, side, true))
@@ -427,30 +428,33 @@ namespace HiveCore
             Stopwatch stopwatch = new();
             stopwatch.Start();
             HashSet<(int x, int y)> positions = new();
-            _SpiderDFS(ref piece, ref positions, piece.Point, 0, _SPIDER_MAX_STEP_COUNT);
+            Dictionary<(int x, int y), bool> visited = new();
+            _SpiderDFS(ref piece, ref positions, ref visited, piece.Point, 0, _SPIDER_MAX_STEP_COUNT);
             stopwatch.Stop();
             PrintRed("Generating spider moves took: " + stopwatch.Elapsed.TotalMilliseconds + "ms");
             return positions;
         }
 
-        private void _SpiderDFS(ref Piece piece, ref HashSet<(int x, int y)> positions, (int x, int y) curSpot, int curDepth, int maxDepth)
+        private void _SpiderDFS(ref Piece piece, ref HashSet<(int x, int y)> positions, ref Dictionary<(int x, int y), bool> visited, (int x, int y) curSpot, int curDepth, int maxDepth)
         {
             if (curDepth == maxDepth)
             {
                 // No one is at that position
                 if (!Pieces.ContainsKey(curSpot))
                 {
+                    visited[curSpot] = true;
                     positions.Add(curSpot);
                 }
                 return;
             }
+            visited[curSpot] = true;
             for (int i = 0; i < MANY_SIDES; ++i)
             {
                 (int x, int y) nextSpot = (curSpot.x + SIDE_OFFSETS_ARRAY[i].x, curSpot.y + SIDE_OFFSETS_ARRAY[i].y);
-                bool hasNotBeenVisited = !positions.Contains(nextSpot);
+                bool hasNotBeenVisited = !visited.ContainsKey(nextSpot) || (visited.ContainsKey(nextSpot) && !visited[nextSpot]);
                 if (hasNotBeenVisited && _IsValidMove(ref piece, curSpot, nextSpot))
                 {
-                    _SpiderDFS(ref piece, ref positions, nextSpot, curDepth + 1, maxDepth);
+                    _SpiderDFS(ref piece, ref positions, ref visited, nextSpot, curDepth + 1, maxDepth);
                 }
             }
         }
@@ -623,7 +627,7 @@ namespace HiveCore
             if (piece.IsSurrounded)
                 return true;
 
-            foreach((int, int) side in piece.Sides.Keys)
+            foreach((int, int) side in piece.Sides)
             {
                 // If there is at least one valid path
                 if (_IsValidMove(ref piece, piece.Point, side, isBeetle))

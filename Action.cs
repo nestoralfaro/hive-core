@@ -1,5 +1,6 @@
 using static HiveCore.Utils;
 using System.Text.RegularExpressions;
+#pragma warning disable IDE1006 // Private members naming style
 
 namespace HiveCore
 {

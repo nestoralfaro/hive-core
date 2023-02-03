@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using static HiveCore.Utils;
 #pragma warning disable IDE1006 // Private members naming style
 
@@ -12,25 +11,22 @@ namespace HiveCore
         public bool IsOnBoard { get; set; }
         public Insect Insect { get; set; }
         public (int x, int y) Point { get; set; }
-        public Dictionary<(int, int), string> Sides { get {
-            return new Dictionary<(int, int), string>()
+        public HashSet<(int, int)> Sides { get {
+            return new HashSet<(int, int)>()
                 {
-                    { (Point.x + SIDE_OFFSETS_ARRAY[0].x, Point.y + SIDE_OFFSETS_ARRAY[0].y), "NT" },  // [0] North
-                    { (Point.x + SIDE_OFFSETS_ARRAY[1].x, Point.y + SIDE_OFFSETS_ARRAY[1].y), "NW" },  // [1] Northwest
-                    { (Point.x + SIDE_OFFSETS_ARRAY[2].x, Point.y + SIDE_OFFSETS_ARRAY[2].y), "SW" },  // [2] Southwest
-                    { (Point.x + SIDE_OFFSETS_ARRAY[3].x, Point.y + SIDE_OFFSETS_ARRAY[3].y), "ST" },  // [3] South
-                    { (Point.x + SIDE_OFFSETS_ARRAY[4].x, Point.y + SIDE_OFFSETS_ARRAY[4].y), "SE" },  // [4] Southeast
-                    { (Point.x + SIDE_OFFSETS_ARRAY[5].x, Point.y + SIDE_OFFSETS_ARRAY[5].y), "NE" },  // [5] Northeast
+                    (Point.x + SIDE_OFFSETS_ARRAY[0].x, Point.y + SIDE_OFFSETS_ARRAY[0].y), // [0] North
+                    (Point.x + SIDE_OFFSETS_ARRAY[1].x, Point.y + SIDE_OFFSETS_ARRAY[1].y), // [1] Northwest
+                    (Point.x + SIDE_OFFSETS_ARRAY[2].x, Point.y + SIDE_OFFSETS_ARRAY[2].y), // [2] Southwest
+                    (Point.x + SIDE_OFFSETS_ARRAY[3].x, Point.y + SIDE_OFFSETS_ARRAY[3].y), // [3] South
+                    (Point.x + SIDE_OFFSETS_ARRAY[4].x, Point.y + SIDE_OFFSETS_ARRAY[4].y), // [4] Southeast
+                    (Point.x + SIDE_OFFSETS_ARRAY[5].x, Point.y + SIDE_OFFSETS_ARRAY[5].y), // [5] Northeast
                 };
         } }
-
         public HashSet<(int, int)> Neighbors { get; set; }
-
-                                                        // If `Sides` is another HashSet, we could use `ExceptWith` instead, which would
-                                                        // not require LINQ, that way using a more native way from `HashSet`.
-                                                        // We need to discover whether we need the mapping to the letters before tho–e.g., "NT"
-        public HashSet<(int, int)> OpenSpotsAround { get { return Sides.Select(s => s.Key).ToHashSet().Except(Neighbors).ToHashSet(); } }
-        public int ManyNeighbors { get{ return Neighbors.Count; } }
+        public (int x, int y) GetSidePointByStringDir (string dir) => (SIDE_OFFSETS[dir].x + Point.x, SIDE_OFFSETS[dir].y + Point.y);
+        public string GetSideStringByPoint ((int x, int y) sidePoint) => SIDE_OFFSETS.Keys.First(dir => (GetSidePointByStringDir(dir).x == sidePoint.x) && (GetSidePointByStringDir(dir).y == sidePoint.y));
+        public HashSet<(int, int)> OpenSpotsAround { get { return Sides.Except(Neighbors).ToHashSet(); } }
+        public int ManyNeighbors { get { return Neighbors.Count; } }
         public override string ToString() { return _piece; }
         public bool IsSurrounded { get; set; }
         public Piece(string piece)

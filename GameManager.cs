@@ -204,13 +204,12 @@ namespace HiveCore
 
         public static void PrintAsHexagon(Piece piece)
         {
-            var point = (string dir) => piece.Sides.First(s => s.Value.Equals(dir)).Key;
-            string NT = piece.Neighbors.Contains(point("NT")) ? ("\t\t" + point("NT") + Environment.NewLine + "\t\t-----------") : "\t\t-----------";
-            string NW = piece.Neighbors.Contains(point("NW")) ? ("\t  " + point("NW") + "/") : "\t\t/";
-            string SW = piece.Neighbors.Contains(point("SW")) ? ("\t  " + point("SW") +  "\\") : "\t\t\\";
-            string ST = piece.Neighbors.Contains(point("ST")) ? ("\t\t-----------" + Environment.NewLine + "\t\t" + point("ST")) : "\t\t-----------";
-            string SE = piece.Neighbors.Contains(point("SE")) ? ("\t /" + point("SE")) : "\t /";
-            string NE = piece.Neighbors.Contains(point("NE")) ? ("\t \\" + point("NE")) : "\t \\";
+            string NT = piece.Neighbors.Contains(piece.GetSidePointByStringDir("NT")) ? ("\t\t" + piece.GetSidePointByStringDir("NT") + Environment.NewLine + "\t\t-----------") : "\t\t-----------";
+            string NW = piece.Neighbors.Contains(piece.GetSidePointByStringDir("NW")) ? ("\t  " + piece.GetSidePointByStringDir("NW") + "/") : "\t\t/";
+            string SW = piece.Neighbors.Contains(piece.GetSidePointByStringDir("SW")) ? ("\t  " + piece.GetSidePointByStringDir("SW") +  "\\") : "\t\t\\";
+            string ST = piece.Neighbors.Contains(piece.GetSidePointByStringDir("ST")) ? ("\t\t-----------" + Environment.NewLine + "\t\t" + piece.GetSidePointByStringDir("ST")) : "\t\t-----------";
+            string SE = piece.Neighbors.Contains(piece.GetSidePointByStringDir("SE")) ? ("\t /" + piece.GetSidePointByStringDir("SE")) : "\t /";
+            string NE = piece.Neighbors.Contains(piece.GetSidePointByStringDir("NE")) ? ("\t \\" + piece.GetSidePointByStringDir("NE")) : "\t \\";
 
             Console.WriteLine(NT);
             Console.WriteLine(NW + NE);

@@ -1,5 +1,3 @@
-using System;
-using System.IO;
 using Xunit;
 using static HiveCore.Utils;
 #pragma warning disable IDE1006 // Private members naming style
@@ -19,15 +17,15 @@ namespace HiveCore
             _WhiteMove("wG1");
             _AssertPiecePoint("wG1", (0, 0));
             _AssertMovingSpots("wG1", new HashSet<(int, int)>());
-            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(1, 1), (-1, 1), (-2, 0), (-1, -1), (1, -1), (2, 0)});
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(1, 1), (-1, 1), (-2, 0), (-1, -1), (1, -1), (2, 0)});
 
             _BlackMove("bB1NEwG1");
             _AssertPiecePoint("wG1", (0, 0));
             _AssertPiecePoint("bB1", (2, 0));
             _AssertMovingSpots("wG1", new HashSet<(int, int)>());
             _AssertMovingSpots("bB1", new HashSet<(int, int)>());
-            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(-1, 1), (-2, 0), (-1, -1)});
-            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(3, 1), (4, 0), (3, -1)});
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(-1, 1), (-2, 0), (-1, -1)});
+            _AssertPlacingSpots(_blackPlayer, new HashSet<(int, int)>() {(3, 1), (4, 0), (3, -1)});
 
             _WhiteMove("wQ1SWwG1");
             _AssertPiecePoint("wG1", (0, 0));
@@ -36,8 +34,8 @@ namespace HiveCore
             _AssertMovingSpots("wG1", new HashSet<(int, int)>());
             _AssertMovingSpots("bB1", new HashSet<(int, int)>());
             _AssertMovingSpots("wQ1", new HashSet<(int, int)>() {(-1, -1), (-1, 1)});
-            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(-1, 1), (-3, 1), (-4, 0), (-3, -1), (-1, -1)});
-            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(3, 1), (4, 0), (3, -1)});
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(-1, 1), (-3, 1), (-4, 0), (-3, -1), (-1, -1)});
+            _AssertPlacingSpots(_blackPlayer, new HashSet<(int, int)>() {(3, 1), (4, 0), (3, -1)});
 
             _BlackMove("bQ1NTbB1");
             _AssertPiecePoint("wG1", (0, 0));
@@ -48,8 +46,8 @@ namespace HiveCore
             _AssertMovingSpots("bB1", new HashSet<(int, int)>());
             _AssertMovingSpots("wQ1", new HashSet<(int, int)>() {(-1, -1), (-1, 1)});
             _AssertMovingSpots("bQ1", new HashSet<(int, int)>() {(1, 1), (4, 0)});
-            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(-1, 1), (-3, 1), (-4, 0), (-3, -1), (-1, -1)});
-            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(2, 2), (4, 2), (5, 1), (4, 0), (3, -1)});
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(-1, 1), (-3, 1), (-4, 0), (-3, -1), (-1, -1)});
+            _AssertPlacingSpots(_blackPlayer, new HashSet<(int, int)>() {(2, 2), (4, 2), (5, 1), (4, 0), (3, -1)});
 
             _WhiteMove("wQ1NWwG1");
             _AssertPiecePoint("wG1", (0, 0));
@@ -60,8 +58,8 @@ namespace HiveCore
             _AssertMovingSpots("bB1", new HashSet<(int, int)>());
             _AssertMovingSpots("wQ1", new HashSet<(int, int)>() {(1, 1), (-2, 0)});
             _AssertMovingSpots("bQ1", new HashSet<(int, int)>() {(1, 1), (4, 0)});
-            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(0, 2), (-2, 2), (-3, 1), (-2, 0), (-1, -1)});
-            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(2, 2), (4, 2), (5, 1), (4, 0), (3, -1)});
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(0, 2), (-2, 2), (-3, 1), (-2, 0), (-1, -1)});
+            _AssertPlacingSpots(_blackPlayer, new HashSet<(int, int)>() {(2, 2), (4, 2), (5, 1), (4, 0), (3, -1)});
 
             _BlackMove("bA1NWbQ1");
             _AssertPiecePoint("wG1", (0, 0));
@@ -74,28 +72,309 @@ namespace HiveCore
             _AssertMovingSpots("wQ1", new HashSet<(int, int)>() {(1, 1), (-2, 0)});
             _AssertMovingSpots("bQ1", new HashSet<(int, int)>());
             _AssertMovingSpots("bA1", new HashSet<(int, int)>() {(4, 2), (5, 1), (4, 0), (3, -1), (1, -1), (-1, -1), (-2, 0), (-3, 1), (-2, 2), (0, 2), (1, 1)});
-            _AssertPlacingSpots(_whitePlayer, new List<(int, int)>() {(-2, 2), (-3, 1), (-2, 0), (-1, -1)});
-            _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(1, 3), (3, 3), (4, 2), (5, 1), (4, 0), (3, -1)});
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(-2, 2), (-3, 1), (-2, 0), (-1, -1)});
+            _AssertPlacingSpots(_blackPlayer, new HashSet<(int, int)>() {(1, 3), (3, 3), (4, 2), (5, 1), (4, 0), (3, -1)});
         }
 
         [Fact]
         public void SpiderCircleTest()
         {
             _WhiteMove("wG1");
+            _AssertPiecePoint("wG1", (0, 0));
+            _AssertMovingSpots("wG1", new HashSet<(int, int)>());
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(1, 1), (-1, 1), (-2, 0), (-1, -1), (1, -1), (2, 0)});
+
             _BlackMove("bG1NTwG1");
+            _AssertPiecePoint("wG1", (0, 0));
+            _AssertPiecePoint("bG1", (1, 1));
+            _AssertMovingSpots("wG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bG1", new HashSet<(int, int)>());
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(-2, 0), (-1, -1), (1, -1)});
+            _AssertPlacingSpots(_blackPlayer, new HashSet<(int, int)>() {(0, 2), (2, 2), (3, 1)});
+
             _WhiteMove("wA1SEwG1");
+            _AssertPiecePoint("wG1", (0, 0));
+            _AssertPiecePoint("bG1", (1, 1));
+            _AssertPiecePoint("wA1", (1, -1));
+            _AssertMovingSpots("wG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wA1", new HashSet<(int, int)>());
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(-2, 0), (-1, -1), (0, -2), (2, -2), (3, -1)});
+            _AssertPlacingSpots(_blackPlayer, new HashSet<(int, int)>() {(0, 2), (2, 2), (3, 1)});
+
             _BlackMove("bA1NTbG1");
+            _AssertPiecePoint("wG1", (0, 0));
+            _AssertPiecePoint("bG1", (1, 1));
+            _AssertPiecePoint("wA1", (1, -1));
+            _AssertPiecePoint("bA1", (2, 2));
+            _AssertMovingSpots("wG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wA1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bA1", new HashSet<(int, int)>());
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(-2, 0), (-1, -1), (0, -2), (2, -2), (3, -1)});
+            _AssertPlacingSpots(_blackPlayer, new HashSet<(int, int)>() {(0, 2), (1, 3), (3, 3), (4, 2), (3, 1)});
+
             _WhiteMove("wQ1SEwA1");
+            _AssertPiecePoint("wG1", (0, 0));
+            _AssertPiecePoint("bG1", (1, 1));
+            _AssertPiecePoint("wA1", (1, -1));
+            _AssertPiecePoint("bA1", (2, 2));
+            _AssertPiecePoint("wQ1", (2, -2));
+            _AssertMovingSpots("wG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wA1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bA1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wQ1", new HashSet<(int, int)>() {(0, -2), (3, -1)});
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(-2, 0), (-1, -1), (0, -2), (1, -3), (3, -3), (4, -2), (3, -1)});
+            _AssertPlacingSpots(_blackPlayer, new HashSet<(int, int)>() {(0, 2), (1, 3), (3, 3), (4, 2), (3, 1)});
+
             _BlackMove("bS1NEbA1");
+            _AssertPiecePoint("wG1", (0, 0));
+            _AssertPiecePoint("bG1", (1, 1));
+            _AssertPiecePoint("wA1", (1, -1));
+            _AssertPiecePoint("bA1", (2, 2));
+            _AssertPiecePoint("wQ1", (2, -2));
+            _AssertPiecePoint("bS1", (4, 2));
+            _AssertMovingSpots("wG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wA1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bA1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wQ1", new HashSet<(int, int)>() {(0, -2), (3, -1)});
+            _AssertMovingSpots("bS1", new HashSet<(int, int)>());
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(-2, 0), (-1, -1), (0, -2), (1, -3), (3, -3), (4, -2), (3, -1)});
+            _AssertPlacingSpots(_blackPlayer, new HashSet<(int, int)>() {(0, 2), (1, 3), (3, 3), (5, 3), (6, 2), (5, 1), (3, 1)});
+
             _WhiteMove("wS1NEwQ1"); // get it on top of wQ1
+            _AssertPiecePoint("wG1", (0, 0));
+            _AssertPiecePoint("bG1", (1, 1));
+            _AssertPiecePoint("wA1", (1, -1));
+            _AssertPiecePoint("bA1", (2, 2));
+            _AssertPiecePoint("wQ1", (2, -2));
+            _AssertPiecePoint("bS1", (4, 2));
+            _AssertPiecePoint("wS1", (4, -2));
+            _AssertMovingSpots("wG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wA1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bA1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wQ1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bS1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wS1", new HashSet<(int, int)>() {(3, 1), (0, -2)});
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(-2, 0), (-1, -1), (0, -2), (1, -3), (3, -3), (5, -3), (6, -2), (5, -1), (3, -1)});
+            _AssertPlacingSpots(_blackPlayer, new HashSet<(int, int)>() {(0, 2), (1, 3), (3, 3), (5, 3), (6, 2), (5, 1), (3, 1)});
+
             _BlackMove("bQ1NEbS1");
+            _AssertPiecePoint("wG1", (0, 0));
+            _AssertPiecePoint("bG1", (1, 1));
+            _AssertPiecePoint("wA1", (1, -1));
+            _AssertPiecePoint("bA1", (2, 2));
+            _AssertPiecePoint("wQ1", (2, -2));
+            _AssertPiecePoint("bS1", (4, 2));
+            _AssertPiecePoint("wS1", (4, -2));
+            _AssertPiecePoint("bQ1", (6, 2));
+            _AssertMovingSpots("wG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wA1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bA1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wQ1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bS1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wS1", new HashSet<(int, int)>() {(3, 1), (0, -2)});
+            _AssertMovingSpots("bQ1", new HashSet<(int, int)>() {(5, 3), (5, 1)});
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(-2, 0), (-1, -1), (0, -2), (1, -3), (3, -3), (5, -3), (6, -2), (5, -1), (3, -1)});
+            _AssertPlacingSpots(_blackPlayer, new HashSet<(int, int)>() {(0, 2), (1, 3), (3, 3), (5, 3), (7, 3), (8, 2), (7, 1), (5, 1), (3, 1)});
+
             _WhiteMove("wG2NEwS1"); // get it off of wQ1
-             _BlackMove("bA2SEbQ1");
+            _AssertPiecePoint("wG1", (0, 0));
+            _AssertPiecePoint("bG1", (1, 1));
+            _AssertPiecePoint("wA1", (1, -1));
+            _AssertPiecePoint("bA1", (2, 2));
+            _AssertPiecePoint("wQ1", (2, -2));
+            _AssertPiecePoint("bS1", (4, 2));
+            _AssertPiecePoint("wS1", (4, -2));
+            _AssertPiecePoint("bQ1", (6, 2));
+            _AssertPiecePoint("wG2", (6, -2));
+            _AssertMovingSpots("wG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wA1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bA1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wQ1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bS1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wS1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bQ1", new HashSet<(int, int)>() {(5, 3), (5, 1)});
+            _AssertMovingSpots("wG2", new HashSet<(int, int)>() {(0, -2)});
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(-2, 0), (-1, -1), (0, -2), (1, -3), (3, -3), (5, -3), (7, -3), (8, -2), (7, -1), (5, -1), (3, -1)});
+            _AssertPlacingSpots(_blackPlayer, new HashSet<(int, int)>() {(0, 2), (1, 3), (3, 3), (5, 3), (7, 3), (8, 2), (7, 1), (5, 1), (3, 1)});
+
+            _BlackMove("bA2SEbQ1");
+            _AssertPiecePoint("wG1", (0, 0));
+            _AssertPiecePoint("bG1", (1, 1));
+            _AssertPiecePoint("wA1", (1, -1));
+            _AssertPiecePoint("bA1", (2, 2));
+            _AssertPiecePoint("wQ1", (2, -2));
+            _AssertPiecePoint("bS1", (4, 2));
+            _AssertPiecePoint("wS1", (4, -2));
+            _AssertPiecePoint("bQ1", (6, 2));
+            _AssertPiecePoint("wG2", (6, -2));
+            _AssertPiecePoint("bA2", (7, 1));
+            _AssertMovingSpots("wG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wA1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bA1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wQ1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bS1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wS1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bQ1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wG2", new HashSet<(int, int)>() {(0, -2)});
+            _AssertMovingSpots("bA2", new HashSet<(int, int)>() {(5, 1), (3, 1), (2, 0), (3, -1), (5, -1), (7, -1), (8, -2), (7, -3), (5, -3), (3, -3), (1, -3), (0, -2), (-1, -1), (-2, 0), (-1, 1), (0, 2), (1, 3), (3, 3), (5, 3), (7, 3), (8, 2)});
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(-2, 0), (-1, -1), (0, -2), (1, -3), (3, -3), (5, -3), (7, -3), (8, -2), (7, -1), (5, -1), (3, -1)});
+            _AssertPlacingSpots(_blackPlayer, new HashSet<(int, int)>() {(0, 2), (1, 3), (3, 3), (5, 3), (7, 3), (8, 2), (9, 1), (8, 0), (6, 0), (5, 1), (3, 1)});
+
             _WhiteMove("wG3NTwG2");
+            _AssertPiecePoint("wG1", (0, 0));
+            _AssertPiecePoint("bG1", (1, 1));
+            _AssertPiecePoint("wA1", (1, -1));
+            _AssertPiecePoint("bA1", (2, 2));
+            _AssertPiecePoint("wQ1", (2, -2));
+            _AssertPiecePoint("bS1", (4, 2));
+            _AssertPiecePoint("wS1", (4, -2));
+            _AssertPiecePoint("bQ1", (6, 2));
+            _AssertPiecePoint("wG2", (6, -2));
+            _AssertPiecePoint("bA2", (7, 1));
+            _AssertPiecePoint("wG3", (7, -1));
+            _AssertMovingSpots("wG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wA1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bA1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wQ1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bS1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wS1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bQ1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wG2", new HashSet<(int, int)>());
+            _AssertMovingSpots("bA2", new HashSet<(int, int)>() {(5, 1), (3, 1), (2, 0), (3, -1), (5, -1), (6, 0), (8, 0), (9, -1), (8, -2), (7, -3), (5, -3), (3, -3), (1, -3), (0, -2), (-1, -1), (-2, 0), (-1, 1), (0, 2), (1, 3), (3, 3), (5, 3), (7, 3), (8, 2)});
+            _AssertMovingSpots("wG3", new HashSet<(int, int)>() {(5, -3)});
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(-2, 0), (-1, -1), (0, -2), (1, -3), (3, -3), (5, -3), (7, -3), (8, -2), (9, -1), (5, -1), (3, -1)});
+            _AssertPlacingSpots(_blackPlayer, new HashSet<(int, int)>() {(0, 2), (1, 3), (3, 3), (5, 3), (7, 3), (8, 2), (9, 1), (5, 1), (3, 1)});
+
+
             _BlackMove("bB1NEbA2");
+            _AssertPiecePoint("wG1", (0, 0));
+            _AssertPiecePoint("bG1", (1, 1));
+            _AssertPiecePoint("wA1", (1, -1));
+            _AssertPiecePoint("bA1", (2, 2));
+            _AssertPiecePoint("wQ1", (2, -2));
+            _AssertPiecePoint("bS1", (4, 2));
+            _AssertPiecePoint("wS1", (4, -2));
+            _AssertPiecePoint("bQ1", (6, 2));
+            _AssertPiecePoint("wG2", (6, -2));
+            _AssertPiecePoint("bA2", (7, 1));
+            _AssertPiecePoint("wG3", (7, -1));
+            _AssertPiecePoint("bB1", (9, 1));
+            _AssertMovingSpots("wG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wA1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bA1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wQ1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bS1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wS1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bQ1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wG2", new HashSet<(int, int)>());
+            _AssertMovingSpots("bA2", new HashSet<(int, int)>());
+            _AssertMovingSpots("wG3", new HashSet<(int, int)>() {(5, -3)});
+            _AssertMovingSpots("bB1", new HashSet<(int, int)>() {(8, 2), (7, 1), (8, 0)});
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(-2, 0), (-1, -1), (0, -2), (1, -3), (3, -3), (5, -3), (7, -3), (8, -2), (9, -1), (5, -1), (3, -1)});
+            _AssertPlacingSpots(_blackPlayer, new HashSet<(int, int)>() {(0, 2), (1, 3), (3, 3), (5, 3), (7, 3), (8, 2), (10, 2), (11, 1), (10, 0), (3, 1), (5, 1)});
+
             _WhiteMove("wB1SWwG1"); // get it on top of wQ1
-             _BlackMove("bB1SEbA2");
+            _AssertPiecePoint("wG1", (0, 0));
+            _AssertPiecePoint("bG1", (1, 1));
+            _AssertPiecePoint("wA1", (1, -1));
+            _AssertPiecePoint("bA1", (2, 2));
+            _AssertPiecePoint("wQ1", (2, -2));
+            _AssertPiecePoint("bS1", (4, 2));
+            _AssertPiecePoint("wS1", (4, -2));
+            _AssertPiecePoint("bQ1", (6, 2));
+            _AssertPiecePoint("wG2", (6, -2));
+            _AssertPiecePoint("bA2", (7, 1));
+            _AssertPiecePoint("wG3", (7, -1));
+            _AssertPiecePoint("bB1", (9, 1));
+            _AssertPiecePoint("wB1", (-2, 0));
+            _AssertMovingSpots("wG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wA1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bA1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wQ1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bS1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wS1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bQ1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wG2", new HashSet<(int, int)>());
+            _AssertMovingSpots("bA2", new HashSet<(int, int)>());
+            _AssertMovingSpots("wG3", new HashSet<(int, int)>() {(5, -3)});
+            _AssertMovingSpots("bB1", new HashSet<(int, int)>() {(8, 2), (7, 1), (8, 0)});
+            _AssertMovingSpots("wB1", new HashSet<(int, int)>() {(-1, 1), (0, 0), (-1, -1)});
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(-3, 1), (-4, 0), (-3, -1), (-1, -1), (0, -2), (1, -3), (3, -3), (5, -3), (7, -3), (8, -2), (9, -1), (5, -1), (3, -1)});
+            _AssertPlacingSpots(_blackPlayer, new HashSet<(int, int)>() {(0, 2), (1, 3), (3, 3), (5, 3), (7, 3), (8, 2), (10, 2), (11, 1), (10, 0), (3, 1), (5, 1)});
+
+            _BlackMove("bB1SEbA2");         // full circle
+            _AssertPiecePoint("wG1", (0, 0));
+            _AssertPiecePoint("bG1", (1, 1));
+            _AssertPiecePoint("wA1", (1, -1));
+            _AssertPiecePoint("bA1", (2, 2));
+            _AssertPiecePoint("wQ1", (2, -2));
+            _AssertPiecePoint("bS1", (4, 2));
+            _AssertPiecePoint("wS1", (4, -2));
+            _AssertPiecePoint("bQ1", (6, 2));
+            _AssertPiecePoint("wG2", (6, -2));
+            _AssertPiecePoint("bA2", (7, 1));
+            _AssertPiecePoint("wG3", (7, -1));
+            _AssertPiecePoint("bB1", (8, 0));
+            _AssertPiecePoint("wB1", (-2, 0));
+            _AssertMovingSpots("wG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bG1", new HashSet<(int, int)>() {(3, 3), (-1, -1)});
+            //                                                  outside ring                                                                                                                                                                     inside ring
+            _AssertMovingSpots("wA1", new HashSet<(int, int)>() {(0, -2), (1, -3), (3, -3), (5, -3), (7, -3), (8, -2), (9, -1), (10, 0), (9, 1), (8, 2), (7, 3), (5, 3), (3, 3), (1, 3), (0, 2), (-1, 1), (-3, 1), (-4, 0), (-3, -1), (-1, -1), (3, -1), (5, -1), (6, 0), (5, 1), (3, 1), (2, 0)});
+            //                                                  ONLY outside ring
+            _AssertMovingSpots("bA1", new HashSet<(int, int)>() {(3, 3), (5, 3), (7, 3), (8, 2), (9, 1), (10, 0), (9, -1), (8, -2), (7, -3), (5, -3), (3, -3), (1, -3), (0, -2), (-1, -1), (-3, -1), (-4, 0), (-3, 1), (-1, 1), (0, 2)});
+            _AssertMovingSpots("wQ1", new HashSet<(int, int)>() {(0, -2), (3, -3)});
+            _AssertMovingSpots("bS1", new HashSet<(int, int)>() {(0, 2), (3, -1), (5, -1), (8, 2)});    // this test case failed with improved _GetSpiderMovingSpots, but passed with previous implementation. Was missing 2 moves: (0, 2), (5, -1)
+            _AssertMovingSpots("wS1", new HashSet<(int, int)>() {(0, -2), (8, -2), (5, 1), (3, 1)});    // this test case failed with improved _GetSpiderMovingSpots, but passed with previous implementation
+            _AssertMovingSpots("bQ1", new HashSet<(int, int)>() {(5, 3), (8, 2)});
+            _AssertMovingSpots("wG2", new HashSet<(int, int)>() {(9, 1), (0, -2)});
+            //                                                  outside ring                                                                                                                                                                    // inside ring
+            _AssertMovingSpots("bA2", new HashSet<(int, int)>() {(9, 1), (10, 0), (9, -1), (8, -2), (7, -3), (5, -3), (3, -3), (1, -3), (0, -2), (-1, -1), (-3, -1), (-4, 0), (-3, 1), (-1, 1), (0, 2), (1, 3), (3, 3), (5, 3), (7, 3), (8, 2), (6, 0), (5, -1), (3, -1), (2, 0), (3, 1), (5, 1)});
+            _AssertMovingSpots("wG3", new HashSet<(int, int)>() {(9, 1), (5, -3)});
+            _AssertMovingSpots("bB1", new HashSet<(int, int)>() {(9, 1), (7, 1), (7, -1), (9, -1)});
+            _AssertMovingSpots("wB1", new HashSet<(int, int)>() {(-1, 1), (0, 0), (-1, -1)});
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(-3, 1), (-4, 0), (-3, -1), (-1, -1), (0, -2), (1, -3), (3, -3), (5, -3), (7, -3), (8, -2), (5, -1), (3, -1)});
+            _AssertPlacingSpots(_blackPlayer, new HashSet<(int, int)>() {(0, 2), (1, 3), (3, 3), (5, 3), (7, 3), (8, 2), (9, 1), (10, 0), (3, 1), (5, 1)});
+
             _WhiteMove("wS1STbQ1"); // get it on top of wQ1
+            _AssertPiecePoint("wG1", (0, 0));
+            _AssertPiecePoint("bG1", (1, 1));
+            _AssertPiecePoint("wA1", (1, -1));
+            _AssertPiecePoint("bA1", (2, 2));
+            _AssertPiecePoint("wQ1", (2, -2));
+            _AssertPiecePoint("bS1", (4, 2));
+            _AssertPiecePoint("wS1", (5, 1));
+            _AssertPiecePoint("bQ1", (6, 2));
+            _AssertPiecePoint("wG2", (6, -2));
+            _AssertPiecePoint("bA2", (7, 1));
+            _AssertPiecePoint("wG3", (7, -1));
+            _AssertPiecePoint("bB1", (8, 0));
+            _AssertPiecePoint("wB1", (-2, 0));
+            _AssertMovingSpots("wG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wA1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bA1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wQ1", new HashSet<(int, int)>() {(3, -1), (0, -2)});
+            _AssertMovingSpots("bS1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wS1", new HashSet<(int, int)>() {(3, -1), (4, -2)});
+            _AssertMovingSpots("bQ1", new HashSet<(int, int)>() {(5, 3), (8, 2)});
+            _AssertMovingSpots("wG2", new HashSet<(int, int)>() {(9, 1)});
+            _AssertMovingSpots("bA2", new HashSet<(int, int)>());
+            _AssertMovingSpots("wG3", new HashSet<(int, int)>());
+            _AssertMovingSpots("bB1", new HashSet<(int, int)>());
+            _AssertMovingSpots("wB1", new HashSet<(int, int)>() {(-1, 1), (0, 0), (-1, -1)});
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(-3, 1), (-4, 0), (-3, -1), (-1, -1), (0, -2), (1, -3), (3, -3), (4, -2), (5, -3), (7, -3), (8, -2), (5, -1), (3, -1), (4, 0)});
+            _AssertPlacingSpots(_blackPlayer, new HashSet<(int, int)>() {(0, 2), (1, 3), (3, 3), (5, 3), (7, 3), (8, 2), (9, 1), (10, 0)});
         }
 
         // [Fact]
@@ -296,7 +575,7 @@ namespace HiveCore
         //     _AssertPlacingSpots(_blackPlayer, new List<(int, int)>() {(3, 1), (4, 0), (3, -1)});
         // }
 
-        # region Helper Methods
+# region Helper Methods
         private void _BlackMove(string moveStr)
         {
             // Action move = new Action(moveStr);
@@ -320,7 +599,7 @@ namespace HiveCore
             Assert.True(actualPoint.x == point.Item1 && actualPoint.y == point.Item2);
         }
 
-        private void _AssertPlacingSpots(Color color, List<(int, int)> spots)
+        private void _AssertPlacingSpots(Color color, HashSet<(int, int)> spots)
         {
             var returnedSpots = game.Board.GetPlacingSpotsFor(color);
             Console.WriteLine($"////////////////Actual Placing Spots Returned For Player {color}////////////////");
@@ -338,7 +617,7 @@ namespace HiveCore
                 {
                     output += d;
                 }
-                Console.WriteLine(output);
+                _PrintWarning(output);
             }
 
             Console.WriteLine($"Expected count: {spots.Count}");
@@ -371,7 +650,7 @@ namespace HiveCore
                 {
                     output += d;
                 }
-                Console.WriteLine(output);
+                _PrintWarning(output);
             }
 
             Console.WriteLine($"Expected count: {spots.Count}");
@@ -412,6 +691,6 @@ namespace HiveCore
             }
         }
 
-        # endregion
+# endregion
     }
 }

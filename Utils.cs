@@ -9,7 +9,7 @@ namespace HiveCore
         public enum ActionKind { Moving, Placing }
         public const int MANY_SIDES = 6;
         public const int _SPIDER_MAX_STEP_COUNT = 3;
-        public static readonly Dictionary<string, (int, int)> SIDE_OFFSETS = new()
+        public static readonly Dictionary<string, (int x, int y)> SIDE_OFFSETS = new()
         {
             // Notice how each side is only valid if it adds up to an even number
             { "NT", (1, 1) },    // [0] North
