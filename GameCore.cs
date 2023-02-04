@@ -21,22 +21,17 @@ namespace HiveCore
         {
             if (_isFirstPlayersTurn)
             {
-                // PrintPlayerHeader(Game.Board);
-                PrintPlayerHeader(player1);
+                PrintPlayerHeader(player1, GameManager.Board);
                 if (GameManager.HumanMove(player1))
                     _isFirstPlayersTurn = false;
             }
             else
             {
-                // PrintPlayerHeader(Game.Board);
-                // GameManager.AIMove(player2);
-                // _isHumanPlayersTurn = true;
-                // PrintPlayerHeader(Game.Board);
-                PrintPlayerHeader(player2);
-                if (GameManager.HumanMove(player2))
+                PrintPlayerHeader(player2, GameManager.Board);
+                // if (GameManager.HumanMove(player2))
+                if (GameManager.AIMove(player2))
                     _isFirstPlayersTurn = true;
             }
-
             GameManager.PrintFormatted();
         }
 

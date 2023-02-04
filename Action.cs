@@ -68,8 +68,8 @@ namespace HiveCore
     {
         public Piece Piece { get; set; }
         public (int x, int y) To { get; set; }
-        public ActionKind Action {get; set;}
-        public AIAction (Piece piece, (ActionKind action, (int x, int y) to) move)
+        public ActionType Action {get; set;}
+        public AIAction (Piece piece, (ActionType action, (int x, int y) to) move)
         {
             Piece = piece;
             Action = move.action;

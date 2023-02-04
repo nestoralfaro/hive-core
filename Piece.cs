@@ -69,7 +69,7 @@ namespace HiveCore
             obj is Piece p
             // and both are either on or off the board
             && p.IsOnBoard == IsOnBoard
-            // and have the same string (which should validate their Color, Insect, and Number)
+            // and have the same string form (which should validate their Color, Insect, and Number)
             && _piece == p._piece
             // and the same point
             && (p.Point.x == Point.x) && (p.Point.y == p.Point.y)

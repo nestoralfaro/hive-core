@@ -145,25 +145,26 @@ namespace HiveCore
         }
 
 
-        public void AIMove(Color color)
+        // public void AIMove(Color color)
+        // {
+        // //     if (action == ActionKind.Moving)
+        // //     {
+        // //         MovePiece(piece, to);
+        // //     }
+
+        // //     if (action == ActionKind.Placing)
+        // //     {
+        // //         PlacePiece(player, piece, to);
+        // //     }
+        // }
+
+        public bool AIMove(Color color)
         {
-
-
-
-
-
-
-
-        //     if (action == ActionKind.Moving)
-        //     {
-        //         MovePiece(piece, to);
-        //     }
-
-        //     if (action == ActionKind.Placing)
-        //     {
-        //         PlacePiece(player, piece, to);
-        //     }
+            return Board.AIMove(color);
         }
+
+
+
 
         public bool IsGameOver()
         {
@@ -219,5 +220,9 @@ namespace HiveCore
             Console.WriteLine("*************************************");
             Console.WriteLine();
         }
+
+
+
+
     }
 }

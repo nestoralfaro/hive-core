@@ -6,7 +6,7 @@ namespace HiveCore
     {
         public enum Color { Black, White }
         public enum Insect { QueenBee, Beetle, Grasshopper, Spider, Ant }
-        public enum ActionKind { Moving, Placing }
+        public enum ActionType { Moving, Placing }
         public const int MANY_SIDES = 6;
         public const int _SPIDER_MAX_STEP_COUNT = 3;
         public static readonly Dictionary<string, (int x, int y)> SIDE_OFFSETS = new()
@@ -40,12 +40,12 @@ namespace HiveCore
             Console.WriteLine();
         }
 
-        public static void PrintPlayerHeader(Color color)
+        public static void PrintPlayerHeader(Color color, Board board)
         {
                 Console.BackgroundColor = color == Color.Black ? ConsoleColor.DarkGray : ConsoleColor.White;
                 Console.ForegroundColor = color == Color.Black ? ConsoleColor.White : ConsoleColor.Black;
                 Console.Write($"It is {color}'s turn.");
-                // _PrintRemainingPieces(player);
+                _PrintRemainingPieces(color == Color.Black ? board.BlackPieces : board.WhitePieces);
                 Console.ResetColor();
                 Console.WriteLine();
         }
@@ -68,15 +68,16 @@ namespace HiveCore
             Console.WriteLine();
         }
 
-        // private static void _PrintRemainingPieces(Color player)
-        // {
-        //     string Output = "";
-        //     foreach (Piece piece in player.Pieces)
-        //     {
-        //         // Maybe we should use the String builder for performance improvement
-        //         Output += $"{piece.ToString()[1]}{piece.ToString()[2]}|";
-        //     }
-        //     Console.Write($" | Remaining pieces: {Output}");
-        // }
+        private static void _PrintRemainingPieces(HashSet<Piece> pieces)
+        {
+            string Output = "";
+            foreach (Piece piece in pieces)
+            {
+                // Maybe we should use the String builder for performance improvement
+                // However, since this is just a helper method, probably doesn't matter much
+                Output += $"{piece.ToString()[1]}{piece.ToString()[2]}|";
+            }
+            Console.Write($" | Remaining pieces: {Output}");
+        }
     }
 }

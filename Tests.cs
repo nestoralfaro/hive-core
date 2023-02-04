@@ -761,27 +761,29 @@ namespace HiveCore
             _AssertPlacingSpots(_blackPlayer, new HashSet<(int, int)>() {(0, 2), (1, 3), (3, 3), (5, 3), (7, 3), (8, 2), (9, 1), (10, 0), (5, 1), (3, 1)});
         }
 
-        //         [Fact]
-        // public void SpiderCircleGateTest()
-        // {
-        //     _WhiteMove("wG1");
-        //     _BlackMove("bG1NTwG1");
-        //     _WhiteMove("wA1SEwG1");
-        //     _BlackMove("bS1NTbG1");
-        //     _WhiteMove("wQ1SEwA1");
-        //     _BlackMove("bA1NEbS1");
-        //     _WhiteMove("wS1NEwQ1"); // get it on top of wQ1
-        //     _BlackMove("bQ1NEbA1");
-        //     _WhiteMove("wG2NEwS1"); // get it off of wQ1
-        //     _BlackMove("bA2SEbQ1");
-        //     _WhiteMove("wG3NTwG2");
-        //     _BlackMove("bB1NEbA2");
-        //     _WhiteMove("wB1SWwG1"); // get it on top of wQ1
-        //     _BlackMove("bB1SEbA2");
-        //     _WhiteMove("wB1STwG1"); // get it on top of wQ1
-        //     _BlackMove("bS1NTbQ1");
-
-        // }
+        [Fact]
+        public void SpiderCircleGateTest()
+        {
+            _WhiteMove("wG1");
+            _AssertPiecePoint("wG1", (0, 0));
+            _AssertMovingSpots("wG1", new HashSet<(int, int)>());
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(1, 1), (-1, 1), (-2, 0), (-1, -1), (1, -1), (2, 0)});
+            _BlackMove("bG1NTwG1");
+            _WhiteMove("wA1SEwG1");
+            _BlackMove("bS1NTbG1");
+            _WhiteMove("wQ1SEwA1");
+            _BlackMove("bA1NEbS1");
+            _WhiteMove("wS1NEwQ1"); // get it on top of wQ1
+            _BlackMove("bQ1NEbA1");
+            _WhiteMove("wG2NEwS1"); // get it off of wQ1
+            _BlackMove("bA2SEbQ1");
+            _WhiteMove("wG3NTwG2");
+            _BlackMove("bB1NEbA2");
+            _WhiteMove("wB1SWwG1"); // get it on top of wQ1
+            _BlackMove("bB1SEbA2");
+            _WhiteMove("wB1STwG1"); // get it on top of wQ1
+            _BlackMove("bS1NTbQ1");
+        }
 
         // [Fact]
         // public void AntBiggerCTest()
@@ -837,8 +839,6 @@ namespace HiveCore
         //     _WhiteMove("wA2STwQ1"); // get it on top of wQ1
         //     _BlackMove("bQ1SWbA1");
         //     _WhiteMove("wA2SWbQ1"); // get it off of wQ1
-           
-
         // }
 
         //                [Fact]
