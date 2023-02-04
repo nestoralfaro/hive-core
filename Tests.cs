@@ -75,7 +75,53 @@ namespace HiveCore
             _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(-2, 2), (-3, 1), (-2, 0), (-1, -1)});
             _AssertPlacingSpots(_blackPlayer, new HashSet<(int, int)>() {(1, 3), (3, 3), (4, 2), (5, 1), (4, 0), (3, -1)});
         }
+        [Fact]
+        public void BeetleCTest(){
+            //white move one
+             _WhiteMove("wG1");
+            _AssertPiecePoint("wG1", (0, 0));
+            _AssertMovingSpots("wG1", new HashSet<(int, int)>());
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(1, 1), (-1, 1), (-2, 0), (-1, -1), (1, -1), (2, 0)});
+            //black move one
+            _BlackMove("bG1NTwG1");
+            _AssertPiecePoint("wG1", (0, 0));
+            _AssertPiecePoint("bG1", (1, 1));
+            _AssertMovingSpots("wG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bG1", new HashSet<(int, int)>());
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(-2, 0), (-1, -1), (1, -1)});
+            _AssertPlacingSpots(_blackPlayer, new HashSet<(int, int)>() {(0, 2), (2, 2), (3, 1)});
+            //white move two
+            _WhiteMove("wQ1SWwG1");
+            _AssertPiecePoint("wQ1", (-2,0));
+            _AssertMovingSpots("wQ1", new HashSet<(int, int)>(){(-1,-1), (-1,1)});
+            _AssertMovingSpots("wG1", new HashSet<(int, int)>());
+            _AssertMovingSpots("bG1", new HashSet<(int, int)>() );
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(-3,1), (-4,0), (-3,-1), (-1,-1), (1,-1)});
+            _AssertPlacingSpots(_blackPlayer, new HashSet<(int, int)> () {(0,2), (2,2), (3,1)});
+            //Black move two
+            _BlackMove("bQ1NWbG1");
+            _AssertPiecePoint("bQ1", (0,2));
+            _AssertPiecePoint("wQ1", (-2,0));
+            _AssertPiecePoint("wG1", (0, 0));
+            _AssertPiecePoint("bG1", (1, 1));
+            _AssertMovingSpots("bQ1", new HashSet<(int, int)>(){(-1,1), (2,2)});
+            _AssertMovingSpots("wQ1", new HashSet<(int, int)>(){(-1,-1), (-1,1)});
+            _AssertMovingSpots("bG1", new HashSet<(int, int)>() );
+            _AssertMovingSpots("wG1", new HashSet<(int, int)>());
+            _AssertPlacingSpots(_blackPlayer, new HashSet<(int, int)>() {(-2,2), (-1,3), (1,3), (2,2), (3,1)});
+            _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(-3,1), (-4,0), (-3,-1), (-1,-1), (1,-1)});
+            //White Move three
+            _WhiteMove("wB1NWwQ1");
+            _AssertPiecePoint("wB1", (-3,1));
+            _AssertPiecePoint("bQ1", (0,2));
+            _AssertPiecePoint("wQ1", (-2,0));
+            _AssertPiecePoint("wG1", (0, 0));
+            _AssertPiecePoint("bG1", (1, 1));
+            _AssertMovingSpots("wB1", new HashSet<(int, int)>() {(-2,0), (-1,1), (-4,0)});
+            //At this point the beetle should not be able to move to (-2,2) but it can 
+            
 
+        }
         [Fact]
         public void SpiderCircleTest()
         {
