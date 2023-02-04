@@ -119,9 +119,10 @@ namespace HiveCore
             _AssertPiecePoint("bG1", (1, 1));
             _AssertMovingSpots("wB1", new HashSet<(int, int)>() {(-2,0), (-1,1), (-4,0)});
             //At this point the beetle should not be able to move to (-2,2) but it can 
-            
-
+            //That is why it fails this test (one hive rule)
+            //Assumtion is that happens with queen to
         }
+        
         [Fact]
         public void SpiderCircleTest()
         {
