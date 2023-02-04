@@ -122,7 +122,7 @@ namespace HiveCore
             //That is why it fails this test (one hive rule)
             //Assumtion is that happens with queen to
         }
-        
+
         [Fact]
         public void SpiderCircleTest()
         {

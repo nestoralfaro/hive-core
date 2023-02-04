@@ -618,7 +618,7 @@ namespace HiveCore
                     firstIsValid = true;
                 }
 
-                if (firstIsValid && _DoesNotBreakHive(ref piece, nextSpot))
+                if (firstIsValid && _DoesNotBreakHive(ref piece, nextSpot, true, false))
                 {
                     positions.Add(nextSpot);
                 }
@@ -701,10 +701,10 @@ namespace HiveCore
             return false;
         }
 
-        private bool _IsValidMove(ref Piece piece, (int x, int y) from, (int x, int y) to, bool isBeetle = false)
+        private bool _IsValidMove(ref Piece piece, (int x, int y) from, (int x, int y) to, bool isGrasshopper = false, bool isBeetle = false)
         {
             //      Only beetle can crawl on top of                 One Hive Rule                       Physically Fits
-            return (isBeetle || !Pieces.ContainsKey(to)) && _DoesNotBreakHive(ref piece, to) && _IsFreedomOfMovement(ref piece, from, to, isBeetle);
+            return (isBeetle || !Pieces.ContainsKey(to)) && _DoesNotBreakHive(ref piece, to, isGrasshopper, isBeetle) && _IsFreedomOfMovement(ref piece, from, to, isBeetle);
         }
 
         private bool _IsFreedomOfMovement(ref Piece piece, (int x, int y) from, (int x, int y) to, bool isBeetle = false)
@@ -744,11 +744,13 @@ namespace HiveCore
                     : checkThatTheOppositePeripheralExists;
         }
 
-        private bool _DoesNotBreakHive(ref Piece piece, (int x, int y) to)
+        private bool _DoesNotBreakHive(ref Piece piece, (int x, int y) to, bool isGrasshopper = false, bool isBeetle = false)
         {
+            // if it is a beetle, make sure the oldNeighbors also include the pieces below 
             (int, int) oldPoint = piece.Point;
-            _RemovePiece(piece);
+            HashSet<(int x, int y)> oldNeighbors = new(piece.Neighbors);
 
+            _RemovePiece(piece);
             if (!IsAllConnected())
             {
                 // place it back
@@ -760,7 +762,9 @@ namespace HiveCore
             {
                 // Temporarily place this piece to the `to` point
                 PlacePiece(piece, to);
-                if (!IsAllConnected())
+
+                // Not connected
+                if (!IsAllConnected() )
                 {
                     _RemovePiece(piece);
                     // place it back
@@ -768,6 +772,18 @@ namespace HiveCore
 
                     // this move breaks the hive
                     return false;
+                }
+                else if (!isGrasshopper && !(isBeetle && Pieces[to].Count > 1))
+                {
+                    if (!piece.Neighbors.Overlaps(oldNeighbors))
+                    {
+                        _RemovePiece(piece);
+                        // place it back
+                        PlacePiece(piece, oldPoint);
+
+                        // this move breaks the hive
+                        return false;
+                    }
                 }
                 _RemovePiece(piece);
             }
