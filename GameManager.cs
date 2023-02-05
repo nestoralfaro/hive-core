@@ -111,11 +111,11 @@ namespace HiveCore
                     {
                         if (!piece.IsOnBoard && Board.GetPlacingSpotsFor(color).Contains(to))
                         {
-                            Board.PlacePiece(piece, to);
+                            Board.PlacePiece(ref piece, to);
                         }
                         else if (piece.IsOnBoard && Board.GetMovingSpotsFor(ref piece).Contains(to))
                         {
-                            Board.MovePiece(piece, to);
+                            Board.MovePiece(ref piece, to);
                         }
                         else
                         {
@@ -126,7 +126,7 @@ namespace HiveCore
                     {
                         if (IsFirstMove(piece))
                         {
-                            Board.PlacePiece(piece, to);
+                            Board.PlacePiece(ref piece, to);
                         }
                     }
                 }

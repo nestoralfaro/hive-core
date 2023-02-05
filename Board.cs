@@ -94,12 +94,12 @@ namespace HiveCore
         {
             if (action == ActionType.Moving)
             {
-                MovePiece(piece, to);
+                MovePiece(ref piece, to);
             }
 
             if (action == ActionType.Placing)
             {
-                PlacePiece(piece, to);
+                PlacePiece(ref piece, to);
             }
         }
         private (int, AIAction?) alpha_beta(ref Color AI, ref Color opponent, Color whoseTurn, int alpha = int.MinValue, int beta = int.MaxValue, int depth = 1)
@@ -152,11 +152,11 @@ namespace HiveCore
                             // current state–i.e., points dont match
 
                             // Break point here and start with `wG1`! The depth should be of 5
-                            MovePiece(piece, availableMove.to);
+                            MovePiece(ref curPiece, availableMove.to);
                         }
                         else if (!piece.IsOnBoard && availableMove.action == ActionType.Placing)
                         {
-                            PlacePiece(piece, availableMove.to);
+                            PlacePiece(ref curPiece, availableMove.to);
                         }
                                                                                     // switch whose turn
                         (int min, AIAction? move) = alpha_beta(ref AI, ref opponent, whoseTurn == Color.White ? Color.Black : Color.White, alpha, beta, depth + 1);
@@ -219,11 +219,11 @@ namespace HiveCore
                         // make move
                         if (piece.IsOnBoard && availableMove.action == ActionType.Moving)
                         {
-                            MovePiece(piece, availableMove.to);
+                            MovePiece(ref curPiece, availableMove.to);
                         }
                         else if (!piece.IsOnBoard && availableMove.action == ActionType.Placing)
                         {
-                            PlacePiece(piece, availableMove.to);
+                            PlacePiece(ref curPiece, availableMove.to);
                         }
                                                                                     // switch whose turn
                         (int max, AIAction? move) = alpha_beta(ref AI, ref opponent, whoseTurn == Color.White ? Color.Black : Color.White, alpha, beta, depth + 1);
@@ -258,15 +258,15 @@ namespace HiveCore
         *************************************************************************
         *************************************************************************/
 #region Placing/Moving on the Board
-        public void MovePiece(Piece piece, (int, int) to)
+        public void MovePiece(ref Piece piece, (int, int) to)
         {
             // remove piece
-            _RemovePiece(piece);
+            _RemovePiece(ref piece);
             // place it at the new point
-            PlacePiece(piece, to);
+            PlacePiece(ref piece, to);
         }
 
-        public void PlacePiece(Piece piece, (int, int) to)
+        public void PlacePiece(ref Piece piece, (int, int) to)
         {
             if (to.Item1 == 2 && to.Item2 == 0 && piece.ToString().Equals("bQ1"))
             {
@@ -307,7 +307,7 @@ namespace HiveCore
             BlackPieces = board.BlackPieces;
         }
 
-        private void _RemovePiece(Piece piece)
+        private void _RemovePiece(ref Piece piece)
         {
             (int, int) removingSpot = piece.Point;
 
@@ -566,7 +566,7 @@ namespace HiveCore
 
             // Because the last point it found is where this piece is now positioned
             // Move it back to where it was
-            MovePiece(piece, oldAntPosition);
+            MovePiece(ref piece, oldAntPosition);
 
             // itself should not be included
             positions.Remove(oldAntPosition);
@@ -587,7 +587,7 @@ namespace HiveCore
                     positions.Add(nextSpot);
                     // This move is important because it needs to update its neighbors
                     // so that it can later be appropriately validated by the _IsOneHive
-                    MovePiece(piece, nextSpot);
+                    MovePiece(ref piece, nextSpot);
                     _AntDFS(ref piece, ref positions, nextSpot);
                 }
             }
@@ -651,7 +651,7 @@ namespace HiveCore
 
             // Because the last point it found is where this piece is now positioned
             // Move it back to where it was
-            MovePiece(piece, oldSpiderPosition);
+            MovePiece(ref piece, oldSpiderPosition);
             stopwatch.Stop();
             PrintRed("Generating spider moves took: " + stopwatch.Elapsed.TotalMilliseconds + "ms");
             return positions;
@@ -678,10 +678,10 @@ namespace HiveCore
                 {
                     // This move is important because it needs to update its neighbors
                     // so that it can later be appropriately validated by the _IsOneHive
-                    MovePiece(piece, nextSpot);
+                    MovePiece(ref piece, nextSpot);
                     _SpiderDFS(ref piece, ref positions, ref visited, nextSpot, curDepth + 1, maxDepth);
                 }
-                MovePiece(piece, curSpot);
+                MovePiece(ref piece, curSpot);
             }
         }
 
@@ -773,18 +773,18 @@ namespace HiveCore
             (int, int) oldPoint = piece.Point;
             HashSet<(int x, int y)> oldNeighbors = new(piece.Neighbors);
 
-            _RemovePiece(piece);
+            _RemovePiece(ref piece);
             if (!IsAllConnected())
             {
                 // place it back
-                PlacePiece(piece, oldPoint);
+                PlacePiece(ref piece, oldPoint);
                 // this move breaks the hive
                 return false;
             }
             else
             {
                 // Temporarily place this piece to the `to` point
-                PlacePiece(piece, to);
+                PlacePiece(ref piece, to);
 
                 // If it is a grasshopper, just check if it is all connected  
                 if ((isGrasshopper
@@ -795,14 +795,14 @@ namespace HiveCore
                 && IsAllConnected())
                 {
                     // move it back
-                    MovePiece(piece, oldPoint);
+                    MovePiece(ref piece, oldPoint);
                     // this is a valid move
                     return true;
                 }
                 else
                 {
                     // move it back
-                    MovePiece(piece, oldPoint);
+                    MovePiece(ref piece, oldPoint);
                     // this is an invalid move
                     return false;
                 }
