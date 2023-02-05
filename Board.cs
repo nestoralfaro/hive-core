@@ -9,8 +9,11 @@ namespace HiveCore
         public Dictionary<(int, int), Stack<Piece>> Pieces;
         private Dictionary<string, (int, int)> _piece_point;
         private Dictionary<Color, HashSet<(int, int)>> _color_pieces;
-        public HashSet<Piece> WhitePieces { get; set; }
-        public HashSet<Piece> BlackPieces { get; set; }
+        public Dictionary<string, Piece> WhitePieces { get; set; }
+        public Dictionary<string, Piece> BlackPieces { get; set; }
+
+        public HashSet<string> WhitePiecesKeys { get; set; }
+        public HashSet<string> BlackPiecesKeys { get; set; }
 
         public Board()
         {
@@ -30,34 +33,64 @@ namespace HiveCore
             };
             _color_pieces.EnsureCapacity(2);
 
-            WhitePieces = new HashSet<Piece>()
+            WhitePieces = new Dictionary<string, Piece>()
             {
-               new Piece("wQ1"),
-               new Piece("wA1"),
-               new Piece("wA2"),
-               new Piece("wA3"),
-               new Piece("wB1"),
-               new Piece("wB2"),
-               new Piece("wG1"),
-               new Piece("wG2"),
-               new Piece("wG3"),
-               new Piece("wS1"),
-               new Piece("wS2"),
+             {"wQ1", new Piece("wQ1")},
+             {"wA1", new Piece("wA1")},
+             {"wA2", new Piece("wA2")},
+             {"wA3", new Piece("wA3")},
+             {"wB1", new Piece("wB1")},
+             {"wB2", new Piece("wB2")},
+             {"wG1", new Piece("wG1")},
+             {"wG2", new Piece("wG2")},
+             {"wG3", new Piece("wG3")},
+             {"wS1", new Piece("wS1")},
+             {"wS2", new Piece("wS2")},
             };
 
-            BlackPieces = new HashSet<Piece>()
+            WhitePiecesKeys = new HashSet<string>()
             {
-               new Piece("bQ1"),
-               new Piece("bA1"),
-               new Piece("bA2"),
-               new Piece("bA3"),
-               new Piece("bB1"),
-               new Piece("bB2"),
-               new Piece("bG1"),
-               new Piece("bG2"),
-               new Piece("bG3"),
-               new Piece("bS1"),
-               new Piece("bS2"),
+               "wQ1",
+               "wA1",
+               "wA2",
+               "wA3",
+               "wB1",
+               "wB2",
+               "wG1",
+               "wG2",
+               "wG3",
+               "wS1",
+               "wS2",
+            };
+
+            BlackPieces = new Dictionary<string, Piece>()
+            {
+               {"bQ1", new Piece("bQ1")},
+               {"bA1", new Piece("bA1")},
+               {"bA2", new Piece("bA2")},
+               {"bA3", new Piece("bA3")},
+               {"bB1", new Piece("bB1")},
+               {"bB2", new Piece("bB2")},
+               {"bG1", new Piece("bG1")},
+               {"bG2", new Piece("bG2")},
+               {"bG3", new Piece("bG3")},
+               {"bS1", new Piece("bS1")},
+               {"bS2", new Piece("bS2")},
+            };
+
+            BlackPiecesKeys = new HashSet<string>()
+            {
+               "bQ1",
+               "bA1",
+               "bA2",
+               "bA3",
+               "bB1",
+               "bB2",
+               "bG1",
+               "bG2",
+               "bG3",
+               "bS1",
+               "bS2",
             };
         }
 
@@ -65,8 +98,10 @@ namespace HiveCore
         {
             return new Board()
             {
-                WhitePieces = this.WhitePieces.Select(p => p.Clone()).ToHashSet(),
-                BlackPieces = this.BlackPieces.Select(p => p.Clone()).ToHashSet(),
+                // WhitePieces = this.WhitePieces.Select(p => p.Clone()).ToHashSet(),
+                // BlackPieces = this.BlackPieces.Select(p => p.Clone()).ToHashSet(),
+                WhitePieces = this.WhitePieces.ToDictionary(first => first.Key, second => second.Value.Clone()),
+                BlackPieces = this.BlackPieces.ToDictionary(first => first.Key, second => second.Value.Clone()),
                 Pieces = this.Pieces.ToDictionary(point => point.Key, stack => new Stack<Piece>(stack.Value.Select(piece => piece.Clone()))),
                 _color_pieces = this._color_pieces.ToDictionary(color => color.Key, pieces => new HashSet<(int, int)>(pieces.Value)),
                 _piece_point = new Dictionary<string, (int, int)>(this._piece_point),
@@ -80,174 +115,81 @@ namespace HiveCore
         *************************************************************************/
         public bool AIMove(Color color)
         {
-            //    if AI's color is black, then Opponent is White, otherwise black
-            Color opponent = color == Color.Black ? Color.White : Color.Black;
-            (int maxVal, AIAction? move) = alpha_beta(ref color, ref opponent, color);
-            if (move != null)
-                _AIMakeMove(move.Action, move.Piece, move.To);
-            // if everything went well
+            (int val, (Piece piece, (int, int) to)) = _Search(color, _MAX_DEPTH_TREE_SEARCH, int.MinValue, int.MaxValue);
+            MovePiece(piece, to);
             return true;
         }
 
-#region AI Method Helpers
-        private void _AIMakeMove (ActionType action, Piece piece, (int, int) to)
+        // Based on the original pseudocode and this guy's: https://www.youtube.com/watch?v=U4ogK0MIzqk&t=1005s
+        private (int, (Piece, (int, int))) _Search(Color whoseTurn, int depth, int alpha, int beta)
         {
-            if (action == ActionType.Moving)
+            (Piece, (int, int)) myMove = default;
+            if (depth == 0)
             {
-                MovePiece(ref piece, to);
+                return (new Random().Next(1, 100), myMove);
             }
 
-            if (action == ActionType.Placing)
+            HashSet<(Piece, (int, int))> moves = _GenerateMovesFor(whoseTurn);
+
+            foreach ((Piece piece, (int, int) to) in moves)
             {
-                PlacePiece(ref piece, to);
+                Board prev = this.Clone();
+                MovePiece(piece, to);
+                (int evaluation, (Piece, (int, int)) move) = _Search(whoseTurn == Color.Black ? Color.White : Color.Black, depth - 1, -beta, -alpha);
+                evaluation = -evaluation;
+                SetState(prev);
+                if (evaluation >= beta)
+                {
+                    return (beta, myMove);
+                }
+                alpha = Math.Max(alpha, evaluation);
+                myMove = new (piece.Clone(), to);
             }
+
+            return (alpha, myMove);
         }
-        private (int, AIAction?) alpha_beta(ref Color AI, ref Color opponent, Color whoseTurn, int alpha = int.MinValue, int beta = int.MaxValue, int depth = 1)
+
+#region AI Method Helpers
+        private HashSet<(Piece, (int, int))> _GenerateMovesFor(Color curPlayer)
         {
-            AIAction? myMove = null;
-            if (depth > _MAX_DEPTH_TREE_SEARCH || IsAQueenSurrounded())
-            {
-                // Calculate score with heuristic
-                // Return score and currentMove
-                return (new Random().Next(1, 50), myMove);
-            }
+            HashSet<(Piece, (int, int))> moves = new();
 
-            // If AI turn
-            if (whoseTurn == AI)
+            // Force the player to play their queen on their 4th turn
+            string playersQueen = $"{char.ToLower(curPlayer.ToString()[0])}Q1";
+            if (GetManyPiecesPlayedBy(curPlayer) == 3 && !IsOnBoard(playersQueen))
             {
-                int maxValue = -1000000;
-                // pieces hashset should be in sync with board but they are not
-                HashSet<(ActionType action, (int, int) to)> availableMoves = new();
-
-                // get AI's available placing spots
-                foreach ((int, int) to in GetPlacingSpotsFor(AI))
+                foreach ((int, int) spot in GetPlacingSpotsFor(curPlayer))
                 {
-                    availableMoves.Add((ActionType.Placing, to));
+                    moves.Add((curPlayer == Color.Black ? BlackPieces[playersQueen] : WhitePieces[playersQueen], spot));
                 }
 
-                // For every AI piece
-                foreach (Piece piece in AI == Color.Black ? BlackPieces : WhitePieces)
-                {
-                    Piece curPiece = piece;
+                return moves;
+            }
 
-                    // if this piece is on the board
+            // Idea for forcing the queen to not be played on the first turn:
+            // Maybe remove it temporarily, and put it back until the `manyPiecesPlayedByCurPlayer > 1`?
+
+            foreach (Piece piece in curPlayer == Color.Black ? BlackPieces.Values : WhitePieces.Values)
+            {
+                if (!piece.IsSurrounded)
+                {
                     if (piece.IsOnBoard)
                     {
-                        foreach ((int, int) to in GetMovingSpotsFor(ref curPiece))
+                        foreach ((int, int) spot in GetMovingSpotsFor(piece))
                         {
-                            availableMoves.Add((ActionType.Moving, to));
+                            moves.Add((piece.Clone(), spot));
                         }
                     }
-
-                    // for every available move for current piece
-                    foreach ((ActionType action, (int, int) to) availableMove in availableMoves)
+                    else
                     {
-                        Board prev = this.Clone();
-                        // make move
-                        if (piece.IsOnBoard && availableMove.action == ActionType.Moving)
+                        foreach ((int, int) spot in GetPlacingSpotsFor(piece.Color))
                         {
-                            // crashes on the second skip
-                            // first move is successful
-                            // by the second time it gets here, the piece in the original blackpieces set do not match the
-                            // current state–i.e., points dont match
-
-                            // Break point here and start with `wG1`! The depth should be of 5
-                            MovePiece(ref curPiece, availableMove.to);
+                            moves.Add((piece.Clone(), spot));
                         }
-                        else if (!piece.IsOnBoard && availableMove.action == ActionType.Placing)
-                        {
-                            PlacePiece(ref curPiece, availableMove.to);
-                        }
-                                                                                    // switch whose turn
-                        (int min, AIAction? move) = alpha_beta(ref AI, ref opponent, whoseTurn == Color.White ? Color.Black : Color.White, alpha, beta, depth + 1);
-
-                        if (min > maxValue)
-                        {
-                            maxValue = min;
-                            myMove = new AIAction(piece, availableMove);
-                        }
-
-                        // set game state back to what is was before making move
-                        SetState(prev);
-
-                        // If alpha catches up to beta, kill kids
-                        if (maxValue >= beta)
-                            return (maxValue, myMove);
-
-                        // new value is greater than alpha? update alpha
-                        if (maxValue > alpha)
-                            alpha = maxValue;
                     }
                 }
-                return (maxValue, myMove);
             }
-
-            // If Opponent turn
-            // if (whoseTurn != this.Color)
-            else
-            {
-                int minValue = 1000000;
-
-                HashSet<(ActionType action, (int, int) to)> availableMoves = new();
-
-                // get opponent's available placing spots
-                foreach (var to in GetPlacingSpotsFor(opponent))
-                {
-                    availableMoves.Add((ActionType.Placing, to));
-                }
-
-                // For every opponent's piece
-                foreach (Piece piece in opponent == Color.Black ? BlackPieces : WhitePieces)
-                {
-                    Piece curPiece = piece;
-
-                    // if this piece is on the board
-                    if (piece.IsOnBoard)
-                    {
-                        // get its moving spots
-                        foreach ((int, int) to in GetMovingSpotsFor(ref curPiece))
-                        {
-                            availableMoves.Add((ActionType.Moving, to));
-                        }
-                    }
-
-                    // for every available move for current piece
-                    foreach ((ActionType action, (int, int) to) availableMove in availableMoves)
-                    {
-                        Board prev = this.Clone();
-
-                        // make move
-                        if (piece.IsOnBoard && availableMove.action == ActionType.Moving)
-                        {
-                            MovePiece(ref curPiece, availableMove.to);
-                        }
-                        else if (!piece.IsOnBoard && availableMove.action == ActionType.Placing)
-                        {
-                            PlacePiece(ref curPiece, availableMove.to);
-                        }
-                                                                                    // switch whose turn
-                        (int max, AIAction? move) = alpha_beta(ref AI, ref opponent, whoseTurn == Color.White ? Color.Black : Color.White, alpha, beta, depth + 1);
-
-                        if (max < minValue)
-                        {
-                            minValue = max;
-                            myMove = new AIAction(piece, availableMove);
-                        }
-
-                        // set game state back to what is was before making move
-                        SetState(prev);
-
-                        // If alpha catches up to beta, kill kids
-                        if (minValue <= beta)
-                            return (minValue, myMove);
-
-                        // new value is greater than alpha? update alpha
-                        if (minValue < alpha)
-                            alpha = minValue;
-                    }
-                }
-                return (minValue, myMove);
-            }
+            return moves;
         }
 #endregion
 
@@ -258,12 +200,25 @@ namespace HiveCore
         *************************************************************************
         *************************************************************************/
 #region Placing/Moving on the Board
-        public void MovePiece(ref Piece piece, (int, int) to)
+        public void MovePiece(Piece piece, (int, int) to)
         {
+            // piece.Point = to;
             // remove piece
-            _RemovePiece(ref piece);
+            if (piece.IsOnBoard)
+            {
+                _RemovePiece(ref piece);
+            }
             // place it at the new point
             PlacePiece(ref piece, to);
+
+            if (piece.Color == Color.Black)
+            {
+                BlackPieces[piece.ToString()] = piece;
+            }
+            else
+            {
+                WhitePieces[piece.ToString()] = piece;
+            }
         }
 
         public void PlacePiece(ref Piece piece, (int, int) to)
@@ -311,7 +266,7 @@ namespace HiveCore
         {
             (int, int) removingSpot = piece.Point;
 
-            if (Pieces.ContainsKey(removingSpot))
+            if (Pieces.ContainsKey(removingSpot) && Pieces[removingSpot].Peek().ToString().Equals(piece.ToString()))
             {
                 if (Pieces[removingSpot].Count > 0)
                 {
@@ -510,7 +465,7 @@ namespace HiveCore
             return positions;
         }
 
-        public HashSet<(int, int)> GetMovingSpotsFor(ref Piece piece)
+        public HashSet<(int, int)> GetMovingSpotsFor(Piece piece)
         {
             string queen = $"{char.ToLower(piece.Color.ToString()[0])}Q1";
             // NOTE: the order of these statements DO matter. We can take advantage of each short-circuit operator–i.e., and, or
@@ -528,7 +483,7 @@ namespace HiveCore
                 return new HashSet<(int, int)>();
             }
 
-            // If the piece about to be placed is the fourth one
+            // If the piece about to be played is the fourth one
             else if (GetManyPiecesPlayedBy(piece.Color) == 3
             // AND this piece is not the queen
             && !piece.ToString().Equals(queen)
@@ -566,7 +521,7 @@ namespace HiveCore
 
             // Because the last point it found is where this piece is now positioned
             // Move it back to where it was
-            MovePiece(ref piece, oldAntPosition);
+            MovePiece(piece, oldAntPosition);
 
             // itself should not be included
             positions.Remove(oldAntPosition);
@@ -587,7 +542,7 @@ namespace HiveCore
                     positions.Add(nextSpot);
                     // This move is important because it needs to update its neighbors
                     // so that it can later be appropriately validated by the _IsOneHive
-                    MovePiece(ref piece, nextSpot);
+                    MovePiece(piece, nextSpot);
                     _AntDFS(ref piece, ref positions, nextSpot);
                 }
             }
@@ -651,7 +606,7 @@ namespace HiveCore
 
             // Because the last point it found is where this piece is now positioned
             // Move it back to where it was
-            MovePiece(ref piece, oldSpiderPosition);
+            MovePiece(piece, oldSpiderPosition);
             stopwatch.Stop();
             PrintRed("Generating spider moves took: " + stopwatch.Elapsed.TotalMilliseconds + "ms");
             return positions;
@@ -678,13 +633,19 @@ namespace HiveCore
                 {
                     // This move is important because it needs to update its neighbors
                     // so that it can later be appropriately validated by the _IsOneHive
-                    MovePiece(ref piece, nextSpot);
+                    MovePiece(piece, nextSpot);
                     _SpiderDFS(ref piece, ref positions, ref visited, nextSpot, curDepth + 1, maxDepth);
                 }
-                MovePiece(ref piece, curSpot);
+                MovePiece(piece, curSpot);
             }
         }
 
+
+        // wS1
+        // wA1SWwS1
+        // wQ1NWwS1
+        // wA1NEbG3
+        // wG1STwS1 <- crashes here
         private HashSet<(int, int)> _GetQueenMovingSpots(ref Piece piece)
         {
             Stopwatch stopwatch = new();
@@ -692,6 +653,13 @@ namespace HiveCore
             HashSet<(int, int)> spots = new();
             foreach ((int, int) openSpot in piece.OpenSpotsAround)
             {
+                Console.WriteLine("Current Queen State");
+                Console.WriteLine($"{piece} | {piece.IsOnBoard} | From: {piece.Point} | To: {openSpot}");
+                PrintPieces(Pieces);
+                // if (piece.Point == (1, 1) && openSpot == (2, 2))
+                // {
+                //     Console.WriteLine("crashes here");
+                // }
                 // Since the queen can only go around its open spots,
                 // only keep such valid open spots around it
                 if (_IsValidMove(ref piece, piece.Point, openSpot))
@@ -783,6 +751,7 @@ namespace HiveCore
             }
             else
             {
+                Console.WriteLine($"temporarily placing {piece} to {to}");
                 // Temporarily place this piece to the `to` point
                 PlacePiece(ref piece, to);
 
@@ -795,14 +764,14 @@ namespace HiveCore
                 && IsAllConnected())
                 {
                     // move it back
-                    MovePiece(ref piece, oldPoint);
+                    MovePiece(piece, oldPoint);
                     // this is a valid move
                     return true;
                 }
                 else
                 {
                     // move it back
-                    MovePiece(ref piece, oldPoint);
+                    MovePiece(piece, oldPoint);
                     // this is an invalid move
                     return false;
                 }

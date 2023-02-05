@@ -994,7 +994,7 @@ namespace HiveCore
         private void _AssertMovingSpots(string piece, HashSet<(int, int)> spots)
         {
             Piece p = game.Board.GetRefTopPieceByStringName(piece)!;
-            var returnedSpots = game.Board.GetMovingSpotsFor(ref p);
+            var returnedSpots = game.Board.GetMovingSpotsFor(p);
 
             Console.WriteLine($"////////////////Actual Moving Spots For {piece}////////////////");
             foreach (var s in returnedSpots)

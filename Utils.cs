@@ -45,7 +45,7 @@ namespace HiveCore
                 Console.BackgroundColor = color == Color.Black ? ConsoleColor.DarkGray : ConsoleColor.White;
                 Console.ForegroundColor = color == Color.Black ? ConsoleColor.White : ConsoleColor.Black;
                 Console.Write($"It is {color}'s turn.");
-                _PrintRemainingPieces(color == Color.Black ? board.BlackPieces : board.WhitePieces);
+                _PrintRemainingPieces(color == Color.Black ? board.BlackPiecesKeys : board.WhitePiecesKeys);
                 Console.ResetColor();
                 Console.WriteLine();
         }
@@ -68,10 +68,10 @@ namespace HiveCore
             Console.WriteLine();
         }
 
-        private static void _PrintRemainingPieces(HashSet<Piece> pieces)
+        private static void _PrintRemainingPieces(HashSet<string> pieces)
         {
             string Output = "";
-            foreach (Piece piece in pieces)
+            foreach (string piece in pieces)
             {
                 // Maybe we should use the String builder for performance improvement
                 // However, since this is just a helper method, probably doesn't matter much
@@ -79,5 +79,25 @@ namespace HiveCore
             }
             Console.Write($" | Remaining pieces: {Output}");
         }
+        public static void PrintPieces(Dictionary<(int, int), Stack<Piece>> Pieces)
+        {
+            // Print the board
+            if (Pieces.Count != 0)
+            {
+                Console.WriteLine("/*********************************/");
+                Console.WriteLine("Current board state:");
+                foreach (var entry in Pieces)
+                {
+                    Console.WriteLine($"{entry.Value.Peek()} is at {entry.Value.Peek().Point}");
+                    //Print the neighbours
+                    foreach (var neighbour in entry.Value.Peek().Neighbors)
+                    {
+                        Console.WriteLine($"{neighbour}");
+                    }
+                }
+                Console.WriteLine("/*********************************/");
+            }
+        }
+
     }
 }

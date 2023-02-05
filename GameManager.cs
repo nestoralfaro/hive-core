@@ -42,7 +42,7 @@ namespace HiveCore
 
         public bool IsMovingValid(Piece piece, (int, int) to)
         {
-            return piece.IsOnBoard && Board.GetMovingSpotsFor(ref piece).Contains(to);
+            return piece.IsOnBoard && Board.GetMovingSpotsFor(piece).Contains(to);
         }
 
         private bool IsFirstMove(Piece piece)
@@ -102,9 +102,10 @@ namespace HiveCore
                     }
                     else
                     {
-                        piece = color == Color.White
-                        ? Board.WhitePieces.First(p => p.ToString().Equals(move.MovingPiece))
-                        : Board.BlackPieces.First(p => p.ToString().Equals(move.MovingPiece));
+                        // piece = color == Color.White
+                        // ? Board.WhitePieces.First(p => p.ToString().Equals(move.MovingPiece))
+                        // : Board.BlackPieces.First(p => p.ToString().Equals(move.MovingPiece));
+                        piece = color == Color.White ? Board.WhitePieces[move.MovingPiece] : Board.BlackPieces[move.MovingPiece];
                     }
 
                     if (move.IsMoveWithDestination())
@@ -113,9 +114,9 @@ namespace HiveCore
                         {
                             Board.PlacePiece(ref piece, to);
                         }
-                        else if (piece.IsOnBoard && Board.GetMovingSpotsFor(ref piece).Contains(to))
+                        else if (piece.IsOnBoard && Board.GetMovingSpotsFor(piece).Contains(to))
                         {
-                            Board.MovePiece(ref piece, to);
+                            Board.MovePiece(piece, to);
                         }
                         else
                         {
