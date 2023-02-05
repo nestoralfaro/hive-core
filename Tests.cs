@@ -768,6 +768,7 @@ namespace HiveCore
             _AssertPiecePoint("wG1", (0, 0));
             _AssertMovingSpots("wG1", new HashSet<(int, int)>());
             _AssertPlacingSpots(_whitePlayer, new HashSet<(int, int)>() {(1, 1), (-1, 1), (-2, 0), (-1, -1), (1, -1), (2, 0)});
+
             _BlackMove("bG1NTwG1");
             _WhiteMove("wA1SEwG1");
             _BlackMove("bS1NTbG1");

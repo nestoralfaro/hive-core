@@ -561,7 +561,16 @@ namespace HiveCore
             Stopwatch stopwatch = new();
             stopwatch.Start();
             HashSet<(int x, int y)> positions = new();
+            (int x, int y) oldAntPosition = piece.Point;
             _AntDFS(ref piece, ref positions, piece.Point);
+
+            // Because the last point it found is where this piece is now positioned
+            // Move it back to where it was
+            MovePiece(piece, oldAntPosition);
+
+            // itself should not be included
+            positions.Remove(oldAntPosition);
+
             stopwatch.Stop();
             PrintRed("Generating Ant Moves took: " + stopwatch.Elapsed.TotalMilliseconds + "ms");
             return positions;
@@ -572,14 +581,16 @@ namespace HiveCore
             for (int i = 0; i < MANY_SIDES; ++i)
             {
                 (int x, int y) nextSpot = (curSpot.x + SIDE_OFFSETS_ARRAY[i].x, curSpot.y + SIDE_OFFSETS_ARRAY[i].y);
-                bool hasNotBeenVisited = !positions.Contains(nextSpot);
-                if (hasNotBeenVisited && _IsValidMove(ref piece, curSpot, nextSpot))
+                // If it has not been visited    AND Is a valid move
+                if (!positions.Contains(nextSpot) && _IsValidMove(ref piece, curSpot, nextSpot))
                 {
                     positions.Add(nextSpot);
+                    // This move is important because it needs to update its neighbors
+                    // so that it can later be appropriately validated by the _IsOneHive
+                    MovePiece(piece, nextSpot);
                     _AntDFS(ref piece, ref positions, nextSpot);
                 }
             }
-            return;
         }
 
         private HashSet<(int, int)> _GetBeetleMovingSpots(ref Piece piece)
@@ -589,8 +600,9 @@ namespace HiveCore
             HashSet<(int, int)> validMoves = new();
             foreach ((int, int) side in piece.Sides)
             {
-                // Keep the valid "paths" (from point -> to side)
-                if (_IsValidMove(ref piece, piece.Point, side, true))
+                // Because the beetle can only go around, and on top of other pieces
+                // just check if it can move from its current point -> side 
+                if (_IsValidMove(ref piece, piece.Point, side, false, true))
                 {
                     validMoves.Add(side);
                 }
@@ -618,7 +630,7 @@ namespace HiveCore
                     firstIsValid = true;
                 }
 
-                if (firstIsValid && _DoesNotBreakHive(ref piece, nextSpot, true, false))
+                if (firstIsValid && _IsOneHive(ref piece, nextSpot, true))
                 {
                     positions.Add(nextSpot);
                 }
@@ -633,34 +645,43 @@ namespace HiveCore
             Stopwatch stopwatch = new();
             stopwatch.Start();
             HashSet<(int x, int y)> positions = new();
-            Dictionary<(int x, int y), bool> visited = new();
+            HashSet<(int x, int y)> visited = new();
+            (int, int) oldSpiderPosition = piece.Point;
             _SpiderDFS(ref piece, ref positions, ref visited, piece.Point, 0, _SPIDER_MAX_STEP_COUNT);
+
+            // Because the last point it found is where this piece is now positioned
+            // Move it back to where it was
+            MovePiece(piece, oldSpiderPosition);
             stopwatch.Stop();
             PrintRed("Generating spider moves took: " + stopwatch.Elapsed.TotalMilliseconds + "ms");
             return positions;
         }
 
-        private void _SpiderDFS(ref Piece piece, ref HashSet<(int x, int y)> positions, ref Dictionary<(int x, int y), bool> visited, (int x, int y) curSpot, int curDepth, int maxDepth)
+        private void _SpiderDFS(ref Piece piece, ref HashSet<(int x, int y)> positions, ref HashSet<(int x, int y)> visited, (int x, int y) curSpot, int curDepth, int maxDepth)
         {
             if (curDepth == maxDepth)
             {
-                // No one is at that position
-                if (!Pieces.ContainsKey(curSpot))
-                {
-                    visited[curSpot] = true;
-                    positions.Add(curSpot);
-                }
+                visited.Add(curSpot);
+                positions.Add(curSpot);
                 return;
             }
-            visited[curSpot] = true;
+            visited.Add(curSpot);
             for (int i = 0; i < MANY_SIDES; ++i)
             {
                 (int x, int y) nextSpot = (curSpot.x + SIDE_OFFSETS_ARRAY[i].x, curSpot.y + SIDE_OFFSETS_ARRAY[i].y);
-                bool hasNotBeenVisited = !visited.ContainsKey(nextSpot) || (visited.ContainsKey(nextSpot) && !visited[nextSpot]);
-                if (hasNotBeenVisited && _IsValidMove(ref piece, curSpot, nextSpot))
+
+                // TO BENCHMARK: Because DFS may run into itself at one point, maybe this should be validated
+                // if (!visited.Contains(nextSpot) && (piece.Point != nextSpot) && _IsValidMove(ref piece, curSpot, nextSpot))
+
+                // It has not been visited      AND Is a valid move
+                if (!visited.Contains(nextSpot) && _IsValidMove(ref piece, curSpot, nextSpot))
                 {
+                    // This move is important because it needs to update its neighbors
+                    // so that it can later be appropriately validated by the _IsOneHive
+                    MovePiece(piece, nextSpot);
                     _SpiderDFS(ref piece, ref positions, ref visited, nextSpot, curDepth + 1, maxDepth);
                 }
+                MovePiece(piece, curSpot);
             }
         }
 
@@ -671,6 +692,8 @@ namespace HiveCore
             HashSet<(int, int)> spots = new();
             foreach ((int, int) openSpot in piece.OpenSpotsAround)
             {
+                // Since the queen can only go around its open spots,
+                // only keep such valid open spots around it
                 if (_IsValidMove(ref piece, piece.Point, openSpot))
                 {
                     spots.Add(openSpot);
@@ -704,7 +727,7 @@ namespace HiveCore
         private bool _IsValidMove(ref Piece piece, (int x, int y) from, (int x, int y) to, bool isGrasshopper = false, bool isBeetle = false)
         {
             //      Only beetle can crawl on top of                 One Hive Rule                       Physically Fits
-            return (isBeetle || !Pieces.ContainsKey(to)) && _DoesNotBreakHive(ref piece, to, isGrasshopper, isBeetle) && _IsFreedomOfMovement(ref piece, from, to, isBeetle);
+            return (isBeetle || !Pieces.ContainsKey(to)) && _IsOneHive(ref piece, to, isGrasshopper, isBeetle) && _IsFreedomOfMovement(ref piece, from, to, isBeetle);
         }
 
         private bool _IsFreedomOfMovement(ref Piece piece, (int x, int y) from, (int x, int y) to, bool isBeetle = false)
@@ -744,7 +767,7 @@ namespace HiveCore
                     : checkThatTheOppositePeripheralExists;
         }
 
-        private bool _DoesNotBreakHive(ref Piece piece, (int x, int y) to, bool isGrasshopper = false, bool isBeetle = false)
+        private bool _IsOneHive(ref Piece piece, (int x, int y) to, bool isGrasshopper = false, bool isBeetle = false)
         {
             // if it is a beetle, make sure the oldNeighbors also include the pieces below 
             (int, int) oldPoint = piece.Point;
@@ -763,35 +786,27 @@ namespace HiveCore
                 // Temporarily place this piece to the `to` point
                 PlacePiece(piece, to);
 
-                // Not connected
-                if (!IsAllConnected() )
+                // If it is a grasshopper, just check if it is all connected  
+                if ((isGrasshopper
+                // if it is a beetle, and it is on top of another one, just check that it is all connected
+                || (isBeetle && Pieces[to].Count > 1)
+                // for any other piece, make sure it was always connected, and that it is still connected
+                || piece.Neighbors.Overlaps(oldNeighbors))
+                && IsAllConnected())
                 {
-                    _RemovePiece(piece);
-                    // place it back
-                    PlacePiece(piece, oldPoint);
-
-                    // this move breaks the hive
+                    // move it back
+                    MovePiece(piece, oldPoint);
+                    // this is a valid move
+                    return true;
+                }
+                else
+                {
+                    // move it back
+                    MovePiece(piece, oldPoint);
+                    // this is an invalid move
                     return false;
                 }
-                else if (!isGrasshopper && !(isBeetle && Pieces[to].Count > 1))
-                {
-                    if (!piece.Neighbors.Overlaps(oldNeighbors))
-                    {
-                        _RemovePiece(piece);
-                        // place it back
-                        PlacePiece(piece, oldPoint);
-
-                        // this move breaks the hive
-                        return false;
-                    }
-                }
-                _RemovePiece(piece);
             }
-
-            // Place it back
-            PlacePiece(piece, oldPoint);
-            // this move does not break the hive
-            return true;
         }
 
         public bool IsAllConnected()
@@ -831,7 +846,7 @@ namespace HiveCore
         // This should be used for the pieces that have an expensive move generation–i.e., for now, only the Ant
         // TODO: Test whether adding this validation actually improves performance on other pieces
         // (which probably does not because it would be validating its surroundings twice) 
-        public bool IsPinned(Piece piece, bool isBeetle = false)
+        public bool IsPinned(Piece piece, bool isGrasshopper, bool isBeetle)
         {
             // should be set up as soon as neighbors are added
             if (piece.IsSurrounded)
@@ -840,13 +855,12 @@ namespace HiveCore
             foreach((int, int) side in piece.Sides)
             {
                 // If there is at least one valid path
-                if (_IsValidMove(ref piece, piece.Point, side, isBeetle))
+                if (_IsValidMove(ref piece, piece.Point, side, isGrasshopper, isBeetle))
                 {
                     // It is not pinned
                     return false;
                 }
             }
-
             // None of its side were a valid path,
             // So this piece is pinned
             return true;
