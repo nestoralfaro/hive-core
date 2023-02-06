@@ -1,22 +1,10 @@
 namespace HiveCore
 #pragma warning disable IDE1006 // Private members naming style
-
-// wS1
-// wA1SWwS1
-// wQ1NWwS1
-// wA1NEbG3
-// wG1STwS1
-
-
-// wS1
-// bG1NTwS1
-// wS1NTbG1
-
 {
     public static class Utils
     {
         public enum Color { Black, White }
-        public const int _MAX_DEPTH_TREE_SEARCH = 5;
+        public const int _MAX_DEPTH_TREE_SEARCH = 3;
         public enum Insect { QueenBee, Beetle, Grasshopper, Spider, Ant }
         public const int MANY_SIDES = 6;
         public const int _SPIDER_MAX_STEP_COUNT = 3;

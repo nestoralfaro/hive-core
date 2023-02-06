@@ -118,50 +118,6 @@ namespace HiveCore
             return true;
         }
 
-        // private (int eval, (Piece piece, (int, int) to) move) _Search(Color whoseTurn, int alpha, int beta, int depth)
-        // {
-        //     (int, (Piece, (int, int))) myMove = default;
-
-        //     if (depth > _MAX_DEPTH_TREE_SEARCH || IsGameOver())
-        //     {
-        //         return myMove;
-        //     }
-
-        //     // AI
-        //     if (whoseTurn == Color.Black)
-        //     {
-        //         int maxValue = -1000000;
-        //         HashSet<(Piece, (int, int))> moves = _GenerateMovesFor(whoseTurn);
-
-        //         foreach ((Piece piece, (int, int) to) in moves)
-        //         {
-        //             (int, int) oldPoint = piece.Point;
-        //             MovePiece(piece, to);
-
-        //             (int min, (Piece, (int, int)) move) res = _Search(Color.White, alpha, beta, depth + 1);
-
-        //             if (res.min > maxValue)
-        //             {
-        //                 maxValue = res.min;
-        //                 myMove = res;
-        //             }
-
-        //             MovePiece(piece, oldPoint);
-
-        //             if (maxValue >= beta)
-        //             {
-        //                 return (maxValue, res.move);
-        //             }
-
-        //             if (maxValue > alpha)
-        //             {
-        //                 alpha = maxValue;
-        //             }
-        //         }
-        //         return (maxValue, )
-
-        //     }
-        // }
         // Based on the original pseudocode and this guy's: https://www.youtube.com/watch?v=U4ogK0MIzqk&t=1005s
         private (int eval, (Piece piece, (int, int) to) move) _Search(Color whoseTurn, int alpha, int beta, int depth)
         {
@@ -182,9 +138,10 @@ namespace HiveCore
                 return (0, myMove);
             }
 
-            foreach ((Piece piece, (int, int) to) in moves)
+            foreach ((Piece curPiece, (int, int) to) in moves)
             {
-                (int, int) oldPoint = piece.Point;
+                (int, int) oldPoint = curPiece.Point;
+                Piece piece = curPiece.Color == Color.Black ? BlackPieces[curPiece.ToString()] : WhitePieces[curPiece.ToString()];
                 // make move
                 MovePiece(piece, to);
                 (int evaluation, (Piece, (int, int)) move) = _Search(whoseTurn == Color.Black ? Color.White : Color.Black, -beta, -alpha, depth - 1);
@@ -199,7 +156,6 @@ namespace HiveCore
                 alpha = Math.Max(alpha, evaluation);
                 myMove = (piece, to);
             }
-
             return (alpha, myMove);
         }
 

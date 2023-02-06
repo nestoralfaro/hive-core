@@ -6,7 +6,6 @@ namespace HiveCore
     class GameCore
     {
         private bool _isFirstPlayersTurn;
-        private Color _winner {get; set;}
         private Color _player1 {get;}
         private Color _player2 {get;}
         public Board Board {get;}
@@ -15,7 +14,6 @@ namespace HiveCore
             _isFirstPlayersTurn = true;
             _player1 = Color.White;
             _player2 = Color.Black;
-            _winner = Color.White;
             Board = new();
         }
 
@@ -39,11 +37,18 @@ namespace HiveCore
 
         public bool IsGameOver()
         {
-            // if (IsGameOver())
-            // {
-            //     Console.WriteLine(_winner);
-            //     return true;
-            // }
+            if (Board.IsGameOver())
+            {
+                if (Board.WhitePieces["wQ1"].IsSurrounded)
+                {
+                    PrintGreen("Black won!");
+                }
+                else
+                {
+                    PrintGreen("White won!");
+                }
+                return true;
+            }
             return false;
         }
 
