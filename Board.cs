@@ -113,13 +113,57 @@ namespace HiveCore
         {
             int min = 1000000;
             int max = -min;
-            (int eval, (Piece piece, (int, int) to)) = _Search(color, _MAX_DEPTH_TREE_SEARCH, max, min);
+            (int eval, (Piece piece, (int, int) to)) = _Search(color, max, min, _MAX_DEPTH_TREE_SEARCH);
             MovePiece(piece, to);
             return true;
         }
 
+        // private (int eval, (Piece piece, (int, int) to) move) _Search(Color whoseTurn, int alpha, int beta, int depth)
+        // {
+        //     (int, (Piece, (int, int))) myMove = default;
+
+        //     if (depth > _MAX_DEPTH_TREE_SEARCH || IsGameOver())
+        //     {
+        //         return myMove;
+        //     }
+
+        //     // AI
+        //     if (whoseTurn == Color.Black)
+        //     {
+        //         int maxValue = -1000000;
+        //         HashSet<(Piece, (int, int))> moves = _GenerateMovesFor(whoseTurn);
+
+        //         foreach ((Piece piece, (int, int) to) in moves)
+        //         {
+        //             (int, int) oldPoint = piece.Point;
+        //             MovePiece(piece, to);
+
+        //             (int min, (Piece, (int, int)) move) res = _Search(Color.White, alpha, beta, depth + 1);
+
+        //             if (res.min > maxValue)
+        //             {
+        //                 maxValue = res.min;
+        //                 myMove = res;
+        //             }
+
+        //             MovePiece(piece, oldPoint);
+
+        //             if (maxValue >= beta)
+        //             {
+        //                 return (maxValue, res.move);
+        //             }
+
+        //             if (maxValue > alpha)
+        //             {
+        //                 alpha = maxValue;
+        //             }
+        //         }
+        //         return (maxValue, )
+
+        //     }
+        // }
         // Based on the original pseudocode and this guy's: https://www.youtube.com/watch?v=U4ogK0MIzqk&t=1005s
-        private (int eval, (Piece piece, (int, int) to) move) _Search(Color whoseTurn, int depth, int alpha, int beta)
+        private (int eval, (Piece piece, (int, int) to) move) _Search(Color whoseTurn, int alpha, int beta, int depth)
         {
             (Piece, (int, int)) myMove = default;
             if (depth == 0)
@@ -143,7 +187,7 @@ namespace HiveCore
                 (int, int) oldPoint = piece.Point;
                 // make move
                 MovePiece(piece, to);
-                (int evaluation, (Piece, (int, int)) move) = _Search(whoseTurn == Color.Black ? Color.White : Color.Black, depth - 1, -beta, -alpha);
+                (int evaluation, (Piece, (int, int)) move) = _Search(whoseTurn == Color.Black ? Color.White : Color.Black, -beta, -alpha, depth - 1);
                 evaluation = -evaluation;
                 // put it back
                 MovePiece(piece, oldPoint);
@@ -213,6 +257,25 @@ namespace HiveCore
         }
 #endregion
 
+        public void MovePiece(Piece piece, (int, int) to)
+        {
+            if (piece == null)
+            {
+                return;
+            }
+
+            if (piece.IsOnBoard)
+            {
+                _RemovePiece(ref piece);
+            }
+
+            // (1, 2) is a signal of "putting back"
+            // meaning that it does not belong to the board
+            if (to != (1, 2))
+            {
+                _PlacePiece(ref piece, to);
+            }
+        }
         public HashSet<(int, int)> GetPlacingSpotsFor(Color color)
         {
             Stopwatch stopwatch = new();
@@ -259,18 +322,6 @@ namespace HiveCore
             stopwatch.Stop();
             PrintRed($"Generating Available Placing Spots for {color} Player took: {stopwatch.Elapsed.TotalMilliseconds} ms");
             return positions;
-        }
-
-        private bool _IsPieceOnBoard(string piece)
-        {
-            return piece[0] == 'b' ? BlackPieces[piece].IsOnBoard : WhitePieces[piece].IsOnBoard;
-        }
-
-        private int _GetManyPiecesPlayedBy(Color color)
-        {
-            return color == Color.Black
-                ? BlackPieces.Values.Count(piece => piece.IsOnBoard)
-                : WhitePieces.Values.Count(piece => piece.IsOnBoard);
         }
 
         public HashSet<(int, int)> GetMovingSpotsFor(Piece piece)
@@ -321,25 +372,7 @@ namespace HiveCore
             }
         }
 
-        public void MovePiece(Piece piece, (int, int) to)
-        {
-            if (piece == null)
-            {
-                return;
-            }
-
-            if (piece.IsOnBoard)
-            {
-                _RemovePiece(ref piece);
-            }
-
-            // (1, 2) is a signal of "putting back"
-            // meaning that it does not belong to the board
-            if (to != (1, 2))
-            {
-                _PlacePiece(ref piece, to);
-            }
-        }
+#region Placing/Moving on the Board helper methods
 
         private void _PlacePiece(ref Piece piece, (int, int) to)
         {
@@ -433,6 +466,19 @@ namespace HiveCore
                 }
             }
         }
+
+        private bool _IsPieceOnBoard(string piece)
+        {
+            return piece[0] == 'b' ? BlackPieces[piece].IsOnBoard : WhitePieces[piece].IsOnBoard;
+        }
+
+        private int _GetManyPiecesPlayedBy(Color color)
+        {
+            return color == Color.Black
+                ? BlackPieces.Values.Count(piece => piece.IsOnBoard)
+                : WhitePieces.Values.Count(piece => piece.IsOnBoard);
+        }
+#endregion
 
 #region Each Moving Spot Getter for `Piece`
         private HashSet<(int, int)> _GetAntMovingSpots(ref Piece piece)
