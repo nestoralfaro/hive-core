@@ -1,17 +1,14 @@
 #pragma warning disable IDE1006 // Private members naming style
 using static HiveCore.Utils;
 using System.Diagnostics;
+
 namespace HiveCore
 {
     public class Board
     {
-        private const int _MAX_DEPTH_TREE_SEARCH = 5;
         public Dictionary<(int, int), Stack<Piece>> Pieces;
-        private Dictionary<string, (int, int)> _piece_point;
-        private Dictionary<Color, HashSet<(int, int)>> _color_pieces;
         public Dictionary<string, Piece> WhitePieces { get; set; }
         public Dictionary<string, Piece> BlackPieces { get; set; }
-
         public HashSet<string> WhitePiecesKeys { get; set; }
         public HashSet<string> BlackPiecesKeys { get; set; }
 
@@ -23,88 +20,87 @@ namespace HiveCore
             Pieces = new Dictionary<(int, int), Stack<Piece>>();
             Pieces.EnsureCapacity(22);
 
-            _piece_point = new Dictionary<string, (int, int)>();
-            _piece_point.EnsureCapacity(22);
-
-            _color_pieces = new Dictionary< Color, HashSet<(int, int)> >()
-            {
-                {Color.Black, new HashSet<(int, int)>()},
-                {Color.White, new HashSet<(int, int)>()},
-            };
-            _color_pieces.EnsureCapacity(2);
-
             WhitePieces = new Dictionary<string, Piece>()
             {
-             {"wQ1", new Piece("wQ1")},
-             {"wA1", new Piece("wA1")},
-             {"wA2", new Piece("wA2")},
-             {"wA3", new Piece("wA3")},
-             {"wB1", new Piece("wB1")},
-             {"wB2", new Piece("wB2")},
-             {"wG1", new Piece("wG1")},
-             {"wG2", new Piece("wG2")},
-             {"wG3", new Piece("wG3")},
-             {"wS1", new Piece("wS1")},
-             {"wS2", new Piece("wS2")},
+                {"wQ1", new Piece("wQ1")},
+                {"wA1", new Piece("wA1")},
+                {"wA2", new Piece("wA2")},
+                {"wA3", new Piece("wA3")},
+                {"wB1", new Piece("wB1")},
+                {"wB2", new Piece("wB2")},
+                {"wG1", new Piece("wG1")},
+                {"wG2", new Piece("wG2")},
+                {"wG3", new Piece("wG3")},
+                {"wS1", new Piece("wS1")},
+                {"wS2", new Piece("wS2")},
             };
 
             WhitePiecesKeys = new HashSet<string>()
             {
-               "wQ1",
-               "wA1",
-               "wA2",
-               "wA3",
-               "wB1",
-               "wB2",
-               "wG1",
-               "wG2",
-               "wG3",
-               "wS1",
-               "wS2",
+                "wQ1",
+                "wA1",
+                "wA2",
+                "wA3",
+                "wB1",
+                "wB2",
+                "wG1",
+                "wG2",
+                "wG3",
+                "wS1",
+                "wS2",
             };
 
             BlackPieces = new Dictionary<string, Piece>()
             {
-               {"bQ1", new Piece("bQ1")},
-               {"bA1", new Piece("bA1")},
-               {"bA2", new Piece("bA2")},
-               {"bA3", new Piece("bA3")},
-               {"bB1", new Piece("bB1")},
-               {"bB2", new Piece("bB2")},
-               {"bG1", new Piece("bG1")},
-               {"bG2", new Piece("bG2")},
-               {"bG3", new Piece("bG3")},
-               {"bS1", new Piece("bS1")},
-               {"bS2", new Piece("bS2")},
+                {"bQ1", new Piece("bQ1")},
+                {"bA1", new Piece("bA1")},
+                {"bA2", new Piece("bA2")},
+                {"bA3", new Piece("bA3")},
+                {"bB1", new Piece("bB1")},
+                {"bB2", new Piece("bB2")},
+                {"bG1", new Piece("bG1")},
+                {"bG2", new Piece("bG2")},
+                {"bG3", new Piece("bG3")},
+                {"bS1", new Piece("bS1")},
+                {"bS2", new Piece("bS2")},
             };
 
             BlackPiecesKeys = new HashSet<string>()
             {
-               "bQ1",
-               "bA1",
-               "bA2",
-               "bA3",
-               "bB1",
-               "bB2",
-               "bG1",
-               "bG2",
-               "bG3",
-               "bS1",
-               "bS2",
+                "bQ1",
+                "bA1",
+                "bA2",
+                "bA3",
+                "bB1",
+                "bB2",
+                "bG1",
+                "bG2",
+                "bG3",
+                "bS1",
+                "bS2",
             };
         }
 
         public Board Clone()
         {
+            Dictionary<string, Piece> clonedWhitePieces = this.WhitePieces.ToDictionary(first => first.Key, second => second.Value.Clone());
+            Dictionary<string, Piece> clonedBlackPieces = this.BlackPieces.ToDictionary(first => first.Key, second => second.Value.Clone());
+            Dictionary<(int, int), Stack<Piece>> clonedPieces = new();
+
+            foreach ((int, int) point in Pieces.Keys)
+            {
+                clonedPieces[point] = new Stack<Piece>();
+                foreach (Piece piece in Pieces[point])
+                {
+                    clonedPieces[point].Push(piece.Color == Color.Black ? clonedBlackPieces[piece.ToString()] : clonedWhitePieces[piece.ToString()]);
+                }
+            }
+
             return new Board()
             {
-                // WhitePieces = this.WhitePieces.Select(p => p.Clone()).ToHashSet(),
-                // BlackPieces = this.BlackPieces.Select(p => p.Clone()).ToHashSet(),
-                WhitePieces = this.WhitePieces.ToDictionary(first => first.Key, second => second.Value.Clone()),
-                BlackPieces = this.BlackPieces.ToDictionary(first => first.Key, second => second.Value.Clone()),
-                Pieces = this.Pieces.ToDictionary(point => point.Key, stack => new Stack<Piece>(stack.Value.Select(piece => piece.Clone()))),
-                _color_pieces = this._color_pieces.ToDictionary(color => color.Key, pieces => new HashSet<(int, int)>(pieces.Value)),
-                _piece_point = new Dictionary<string, (int, int)>(this._piece_point),
+                WhitePieces = clonedWhitePieces,
+                BlackPieces = clonedBlackPieces,
+                Pieces = clonedPieces,
             };
         }
 
@@ -115,35 +111,49 @@ namespace HiveCore
         *************************************************************************/
         public bool AIMove(Color color)
         {
-            (int val, (Piece piece, (int, int) to)) = _Search(color, _MAX_DEPTH_TREE_SEARCH, int.MinValue, int.MaxValue);
+            int min = 1000000;
+            int max = -min;
+            (int eval, (Piece piece, (int, int) to)) = _Search(color, _MAX_DEPTH_TREE_SEARCH, max, min);
             MovePiece(piece, to);
             return true;
         }
 
         // Based on the original pseudocode and this guy's: https://www.youtube.com/watch?v=U4ogK0MIzqk&t=1005s
-        private (int, (Piece, (int, int))) _Search(Color whoseTurn, int depth, int alpha, int beta)
+        private (int eval, (Piece piece, (int, int) to) move) _Search(Color whoseTurn, int depth, int alpha, int beta)
         {
             (Piece, (int, int)) myMove = default;
             if (depth == 0)
             {
-                return (new Random().Next(1, 100), myMove);
+                return (new Random().Next(-1000010, 1000010), myMove);
             }
 
             HashSet<(Piece, (int, int))> moves = _GenerateMovesFor(whoseTurn);
 
+            if (moves.Count == 0)
+            {
+                if (IsGameOver())
+                {
+                    return (-1000000, myMove);
+                }
+                return (0, myMove);
+            }
+
             foreach ((Piece piece, (int, int) to) in moves)
             {
-                Board prev = this.Clone();
+                (int, int) oldPoint = piece.Point;
+                // make move
                 MovePiece(piece, to);
                 (int evaluation, (Piece, (int, int)) move) = _Search(whoseTurn == Color.Black ? Color.White : Color.Black, depth - 1, -beta, -alpha);
                 evaluation = -evaluation;
-                SetState(prev);
+                // put it back
+                MovePiece(piece, oldPoint);
+
                 if (evaluation >= beta)
                 {
                     return (beta, myMove);
                 }
                 alpha = Math.Max(alpha, evaluation);
-                myMove = new (piece.Clone(), to);
+                myMove = (piece, to);
             }
 
             return (alpha, myMove);
@@ -156,19 +166,17 @@ namespace HiveCore
 
             // Force the player to play their queen on their 4th turn
             string playersQueen = $"{char.ToLower(curPlayer.ToString()[0])}Q1";
-            if (GetManyPiecesPlayedBy(curPlayer) == 3 && !IsOnBoard(playersQueen))
+            if (_GetManyPiecesPlayedBy(curPlayer) == 3 && !_IsPieceOnBoard(playersQueen))
             {
                 foreach ((int, int) spot in GetPlacingSpotsFor(curPlayer))
                 {
-                    moves.Add((curPlayer == Color.Black ? BlackPieces[playersQueen] : WhitePieces[playersQueen], spot));
+                    moves.Add((curPlayer == Color.Black ? BlackPieces[playersQueen].Clone() : WhitePieces[playersQueen].Clone(), spot));
                 }
-
                 return moves;
             }
 
             // Idea for forcing the queen to not be played on the first turn:
             // Maybe remove it temporarily, and put it back until the `manyPiecesPlayedByCurPlayer > 1`?
-
             foreach (Piece piece in curPlayer == Color.Black ? BlackPieces.Values : WhitePieces.Values)
             {
                 if (!piece.IsSurrounded)
@@ -191,110 +199,176 @@ namespace HiveCore
             }
             return moves;
         }
+
+        public void SetState(Board board)
+        {
+            Pieces = board.Pieces;
+            WhitePieces = board.WhitePieces;
+            BlackPieces = board.BlackPieces;
+        }
+
+        public bool IsGameOver()
+        {
+            return BlackPieces["bQ1"].IsSurrounded || WhitePieces["wQ1"].IsSurrounded;
+        }
 #endregion
 
+        public HashSet<(int, int)> GetPlacingSpotsFor(Color color)
+        {
+            Stopwatch stopwatch = new();
+            stopwatch.Start();
 
-        /*************************************************************************
-        **************************************************************************
-                                        Pieces' Management
-        *************************************************************************
-        *************************************************************************/
-#region Placing/Moving on the Board
+            // Maybe keep track of the visited ones with a hashmap and also pass it to the hasopponent neighbor?
+            HashSet<(int, int)> positions = new();
+
+            // If nothing has been played
+            if (Pieces.Count == 0)
+            {
+                // Origin is the only first valid placing spot
+                return new HashSet<(int, int)>(){(0, 0)};
+            }
+            // If there is only one piece on the board
+            else if (Pieces.Count == 1)
+            {
+                // the available placing spots will be the such piece's surrounding spots
+                return Pieces[(0, 0)].Peek().Sides;
+            }
+            // Make sure the game is still going (add isGameOver or some form of validation)
+            else if (!IsGameOver())
+            {
+                // from here on out, only the spots that do not neighbor an opponent are valid  
+
+                // iterate through the current player's pieces on the board
+                foreach (string key in color == Color.Black ? BlackPiecesKeys : WhitePiecesKeys)
+                {
+                    Piece piece = color == Color.Black ? BlackPieces[key] : WhitePieces[key];
+                    if (piece.IsOnBoard)
+                    {
+                        // iterate through this piece's available spots
+                        foreach ((int, int) spot in piece.OpenSpotsAround)
+                        {
+                            //      Not been visited        It is not neighboring an opponent
+                            if (!positions.Contains(spot) && !_HasOpponentNeighbor(spot, color))
+                            {
+                                positions.Add(spot);
+                            }
+                        }
+                    }
+                }
+            }
+            stopwatch.Stop();
+            PrintRed($"Generating Available Placing Spots for {color} Player took: {stopwatch.Elapsed.TotalMilliseconds} ms");
+            return positions;
+        }
+
+        private bool _IsPieceOnBoard(string piece)
+        {
+            return piece[0] == 'b' ? BlackPieces[piece].IsOnBoard : WhitePieces[piece].IsOnBoard;
+        }
+
+        private int _GetManyPiecesPlayedBy(Color color)
+        {
+            return color == Color.Black
+                ? BlackPieces.Values.Count(piece => piece.IsOnBoard)
+                : WhitePieces.Values.Count(piece => piece.IsOnBoard);
+        }
+
+        public HashSet<(int, int)> GetMovingSpotsFor(Piece piece)
+        {
+            Color color = piece.Color;
+            string queen = $"{char.ToLower(color.ToString()[0])}Q1";
+            // If the piece about to be played is not the queen
+            if (!piece.ToString().Equals(queen)
+            // And the queen has not been played
+            && !_IsPieceOnBoard(queen))
+            {
+                // this piece cannot move
+                return new HashSet<(int, int)>();
+            }
+
+            // If the piece about to be played is the fourth one
+            else if (_GetManyPiecesPlayedBy(piece.Color) == 3
+            // AND this piece is not the queen
+            && !piece.ToString().Equals(queen)
+            // AND the queen has not been played
+            && !_IsPieceOnBoard(queen)
+            )
+            {
+                Console.WriteLine("returning only placing spots for this piece (but not necessarily for the queen)");
+                // then you must place a piece,
+                // and such piece MUST be the queen (this may need to be enforced by GameManager)
+                return GetPlacingSpotsFor(piece.Color);
+            }
+            // if it is not the top piece
+            else if (!Pieces[piece.Point].Peek().ToString().Equals(piece.ToString()))
+            {
+                // This piece cannot move
+                return new HashSet<(int, int)>();
+            }
+            else
+            {
+                Console.WriteLine($"returning the appropriate moves for {piece}");
+                // Return this piece's valid moving spots
+                return piece.Insect switch
+                {
+                    Insect.Ant => _GetAntMovingSpots(ref piece),
+                    Insect.Beetle => _GetBeetleMovingSpots(ref piece),
+                    Insect.Grasshopper => _GetGrasshopperMovingSpots(ref piece),
+                    Insect.Spider => _GetSpiderMovingSpots(ref piece),
+                    Insect.QueenBee => _GetQueenMovingSpots(ref piece),
+                    _ => throw new ArgumentException($"{piece} is an invalid piece."),
+                };
+            }
+        }
+
         public void MovePiece(Piece piece, (int, int) to)
         {
-            // piece.Point = to;
-            // remove piece
+            if (piece == null)
+            {
+                return;
+            }
+
             if (piece.IsOnBoard)
             {
                 _RemovePiece(ref piece);
             }
-            // place it at the new point
-            PlacePiece(ref piece, to);
 
-            if (piece.Color == Color.Black)
+            // (1, 2) is a signal of "putting back"
+            // meaning that it does not belong to the board
+            if (to != (1, 2))
             {
-                BlackPieces[piece.ToString()] = piece;
-            }
-            else
-            {
-                WhitePieces[piece.ToString()] = piece;
+                _PlacePiece(ref piece, to);
             }
         }
 
-        public void PlacePiece(ref Piece piece, (int, int) to)
+        private void _PlacePiece(ref Piece piece, (int, int) to)
         {
-            if (to.Item1 == 2 && to.Item2 == 0 && piece.ToString().Equals("bQ1"))
+            if (piece.Insect == Insect.Beetle && Pieces.ContainsKey(to))
             {
-                // third skip crashes
-                Console.Write("bP!");
-            }
-
-            // if there are pieces at such point              AND it is a beetle
-            if (Pieces.ContainsKey(to) && Pieces[to].Count > 0 && piece.Insect == Insect.Beetle)
-            {
-                // let it crawl on top
                 Pieces[to].Push(piece);
-                _piece_point[piece.ToString()] = to;
-                _color_pieces[piece.Color].Remove(piece.Point);
-                _color_pieces[piece.Color].Add(to);
             }
             else
             {
-                // create a new point -> stack ref
-                Pieces.Add(to, new Stack<Piece>());
-                // push the reference to this piece
+                Pieces[to] = new Stack<Piece>();
                 Pieces[to].Push(piece);
-                // update helper dictionaries
-                _piece_point.Add(piece.ToString(), to);
-                _color_pieces[piece.Color].Add(to);
             }
             piece.Point = to;
             piece.IsOnBoard = true;
             _UpdateNeighborsAt(to);
         }
 
-        public void SetState(Board board)
-        {
-            Pieces = board.Pieces;
-            _color_pieces = board._color_pieces;
-            _piece_point = board._piece_point;
-            WhitePieces = board.WhitePieces;
-            BlackPieces = board.BlackPieces;
-        }
-
         private void _RemovePiece(ref Piece piece)
         {
             (int, int) removingSpot = piece.Point;
-
-            if (Pieces.ContainsKey(removingSpot) && Pieces[removingSpot].Peek().ToString().Equals(piece.ToString()))
+            Pieces[removingSpot].Pop();
+            if (Pieces[removingSpot].Count == 0)
             {
-                if (Pieces[removingSpot].Count > 0)
-                {
-                    // remove the top
-                    Pieces[removingSpot].Pop();
-                }
-
-                // if the stack is empty
-                if (Pieces[removingSpot].Count == 0)
-                {
-                    // Delete the reference too, as it is now an open spot
-                    Pieces.Remove(removingSpot);
-                }
-
-                // Also remove the references from the helper dictionaries
-                _piece_point.Remove(piece.ToString());
-                _color_pieces[piece.Color].Remove(removingSpot);
-                piece.IsOnBoard = false;
-                _UpdateNeighborsAt(removingSpot);
+                Pieces.Remove(removingSpot);
             }
+            piece.SetToDefault();
+            _UpdateNeighborsAt(removingSpot);
         }
-#endregion
 
-#region Placing/Moving on the Board helper methods
-        public bool IsAQueenSurrounded() => (GetRefTopPieceByStringName("wQ1")?.IsSurrounded) == true || (GetRefTopPieceByStringName("bQ1")?.IsSurrounded) == true;
-        public bool IsOnBoard(string piece) => _piece_point.ContainsKey(piece);
-        public (int x, int y) GetPointByString(string piece) => _piece_point[piece];
-        public bool IsEmpty() => Pieces.Count == 0 && _piece_point.Count == 0;
         private void _PopulateNeighborsFor(Piece piece)
         {
             piece.Neighbors.Clear();
@@ -303,13 +377,12 @@ namespace HiveCore
                 // bool IsNeighbor = (point % side == (0, 0));
                 // (int, int) neighborPoint = (point.x + side.Value.Item1, point.y + side.Value.Item2);
                 bool neighborExists = Pieces.ContainsKey(sidePoint);
-                if (neighborExists && !piece.Neighbors.Contains(sidePoint))
+                if (neighborExists)
                 {
                     piece.Neighbors.Add(sidePoint);
                 }
             }
         }
-
         private void _UpdateNeighborsAt((int x, int y) point)
         {
             // if this is a busy spot
@@ -358,155 +431,6 @@ namespace HiveCore
                         }
                     }
                 }
-            }
-        }
-#endregion
-
-#region Piece getters
-        public Piece? GetCloneTopPieceByStringName(string piece) => _piece_point.ContainsKey(piece) ? (Pieces[_piece_point[piece]].TryPeek(out Piece p) ?  p.Clone() : null) : null;
-        public Piece? GetRefTopPieceByStringName(string piece) => _piece_point.ContainsKey(piece) ? (Pieces[_piece_point[piece]].TryPeek(out Piece p) ?  p : null) : null;
-        public Piece GetCloneTopPieceByPoint((int, int) point) => Pieces[point].Peek().Clone();
-        public Piece GetRefTopPieceByPoint((int, int) point) => Pieces[point].Peek();
-        public Piece GetClonePieceByStringName(string piece) => Pieces[_piece_point[piece]].First(p => p.ToString().Equals(piece)).Clone();
-        public Piece GetRefPieceByStringName(string piece) => Pieces[_piece_point[piece]].First(p => p.ToString().Equals(piece));
-        public Piece GetClonePieceByPoint((int x, int y) point) => Pieces[point].First(piece => piece.Point.x == point.x && piece.Point.y == point.y).Clone();
-        public Piece GetRefPieceByPoint((int x, int y) point) => Pieces[point].First(piece => piece.Point.x == point.x && piece.Point.y == point.y);
-        public HashSet<Piece> GetClonePiecesByColor(Color color)
-        {
-            HashSet<Piece> res = new();
-            foreach((int, int) point in _color_pieces[color])
-            {
-                if (Pieces[point].TryPeek(out Piece topPiece))
-                {
-                    res.Add(topPiece.Clone());
-                }
-            }
-            return res;
-        }
-
-        public HashSet<Piece> GetRefPiecesByColor(Color color)
-        {
-            HashSet<Piece> res = new();
-            foreach(var entry in _color_pieces[color])
-            {
-                if (Pieces[entry].TryPeek(out Piece topPiece))
-                {
-                    res.Add(topPiece);
-                }
-            }
-            return res;
-        }
-
-        public int GetManyPiecesPlayedBy(Color color)
-        {
-            int counter = 0;
-            foreach ((int, int) point in _color_pieces[color])
-            {
-                foreach (Piece piece in Pieces[point])
-                {
-                    if (piece.Color == color)
-                    {
-                        ++counter;
-                    }
-                }
-            }
-            return counter;
-        }
-#endregion
-        /*************************************************************************
-        **************************************************************************
-                                        Move getters
-        *************************************************************************
-        *************************************************************************/
-        public HashSet<(int, int)> GetPlacingSpotsFor(Color color)
-        {
-            Stopwatch stopwatch = new();
-            stopwatch.Start();
-
-            // Maybe keep track of the visited ones with a hashmap and also pass it to the hasopponent neighbor?
-            HashSet<(int, int)> positions = new();
-
-            // If nothing has been played
-            if (IsEmpty())
-            {
-                // Origin is the only first valid placing spot
-                return new HashSet<(int, int)>(){(0, 0)};
-            }
-            // If there is only one piece on the board
-            else if (Pieces.Count == 1)
-            {
-                // the available placing spots will be the such piece's surrounding spots
-                return Pieces[(0, 0)].Peek().OpenSpotsAround;
-            }
-            // Make sure the game is still going
-            else if (!IsAQueenSurrounded())
-            {
-                // from here on out, only the spots that do not neighbor an opponent are valid  
-
-                // iterate through the current player's pieces on the board
-                foreach (Piece? piece in GetRefPiecesByColor(color))
-                {
-                    if (piece != null)
-                    {
-                        // iterate through this piece's available spots
-                        foreach ((int, int) spot in piece.OpenSpotsAround)
-                        {
-                            //      Not been visited        It is not neighboring an opponent
-                            if (!positions.Contains(spot) && !_HasOpponentNeighbor(spot, color))
-                            {
-                                positions.Add(spot);
-                            }
-                        }
-                    }
-                }
-            }
-            stopwatch.Stop();
-            PrintRed($"Generating Available Spots for {color} Player took: {stopwatch.Elapsed.TotalMilliseconds} ms");
-            return positions;
-        }
-
-        public HashSet<(int, int)> GetMovingSpotsFor(Piece piece)
-        {
-            string queen = $"{char.ToLower(piece.Color.ToString()[0])}Q1";
-            // NOTE: the order of these statements DO matter. We can take advantage of each short-circuit operator–i.e., and, or
-            // Maybe checking whether the piece is on top should be the first one,
-            // because that would be a more common statment as the game progresses?
-
-            // if the piece about to be moved is not a queen            
-            if (!piece.ToString().Equals(queen)
-            // AND the queen of this piece's color has not been played            
-            && !IsOnBoard(queen)
-            // AND it is not the top piece
-            && !Pieces[piece.Point].Peek().Equals(this))
-            {
-                // This piece cannot move
-                return new HashSet<(int, int)>();
-            }
-
-            // If the piece about to be played is the fourth one
-            else if (GetManyPiecesPlayedBy(piece.Color) == 3
-            // AND this piece is not the queen
-            && !piece.ToString().Equals(queen)
-            // AND the queen has not been played
-            && !IsOnBoard(queen))
-            {
-                // then you must place a piece,
-                // and such piece MUST be the queen (this may need to be enforced by GameManager)
-                return GetPlacingSpotsFor(piece.Color);
-            }
-
-            else
-            {
-                // Return this piece's valid moving spots
-                return piece.Insect switch
-                {
-                    Insect.Ant => _GetAntMovingSpots(ref piece),
-                    Insect.Beetle => _GetBeetleMovingSpots(ref piece),
-                    Insect.Grasshopper => _GetGrasshopperMovingSpots(ref piece),
-                    Insect.Spider => _GetSpiderMovingSpots(ref piece),
-                    Insect.QueenBee => _GetQueenMovingSpots(ref piece),
-                    _ => throw new ArgumentException($"{piece} is an invalid piece."),
-                };
             }
         }
 
@@ -640,12 +564,6 @@ namespace HiveCore
             }
         }
 
-
-        // wS1
-        // wA1SWwS1
-        // wQ1NWwS1
-        // wA1NEbG3
-        // wG1STwS1 <- crashes here
         private HashSet<(int, int)> _GetQueenMovingSpots(ref Piece piece)
         {
             Stopwatch stopwatch = new();
@@ -653,13 +571,6 @@ namespace HiveCore
             HashSet<(int, int)> spots = new();
             foreach ((int, int) openSpot in piece.OpenSpotsAround)
             {
-                Console.WriteLine("Current Queen State");
-                Console.WriteLine($"{piece} | {piece.IsOnBoard} | From: {piece.Point} | To: {openSpot}");
-                PrintPieces(Pieces);
-                // if (piece.Point == (1, 1) && openSpot == (2, 2))
-                // {
-                //     Console.WriteLine("crashes here");
-                // }
                 // Since the queen can only go around its open spots,
                 // only keep such valid open spots around it
                 if (_IsValidMove(ref piece, piece.Point, openSpot))
@@ -680,9 +591,9 @@ namespace HiveCore
             for (int i = 0; i < MANY_SIDES; ++i)
             {
                 (int, int) potentialOpponentNeighborPosition = (point.x + SIDE_OFFSETS_ARRAY[i].x, point.y + SIDE_OFFSETS_ARRAY[i].y);
+                // if (Pieces.ContainsKey(potentialOpponentNeighborPosition) && Pieces[potentialOpponentNeighborPosition].TryPeek(out Piece topPiece) && topPiece.Color != color)
                 // If piece is on the board                                     And Is not the same color as the piece that is about to be placed
-                // if (pieces.ContainsKey(potentialOpponentNeighborPosition) && pieces[potentialOpponentNeighborPosition].Peek().Color != this.Color)
-                if (Pieces.ContainsKey(potentialOpponentNeighborPosition) && Pieces[potentialOpponentNeighborPosition].TryPeek(out Piece topPiece) && topPiece.Color != color)
+                if (Pieces.ContainsKey(potentialOpponentNeighborPosition) && Pieces[potentialOpponentNeighborPosition].Peek().Color != color)
                 {
                     // Has an opponent neighbor
                     return true;
@@ -737,7 +648,6 @@ namespace HiveCore
 
         private bool _IsOneHive(ref Piece piece, (int x, int y) to, bool isGrasshopper = false, bool isBeetle = false)
         {
-            // if it is a beetle, make sure the oldNeighbors also include the pieces below 
             (int, int) oldPoint = piece.Point;
             HashSet<(int x, int y)> oldNeighbors = new(piece.Neighbors);
 
@@ -745,15 +655,14 @@ namespace HiveCore
             if (!IsAllConnected())
             {
                 // place it back
-                PlacePiece(ref piece, oldPoint);
+                _PlacePiece(ref piece, oldPoint);
                 // this move breaks the hive
                 return false;
             }
             else
             {
-                Console.WriteLine($"temporarily placing {piece} to {to}");
                 // Temporarily place this piece to the `to` point
-                PlacePiece(ref piece, to);
+                _PlacePiece(ref piece, to);
 
                 // If it is a grasshopper, just check if it is all connected  
                 if ((isGrasshopper

@@ -46,7 +46,13 @@ namespace HiveCore
             Number = piece[2] - '0';
             Neighbors = new HashSet<(int, int)>();
             Neighbors.EnsureCapacity(MANY_SIDES);
-            Point = (0, 0);
+            SetToDefault();
+        }
+
+        public void SetToDefault()
+        {
+            Neighbors.Clear();
+            Point = (1, 2); // invalid position
             IsOnBoard = false;
             IsSurrounded = false;
         }

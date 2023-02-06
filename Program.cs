@@ -7,12 +7,12 @@ namespace HiveCore
     {
         public static void Main()
         {
-            GameCore gameCore = new();
-            while (!gameCore.IsGameOver())
+            GameCore game = new();
+            while (!game.IsGameOver())
             {
                 Stopwatch stopwatch = new();
                 stopwatch.Start();
-                gameCore.Play();
+                game.Play();
                 stopwatch.Stop();
                 PrintRed("Elapsed time: " + stopwatch.Elapsed.Milliseconds + "ms");
             }

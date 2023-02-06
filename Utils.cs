@@ -1,12 +1,23 @@
 namespace HiveCore
 #pragma warning disable IDE1006 // Private members naming style
 
+// wS1
+// wA1SWwS1
+// wQ1NWwS1
+// wA1NEbG3
+// wG1STwS1
+
+
+// wS1
+// bG1NTwS1
+// wS1NTbG1
+
 {
     public static class Utils
     {
         public enum Color { Black, White }
+        public const int _MAX_DEPTH_TREE_SEARCH = 5;
         public enum Insect { QueenBee, Beetle, Grasshopper, Spider, Ant }
-        public enum ActionType { Moving, Placing }
         public const int MANY_SIDES = 6;
         public const int _SPIDER_MAX_STEP_COUNT = 3;
         public static readonly Dictionary<string, (int x, int y)> SIDE_OFFSETS = new()
@@ -88,7 +99,7 @@ namespace HiveCore
                 Console.WriteLine("Current board state:");
                 foreach (var entry in Pieces)
                 {
-                    Console.WriteLine($"{entry.Value.Peek()} is at {entry.Value.Peek().Point}");
+                    Console.WriteLine($"{entry.Value.Peek()}: {entry.Value.Peek().IsOnBoard} is at {entry.Value.Peek().Point}");
                     //Print the neighbours
                     foreach (var neighbour in entry.Value.Peek().Neighbors)
                     {
@@ -97,6 +108,43 @@ namespace HiveCore
                 }
                 Console.WriteLine("/*********************************/");
             }
+        }
+
+        public static void PrintFormatted(Board board)
+        {
+            if (board.Pieces.Count != 0)
+            {
+                Dictionary<(int, int), bool> hasBeenPrinted = new();
+                foreach (var entry in board.Pieces)
+                {
+                    foreach (Piece piece in entry.Value)
+                    {
+                        if (!hasBeenPrinted.ContainsKey(piece.Point) || !hasBeenPrinted[piece.Point])
+                        {
+                            PrintAsHexagon(piece);
+                            hasBeenPrinted[piece.Point] = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        public static void PrintAsHexagon(Piece piece)
+        {
+            string NT = piece.Neighbors.Contains(piece.GetSidePointByStringDir("NT")) ? ("\t\t" + piece.GetSidePointByStringDir("NT") + Environment.NewLine + "\t\t-----------") : "\t\t-----------";
+            string NW = piece.Neighbors.Contains(piece.GetSidePointByStringDir("NW")) ? ("\t  " + piece.GetSidePointByStringDir("NW") + "/") : "\t\t/";
+            string SW = piece.Neighbors.Contains(piece.GetSidePointByStringDir("SW")) ? ("\t  " + piece.GetSidePointByStringDir("SW") +  "\\") : "\t\t\\";
+            string ST = piece.Neighbors.Contains(piece.GetSidePointByStringDir("ST")) ? ("\t\t-----------" + Environment.NewLine + "\t\t" + piece.GetSidePointByStringDir("ST")) : "\t\t-----------";
+            string SE = piece.Neighbors.Contains(piece.GetSidePointByStringDir("SE")) ? ("\t /" + piece.GetSidePointByStringDir("SE")) : "\t /";
+            string NE = piece.Neighbors.Contains(piece.GetSidePointByStringDir("NE")) ? ("\t \\" + piece.GetSidePointByStringDir("NE")) : "\t \\";
+
+            Console.WriteLine(NT);
+            Console.WriteLine(NW + NE);
+            Console.WriteLine($"\t\t{piece} {piece.Point}");
+            Console.WriteLine(SW + SE);
+            Console.WriteLine(ST);
+            Console.WriteLine("*************************************");
+            Console.WriteLine();
         }
 
     }
