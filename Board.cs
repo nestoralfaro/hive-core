@@ -6,6 +6,12 @@ namespace HiveCore
 {
     public class Board
     {
+        // For benchmarking only
+        private int moveCount;
+        private int curMove = 0;
+        private int manyCalculations = 0;
+        private double totalTimeSoFar = 0;
+
         public Dictionary<(int, int), Stack<Piece>> Pieces;
         public Dictionary<string, Piece> WhitePieces { get; set; }
         public Dictionary<string, Piece> BlackPieces { get; set; }
@@ -14,12 +20,10 @@ namespace HiveCore
 
         public Board()
         {
-            // Ensuring capacities so that each time an element is added
-            // there is no need to dynamically allocate more memory.
-            // This is an approach that should help performance
             Pieces = new Dictionary<(int, int), Stack<Piece>>();
             Pieces.EnsureCapacity(22);
 
+            WhitePiecesKeys = new HashSet<string>() { "wQ1", "wA1", "wA2", "wA3", "wB1", "wB2", "wG1", "wG2", "wG3", "wS1", "wS2" };
             WhitePieces = new Dictionary<string, Piece>()
             {
                 {"wQ1", new Piece("wQ1")},
@@ -35,21 +39,7 @@ namespace HiveCore
                 {"wS2", new Piece("wS2")},
             };
 
-            WhitePiecesKeys = new HashSet<string>()
-            {
-                "wQ1",
-                "wA1",
-                "wA2",
-                "wA3",
-                "wB1",
-                "wB2",
-                "wG1",
-                "wG2",
-                "wG3",
-                "wS1",
-                "wS2",
-            };
-
+            BlackPiecesKeys = new HashSet<string>() { "bQ1", "bA1", "bA2", "bA3", "bB1", "bB2", "bG1", "bG2", "bG3", "bS1", "bS2" };
             BlackPieces = new Dictionary<string, Piece>()
             {
                 {"bQ1", new Piece("bQ1")},
@@ -64,44 +54,6 @@ namespace HiveCore
                 {"bS1", new Piece("bS1")},
                 {"bS2", new Piece("bS2")},
             };
-
-            BlackPiecesKeys = new HashSet<string>()
-            {
-                "bQ1",
-                "bA1",
-                "bA2",
-                "bA3",
-                "bB1",
-                "bB2",
-                "bG1",
-                "bG2",
-                "bG3",
-                "bS1",
-                "bS2",
-            };
-        }
-
-        public Board Clone()
-        {
-            Dictionary<string, Piece> clonedWhitePieces = this.WhitePieces.ToDictionary(first => first.Key, second => second.Value.Clone());
-            Dictionary<string, Piece> clonedBlackPieces = this.BlackPieces.ToDictionary(first => first.Key, second => second.Value.Clone());
-            Dictionary<(int, int), Stack<Piece>> clonedPieces = new();
-
-            foreach ((int, int) point in Pieces.Keys)
-            {
-                clonedPieces[point] = new Stack<Piece>();
-                foreach (Piece piece in Pieces[point])
-                {
-                    clonedPieces[point].Push(piece.Color == Color.Black ? clonedBlackPieces[piece.ToString()] : clonedWhitePieces[piece.ToString()]);
-                }
-            }
-
-            return new Board()
-            {
-                WhitePieces = clonedWhitePieces,
-                BlackPieces = clonedBlackPieces,
-                Pieces = clonedPieces,
-            };
         }
 
         /*************************************************************************
@@ -113,8 +65,17 @@ namespace HiveCore
         {
             int min = 1000000;
             int max = -min;
+
+            Stopwatch stopwatch = new();
+            stopwatch.Start();
+            moveCount = 0;
+
             (int eval, (Piece piece, (int, int) to)) = _Search(color, max, min, _MAX_DEPTH_TREE_SEARCH);
             MovePiece(piece, to);
+            ++curMove;
+
+            stopwatch.Stop();
+            PrintGreen($"#{curMove} - {color}'s AI calculated {moveCount} moves with depth {_MAX_DEPTH_TREE_SEARCH} in {stopwatch.Elapsed.TotalSeconds} s.");
             return true;
         }
 
@@ -127,7 +88,10 @@ namespace HiveCore
                 return (new Random().Next(-1000010, 1000010), myMove);
             }
 
-            HashSet<(Piece, (int, int))> moves = _GenerateMovesFor(whoseTurn);
+            // HashSet<(Piece, (int, int))> moves = GenerateMovesFor(whoseTurn);
+            var random = new Random();
+            HashSet<(Piece, (int, int))> moves = GenerateMovesFor(whoseTurn).ToList().OrderBy(x => random.Next()).ToList().ToHashSet();
+            moveCount += moves.Count;
 
             if (moves.Count == 0)
             {
@@ -153,58 +117,80 @@ namespace HiveCore
                 {
                     return (beta, myMove);
                 }
-                alpha = Math.Max(alpha, evaluation);
+                alpha = alpha > evaluation ? alpha : evaluation;
                 myMove = (piece, to);
             }
             return (alpha, myMove);
         }
 
 #region AI Method Helpers
-        private HashSet<(Piece, (int, int))> _GenerateMovesFor(Color curPlayer)
+        public HashSet<(Piece, (int, int))> GenerateMovesFor(Color curPlayer)
         {
             HashSet<(Piece, (int, int))> moves = new();
-
-            // Force the player to play their queen on their 4th turn
-            string playersQueen = $"{char.ToLower(curPlayer.ToString()[0])}Q1";
-            if (_GetManyPiecesPlayedBy(curPlayer) == 3 && !_IsPieceOnBoard(playersQueen))
+            if (!IsGameOver())
             {
-                foreach ((int, int) spot in GetPlacingSpotsFor(curPlayer))
+                string playersQueen = $"{char.ToLower(curPlayer.ToString()[0])}Q1";
+                Piece playersQueenPiece = curPlayer == Color.Black ? BlackPieces[playersQueen] : WhitePieces[playersQueen];
+                int manyPiecesPlayedByCurPlayer = _GetManyPiecesPlayedBy(curPlayer);
+                foreach (Piece piece in curPlayer == Color.Black ? BlackPieces.Values : WhitePieces.Values)
                 {
-                    moves.Add((curPlayer == Color.Black ? BlackPieces[playersQueen].Clone() : WhitePieces[playersQueen].Clone(), spot));
-                }
-                return moves;
-            }
-
-            // Idea for forcing the queen to not be played on the first turn:
-            // Maybe remove it temporarily, and put it back until the `manyPiecesPlayedByCurPlayer > 1`?
-            foreach (Piece piece in curPlayer == Color.Black ? BlackPieces.Values : WhitePieces.Values)
-            {
-                if (!piece.IsSurrounded)
-                {
-                    if (piece.IsOnBoard)
+                    if (Pieces.Count > 0)
                     {
-                        foreach ((int, int) spot in GetMovingSpotsFor(piece))
+                        if (piece.IsOnBoard)
                         {
-                            moves.Add((piece.Clone(), spot));
+                            if (piece.IsTop && playersQueenPiece.IsOnBoard)
+                            {
+                                foreach ((int, int) spot in GetMovingSpotsFor(piece))
+                                {
+                                    piece.IsPinned = false;
+                                    moves.Add((piece.Clone(), spot));
+                                }
+                            }
+                            else
+                            {
+                                piece.IsPinned = true;
+                            }
+                        }
+                        else
+                        {
+                            if (manyPiecesPlayedByCurPlayer == 0 && !piece.Equals(playersQueenPiece))
+                            {
+                                foreach ((int, int) spot in Pieces[(0, 0)].Peek().Sides)
+                                {
+                                    piece.IsPinned = false;
+                                    moves.Add((piece.Clone(), spot));
+                                }
+                            }
+                            else if (manyPiecesPlayedByCurPlayer == 3 && !playersQueenPiece.IsOnBoard)
+                            {
+                                foreach ((int, int) spot in GetPlacingSpotsFor(curPlayer))
+                                {
+                                    piece.IsPinned = false;
+                                    // Must play queen on their 4th turn
+                                    moves.Add((playersQueenPiece.Clone(), spot));
+                                }
+                            }
+                            else
+                            {
+                                foreach ((int, int) spot in GetPlacingSpotsFor(curPlayer))
+                                {
+                                    piece.IsPinned = false;
+                                    moves.Add((piece.Clone(), spot));
+                                }
+                            }
                         }
                     }
                     else
                     {
-                        foreach ((int, int) spot in GetPlacingSpotsFor(piece.Color))
+                        if (!piece.Equals(playersQueenPiece))
                         {
-                            moves.Add((piece.Clone(), spot));
+                            piece.IsPinned = false;
+                            moves.Add((piece.Clone(), (0, 0)));
                         }
                     }
                 }
             }
             return moves;
-        }
-
-        public void SetState(Board board)
-        {
-            Pieces = board.Pieces;
-            WhitePieces = board.WhitePieces;
-            BlackPieces = board.BlackPieces;
         }
 
         public bool IsGameOver()
@@ -232,108 +218,54 @@ namespace HiveCore
                 _PlacePiece(ref piece, to);
             }
         }
-        public HashSet<(int, int)> GetPlacingSpotsFor(Color color)
+        public HashSet<(int, int)> GetPlacingSpotsFor(Color curPlayer)
         {
-            Stopwatch stopwatch = new();
-            stopwatch.Start();
+            // Stopwatch stopwatch = new();
+            // stopwatch.Start();
 
             // Maybe keep track of the visited ones with a hashmap and also pass it to the hasopponent neighbor?
             HashSet<(int, int)> positions = new();
-
-            // If nothing has been played
-            if (Pieces.Count == 0)
+            foreach (string key in curPlayer == Color.Black ? BlackPiecesKeys : WhitePiecesKeys)
             {
-                // Origin is the only first valid placing spot
-                return new HashSet<(int, int)>(){(0, 0)};
-            }
-            // If there is only one piece on the board
-            else if (Pieces.Count == 1)
-            {
-                // the available placing spots will be the such piece's surrounding spots
-                return Pieces[(0, 0)].Peek().Sides;
-            }
-            // Make sure the game is still going (add isGameOver or some form of validation)
-            else if (!IsGameOver())
-            {
-                // from here on out, only the spots that do not neighbor an opponent are valid  
-
-                // iterate through the current player's pieces on the board
-                foreach (string key in color == Color.Black ? BlackPiecesKeys : WhitePiecesKeys)
+                Piece piece = curPlayer == Color.Black ? BlackPieces[key] : WhitePieces[key];
+                if (piece.IsOnBoard)
                 {
-                    Piece piece = color == Color.Black ? BlackPieces[key] : WhitePieces[key];
-                    if (piece.IsOnBoard)
+                    // iterate through this piece's available spots
+                    foreach ((int, int) spot in piece.OpenSpotsAround)
                     {
-                        // iterate through this piece's available spots
-                        foreach ((int, int) spot in piece.OpenSpotsAround)
+                        //      Not been visited        It is not neighboring an opponent
+                        if (!positions.Contains(spot) && !_HasOpponentNeighbor(spot, curPlayer))
                         {
-                            //      Not been visited        It is not neighboring an opponent
-                            if (!positions.Contains(spot) && !_HasOpponentNeighbor(spot, color))
-                            {
-                                positions.Add(spot);
-                            }
+                            positions.Add(spot);
                         }
                     }
                 }
             }
-            stopwatch.Stop();
-            PrintRed($"Generating Available Placing Spots for {color} Player took: {stopwatch.Elapsed.TotalMilliseconds} ms");
+            // stopwatch.Stop();
+            // PrintRed($"Generating Available Placing Spots for {color} Player took: {stopwatch.Elapsed.TotalMilliseconds} ms");
             return positions;
         }
 
         public HashSet<(int, int)> GetMovingSpotsFor(Piece piece)
         {
-            Color color = piece.Color;
-            string queen = $"{char.ToLower(color.ToString()[0])}Q1";
-            // If the piece about to be played is not the queen
-            if (!piece.ToString().Equals(queen)
-            // And the queen has not been played
-            && !_IsPieceOnBoard(queen))
+            // Return this piece's valid moving spots
+            return piece.Insect switch
             {
-                // this piece cannot move
-                return new HashSet<(int, int)>();
-            }
-
-            // If the piece about to be played is the fourth one
-            else if (_GetManyPiecesPlayedBy(piece.Color) == 3
-            // AND this piece is not the queen
-            && !piece.ToString().Equals(queen)
-            // AND the queen has not been played
-            && !_IsPieceOnBoard(queen)
-            )
-            {
-                Console.WriteLine("returning only placing spots for this piece (but not necessarily for the queen)");
-                // then you must place a piece,
-                // and such piece MUST be the queen (this may need to be enforced by GameManager)
-                return GetPlacingSpotsFor(piece.Color);
-            }
-            // if it is not the top piece
-            else if (!Pieces[piece.Point].Peek().ToString().Equals(piece.ToString()))
-            {
-                // This piece cannot move
-                return new HashSet<(int, int)>();
-            }
-            else
-            {
-                Console.WriteLine($"returning the appropriate moves for {piece}");
-                // Return this piece's valid moving spots
-                return piece.Insect switch
-                {
-                    Insect.Ant => _GetAntMovingSpots(ref piece),
-                    Insect.Beetle => _GetBeetleMovingSpots(ref piece),
-                    Insect.Grasshopper => _GetGrasshopperMovingSpots(ref piece),
-                    Insect.Spider => _GetSpiderMovingSpots(ref piece),
-                    Insect.QueenBee => _GetQueenMovingSpots(ref piece),
-                    _ => throw new ArgumentException($"{piece} is an invalid piece."),
-                };
-            }
+                Insect.Ant => _GetAntMovingSpots(ref piece),
+                Insect.Beetle => _GetBeetleMovingSpots(ref piece),
+                Insect.Grasshopper => _GetGrasshopperMovingSpots(ref piece),
+                Insect.Spider => _GetSpiderMovingSpots(ref piece),
+                Insect.QueenBee => _GetQueenMovingSpots(ref piece),
+                _ => throw new ArgumentException($"{piece} is an invalid piece."),
+            };
         }
 
 #region Placing/Moving on the Board helper methods
-
         private void _PlacePiece(ref Piece piece, (int, int) to)
         {
             if (piece.Insect == Insect.Beetle && Pieces.ContainsKey(to))
             {
+                Pieces[to].Peek().IsTop = false;
                 Pieces[to].Push(piece);
             }
             else
@@ -342,6 +274,7 @@ namespace HiveCore
                 Pieces[to].Push(piece);
             }
             piece.Point = to;
+            piece.IsTop = true;
             piece.IsOnBoard = true;
             _UpdateNeighborsAt(to);
         }
@@ -353,6 +286,10 @@ namespace HiveCore
             if (Pieces[removingSpot].Count == 0)
             {
                 Pieces.Remove(removingSpot);
+            }
+            else
+            {
+                Pieces[removingSpot].Peek().IsTop = true;
             }
             piece.SetToDefault();
             _UpdateNeighborsAt(removingSpot);
@@ -423,11 +360,6 @@ namespace HiveCore
             }
         }
 
-        private bool _IsPieceOnBoard(string piece)
-        {
-            return piece[0] == 'b' ? BlackPieces[piece].IsOnBoard : WhitePieces[piece].IsOnBoard;
-        }
-
         private int _GetManyPiecesPlayedBy(Color color)
         {
             return color == Color.Black
@@ -439,8 +371,8 @@ namespace HiveCore
 #region Each Moving Spot Getter for `Piece`
         private HashSet<(int, int)> _GetAntMovingSpots(ref Piece piece)
         {
-            Stopwatch stopwatch = new();
-            stopwatch.Start();
+            // Stopwatch stopwatch = new();
+            // stopwatch.Start();
             HashSet<(int x, int y)> positions = new();
             (int x, int y) oldAntPosition = piece.Point;
             _AntDFS(ref piece, ref positions, piece.Point);
@@ -452,8 +384,8 @@ namespace HiveCore
             // itself should not be included
             positions.Remove(oldAntPosition);
 
-            stopwatch.Stop();
-            PrintRed("Generating Ant Moves took: " + stopwatch.Elapsed.TotalMilliseconds + "ms");
+            // stopwatch.Stop();
+            // PrintRed("Generating Ant Moves took: " + stopwatch.Elapsed.TotalMilliseconds + "ms");
             return positions;
         }
 
@@ -476,8 +408,8 @@ namespace HiveCore
 
         private HashSet<(int, int)> _GetBeetleMovingSpots(ref Piece piece)
         {
-            Stopwatch stopwatch = new();
-            stopwatch.Start();
+            // Stopwatch stopwatch = new();
+            // stopwatch.Start();
             HashSet<(int, int)> validMoves = new();
             foreach ((int, int) side in piece.Sides)
             {
@@ -488,15 +420,15 @@ namespace HiveCore
                     validMoves.Add(side);
                 }
             }
-            stopwatch.Stop();
-            PrintRed("Generating Beetle moves took: " + stopwatch.Elapsed.TotalMilliseconds + "ms");
+            // stopwatch.Stop();
+            // PrintRed("Generating Beetle moves took: " + stopwatch.Elapsed.TotalMilliseconds + "ms");
             return validMoves;
         }
 
         private HashSet<(int, int)> _GetGrasshopperMovingSpots(ref Piece piece)
         {
-            Stopwatch stopwatch = new();
-            stopwatch.Start();
+            // Stopwatch stopwatch = new();
+            // stopwatch.Start();
             HashSet<(int x, int y)> positions = new();
             for (int s = 0; s < MANY_SIDES; ++s)
             {
@@ -516,8 +448,8 @@ namespace HiveCore
                     positions.Add(nextSpot);
                 }
             }
-            stopwatch.Stop();
-            PrintRed("Generating grasshoper moves took: " + stopwatch.Elapsed.TotalMilliseconds + "ms");
+            // stopwatch.Stop();
+            // PrintRed("Generating grasshoper moves took: " + stopwatch.Elapsed.TotalMilliseconds + "ms");
             return positions;
         }
 
@@ -533,8 +465,8 @@ namespace HiveCore
             // Because the last point it found is where this piece is now positioned
             // Move it back to where it was
             MovePiece(piece, oldSpiderPosition);
+
             stopwatch.Stop();
-            PrintRed("Generating spider moves took: " + stopwatch.Elapsed.TotalMilliseconds + "ms");
             return positions;
         }
 
@@ -552,10 +484,9 @@ namespace HiveCore
                 (int x, int y) nextSpot = (curSpot.x + SIDE_OFFSETS_ARRAY[i].x, curSpot.y + SIDE_OFFSETS_ARRAY[i].y);
 
                 // TO BENCHMARK: Because DFS may run into itself at one point, maybe this should be validated
-                // if (!visited.Contains(nextSpot) && (piece.Point != nextSpot) && _IsValidMove(ref piece, curSpot, nextSpot))
 
                 // It has not been visited      AND Is a valid move
-                if (!visited.Contains(nextSpot) && _IsValidMove(ref piece, curSpot, nextSpot))
+                if (!visited.Contains(nextSpot) && (piece.Point != nextSpot) && _IsValidMove(ref piece, curSpot, nextSpot))
                 {
                     // This move is important because it needs to update its neighbors
                     // so that it can later be appropriately validated by the _IsOneHive
@@ -568,8 +499,8 @@ namespace HiveCore
 
         private HashSet<(int, int)> _GetQueenMovingSpots(ref Piece piece)
         {
-            Stopwatch stopwatch = new();
-            stopwatch.Start();
+            // Stopwatch stopwatch = new();
+            // stopwatch.Start();
             HashSet<(int, int)> spots = new();
             foreach ((int, int) openSpot in piece.OpenSpotsAround)
             {
@@ -580,8 +511,8 @@ namespace HiveCore
                     spots.Add(openSpot);
                 }
             }
-            stopwatch.Stop();
-            PrintRed("Elapsed time: " + stopwatch.Elapsed.TotalMilliseconds + "ms");
+            // stopwatch.Stop();
+            // PrintRed("Elapsed time: " + stopwatch.Elapsed.TotalMilliseconds + "ms");
             return spots;
         }
 #endregion
@@ -607,8 +538,11 @@ namespace HiveCore
 
         private bool _IsValidMove(ref Piece piece, (int x, int y) from, (int x, int y) to, bool isGrasshopper = false, bool isBeetle = false)
         {
-            //      Only beetle can crawl on top of                 One Hive Rule                       Physically Fits
-            return (isBeetle || !Pieces.ContainsKey(to)) && _IsOneHive(ref piece, to, isGrasshopper, isBeetle) && _IsFreedomOfMovement(ref piece, from, to, isBeetle);
+            //  Only beetle can crawl on top of point (to)
+            return (isBeetle || !Pieces.ContainsKey(to))
+            //  Checking freedom of movement first is about 40 calculations/ms faster
+            && _IsFreedomOfMovement(ref piece, from, to, isBeetle)
+            && _IsOneHive(ref piece, to, isGrasshopper, isBeetle);
         }
 
         private bool _IsFreedomOfMovement(ref Piece piece, (int x, int y) from, (int x, int y) to, bool isBeetle = false)
@@ -691,12 +625,12 @@ namespace HiveCore
 
         public bool IsAllConnected()
         {
-            var visited = new Dictionary<(int, int), bool>();
+            var visited = new HashSet<(int, int)>();
             if (Pieces.Count > 0)
             {
                 (int, int) start = Pieces.Keys.First();
-                _BoardDFS(ref visited, start);
-                return visited.Count == Pieces.Count;
+                visited.Add(start);
+                return _BoardDFS(ref visited, start);
             }
             else
             {
@@ -704,28 +638,23 @@ namespace HiveCore
             }
         }
 
-        private void _BoardDFS(ref Dictionary<(int, int), bool> visited, (int, int) piecePoint)
+        private bool _BoardDFS(ref HashSet<(int, int)> visited, (int, int) curPoint)
         {
-            visited[piecePoint] = true;
-            if (Pieces[piecePoint].Count == 0)
+            foreach ((int, int) neighbor in Pieces[curPoint].Peek().Neighbors)
             {
-                return;
-            }
-
-            // for each piece in the stack
-            foreach (Piece curPiece in Pieces[piecePoint])
-            {
-                foreach ((int, int) neighbor in curPiece.Neighbors)
-                {
-                    if ((!visited.ContainsKey(neighbor) || (visited.ContainsKey(neighbor) && !visited[neighbor])) && Pieces.ContainsKey(neighbor))
-                        _BoardDFS(ref visited, neighbor);
+                if (!visited.Contains(neighbor)) {
+                    visited.Add(neighbor);
+                    if (Pieces.Count == visited.Count)
+                    {
+                        return true;
+                    }
+                    _BoardDFS(ref visited, neighbor);
                 }
             }
+            return Pieces.Count == visited.Count;
         }
 
-        // This should be used for the pieces that have an expensive move generation–i.e., for now, only the Ant
-        // TODO: Test whether adding this validation actually improves performance on other pieces
-        // (which probably does not because it would be validating its surroundings twice) 
+        // Has not been tested
         public bool IsPinned(Piece piece, bool isGrasshopper, bool isBeetle)
         {
             // should be set up as soon as neighbors are added

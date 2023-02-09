@@ -978,7 +978,7 @@ namespace HiveCore
                 {
                     output += d;
                 }
-                _PrintWarning(output);
+                PrintYellow(output);
             }
 
             Console.WriteLine($"Expected count: {spots.Count}");
@@ -1011,7 +1011,7 @@ namespace HiveCore
                 {
                     output += d;
                 }
-                _PrintWarning(output);
+                PrintYellow(output);
             }
 
             Console.WriteLine($"Expected count: {spots.Count}");

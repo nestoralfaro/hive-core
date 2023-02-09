@@ -4,7 +4,7 @@ namespace HiveCore
     public static class Utils
     {
         public enum Color { Black, White }
-        public const int _MAX_DEPTH_TREE_SEARCH = 3;
+        public const int _MAX_DEPTH_TREE_SEARCH = 2;
         public enum Insect { QueenBee, Beetle, Grasshopper, Spider, Ant }
         public const int MANY_SIDES = 6;
         public const int _SPIDER_MAX_STEP_COUNT = 3;
@@ -30,7 +30,7 @@ namespace HiveCore
             (2, 0),    // [5] Northeast
         };
 
-        public static void _PrintWarning(string warning)
+        public static void PrintYellow(string warning)
         {
             Console.BackgroundColor = ConsoleColor.Yellow;
             Console.ForegroundColor = ConsoleColor.Black;
@@ -44,7 +44,7 @@ namespace HiveCore
                 Console.BackgroundColor = color == Color.Black ? ConsoleColor.DarkGray : ConsoleColor.White;
                 Console.ForegroundColor = color == Color.Black ? ConsoleColor.White : ConsoleColor.Black;
                 Console.Write($"It is {color}'s turn.");
-                _PrintRemainingPieces(color == Color.Black ? board.BlackPiecesKeys : board.WhitePiecesKeys);
+                _PrintRemainingPieces(color == Color.Black ? board.BlackPieces : board.WhitePieces);
                 Console.ResetColor();
                 Console.WriteLine();
         }
@@ -67,14 +67,15 @@ namespace HiveCore
             Console.WriteLine();
         }
 
-        private static void _PrintRemainingPieces(HashSet<string> pieces)
+        private static void _PrintRemainingPieces(Dictionary<string, Piece> pieces)
         {
             string Output = "";
-            foreach (string piece in pieces)
+            foreach (Piece piece in pieces.Values)
             {
-                // Maybe we should use the String builder for performance improvement
-                // However, since this is just a helper method, probably doesn't matter much
-                Output += $"{piece.ToString()[1]}{piece.ToString()[2]}|";
+                if (!piece.IsOnBoard)
+                {
+                    Output += $"{piece.ToString()[1]}{piece.ToString()[2]}|";
+                }
             }
             Console.Write($" | Remaining pieces: {Output}");
         }
@@ -89,6 +90,7 @@ namespace HiveCore
                 {
                     Console.WriteLine($"{entry.Value.Peek()}: {entry.Value.Peek().IsOnBoard} is at {entry.Value.Peek().Point}");
                     //Print the neighbours
+                    // foreach (var neighbour in entry.Value.Peek().GetNeighbors(in Pieces))
                     foreach (var neighbour in entry.Value.Peek().Neighbors)
                     {
                         Console.WriteLine($"{neighbour}");

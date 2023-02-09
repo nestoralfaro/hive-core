@@ -26,9 +26,13 @@ namespace HiveCore
         public (int x, int y) GetSidePointByStringDir (string dir) => (SIDE_OFFSETS[dir].x + Point.x, SIDE_OFFSETS[dir].y + Point.y);
         public string GetSideStringByPoint ((int x, int y) sidePoint) => SIDE_OFFSETS.Keys.First(dir => (GetSidePointByStringDir(dir).x == sidePoint.x) && (GetSidePointByStringDir(dir).y == sidePoint.y));
         public HashSet<(int, int)> OpenSpotsAround { get { return Sides.Except(Neighbors).ToHashSet(); } }
-        public int ManyNeighbors { get { return Neighbors.Count; } }
         public override string ToString() { return _piece; }
         public bool IsSurrounded { get; set; }
+        // When calling `GenerateMovesFor` (Board.cs:ln. 27) `IsPinned` should get updated
+        public bool IsPinned { get; set; }
+
+        // When calling `_PlacePiece` and `_RemovePiece` from `Board`, `IsTop` property should get updated
+        public bool IsTop { get; set; }
         public Piece(string piece)
         {
             _piece = piece;
@@ -55,6 +59,8 @@ namespace HiveCore
             Point = (1, 2); // invalid position
             IsOnBoard = false;
             IsSurrounded = false;
+            IsPinned = false;
+            IsTop = false;
         }
         public Piece Clone()
         {
@@ -76,15 +82,7 @@ namespace HiveCore
             // and both are either on or off the board
             && p.IsOnBoard == IsOnBoard
             // and have the same string form (which should validate their Color, Insect, and Number)
-            && _piece == p._piece
-            // and the same point
-            && (p.Point.x == Point.x) && (p.Point.y == p.Point.y)
-
-            // maybe unnecessary? to be benchmarked
-            // and the same amount of spots around
-            && p.OpenSpotsAround == OpenSpotsAround
-            // and the same amount of neighbors
-            && p.ManyNeighbors == ManyNeighbors;
+            && _piece.Equals(p._piece);
         }
 
         // hashed by its string form

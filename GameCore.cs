@@ -6,9 +6,9 @@ namespace HiveCore
     class GameCore
     {
         private bool _isFirstPlayersTurn;
-        private Color _player1 {get;}
-        private Color _player2 {get;}
-        public Board Board {get;}
+        private Color _player1 { get; }
+        private Color _player2 { get; }
+        public Board Board { get; }
         public GameCore()
         {
             _isFirstPlayersTurn = true;
@@ -22,14 +22,15 @@ namespace HiveCore
             if (_isFirstPlayersTurn)
             {
                 PrintPlayerHeader(_player1, Board);
+                // if (Board.AIMove(_player1))
                 if (HumanMove(_player1))
                     _isFirstPlayersTurn = false;
             }
             else
             {
                 PrintPlayerHeader(_player2, Board);
-                // if (_HumanMove(_player2))
-                if (Board.AIMove(_player2))
+                // if (Board.AIMove(_player2))
+                if (HumanMove(_player2))
                     _isFirstPlayersTurn = true;
             }
             PrintFormatted(Board);
@@ -54,11 +55,10 @@ namespace HiveCore
 
         public bool HumanMove(Color color)
         {
-            (Piece piece, (int, int) to) = _GetHumanMove(color);
             try
             {
-                if ((!piece.IsOnBoard && Board.GetPlacingSpotsFor(color).Contains(to))
-                    || (piece.IsOnBoard && Board.GetMovingSpotsFor(piece).Contains(to)))
+                (Piece piece, (int, int) to) = _GetHumanMove(color);
+                if (Board.GenerateMovesFor(color).Contains((piece, to)))
                 {
                     Board.MovePiece(piece, to);
                     return true;
@@ -70,7 +70,7 @@ namespace HiveCore
             }
             catch (ArgumentException ex)
             {
-                Console.WriteLine(ex.Message);
+                PrintYellow(ex.Message);
                 return false;
             }
         }
