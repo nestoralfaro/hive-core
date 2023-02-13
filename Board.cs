@@ -11,6 +11,8 @@ namespace HiveCore
         private int curMove = 0;
         private int manyCalculations = 0;
         private double totalTimeSoFar = 0;
+        private const int MIN = 1000000;
+        private const int MAX = -1000000;
 
         public Dictionary<(int, int), Stack<Piece>> Pieces;
         public Dictionary<string, Piece> WhitePieces { get; set; }
@@ -63,14 +65,12 @@ namespace HiveCore
         *************************************************************************/
         public bool AIMove(Color color)
         {
-            int min = 1000000;
-            int max = -min;
-
             Stopwatch stopwatch = new();
             stopwatch.Start();
             moveCount = 0;
 
-            (int eval, (Piece piece, (int, int) to)) = _Search(color, max, min, _MAX_DEPTH_TREE_SEARCH);
+            // (int eval, (Piece piece, (int, int) to)) = _Search(color, MAX, MIN, 0);
+            (int eval, (Piece piece, (int, int) to)) = _Search(color, MAX, MIN, 0);
             MovePiece(piece, to);
             ++curMove;
 
@@ -79,52 +79,98 @@ namespace HiveCore
             return true;
         }
 
-        // Based on the original pseudocode and this guy's: https://www.youtube.com/watch?v=U4ogK0MIzqk&t=1005s
-        private (int eval, (Piece piece, (int, int) to) move) _Search(Color whoseTurn, int alpha, int beta, int depth)
+        private (int eval, (Piece, (int, int) move)) _Evaluate(Color curPlayer, (Piece, (int, int)) curMove)
         {
-            (Piece, (int, int)) myMove = default;
-            if (depth == 0)
+            // dummy heuristic that encourages to play more pieces around opponents queen
+            int manyPiecesAroundMyQueen = curPlayer == Color.Black ? BlackPieces["bQ1"].Neighbors.Count : WhitePieces["wQ1"].Neighbors.Count;
+            int manyPiecesAroundOpponentsQueen = curPlayer == Color.Black ? WhitePieces["wQ1"].Neighbors.Count : BlackPieces["bQ1"].Neighbors.Count;
+
+            // maybe the pieces around queen should have a weight?
+            if (manyPiecesAroundMyQueen > manyPiecesAroundOpponentsQueen)
             {
-                return (new Random().Next(-1000010, 1000010), myMove);
+                return (new Random().Next(1, 1000010), curMove);
+            }
+            else
+            {
+                return (new Random().Next(-1000010, -1), curMove);
+            }
+        }
+
+        // Based on the original pseudocode and this guy's: https://www.youtube.com/watch?v=U4ogK0MIzqk&t=1005s
+        private (int eval, (Piece piece, (int, int) to) move) _Search(Color curPlayer, int alpha, int beta, int depth, (Piece, (int, int)) curMove = default)
+        {
+            if (depth == _MAX_DEPTH_TREE_SEARCH)
+            {
+                // Evaluate the curMove taking into account Pieces (curState) from your opponent's perspective
+                // Write `Evaluate` or heuristics function
+                // return (new Random().Next(-1000010, 1000010), curMove);
+
+                /**
+                Keep in mind the following when evaluating:
+                It is curPlayer's turn, therefore you can:
+                    Check the pieces curPlayer has played, and that score should be the opposite sign-i.e.,g -score
+                    because those would count against the parent (opponent)
+                
+                It is curPlayer's turn, therefore you can:
+                    Check the opponent's pieces, and that score should be the same sign–i.e., score
+                    because those would count for parent (opponent)
+
+                Evaluation should be based on how much myMove has affected my opponent, and pick the one that has
+                hurt them the most, or benefited them the least.
+                **/
+
+                // curMove was made by !curPlayer–i.e., curPlayer's opponent
+                // We are evaluating curPlayer's board state, and seeing how much did curMove affected curPlayer
+                return _Evaluate(curPlayer, curMove);
             }
 
-            // HashSet<(Piece, (int, int))> moves = GenerateMovesFor(whoseTurn);
+            // Generate opponents moves
+            // HashSet<(Piece, (int, int))> moves = GenerateMovesFor(curPlayer).ToHashSet();
             var random = new Random();
-            HashSet<(Piece, (int, int))> moves = GenerateMovesFor(whoseTurn).ToList().OrderBy(x => random.Next()).ToList().ToHashSet();
+            HashSet<(Piece, (int, int))> moves = GenerateMovesFor(curPlayer).ToList().OrderBy(x => random.Next()).ToHashSet();
             moveCount += moves.Count;
 
+            // has no more moves
             if (moves.Count == 0)
             {
-                if (IsGameOver())
-                {
-                    return (-1000000, myMove);
-                }
-                return (0, myMove);
+                return _Evaluate(curPlayer, curMove);
             }
 
             foreach ((Piece curPiece, (int, int) to) in moves)
             {
                 (int, int) oldPoint = curPiece.Point;
                 Piece piece = curPiece.Color == Color.Black ? BlackPieces[curPiece.ToString()] : WhitePieces[curPiece.ToString()];
+
                 // make move
                 MovePiece(piece, to);
-                (int evaluation, (Piece, (int, int)) move) = _Search(whoseTurn == Color.Black ? Color.White : Color.Black, -beta, -alpha, depth - 1);
+
+                (int evaluation, (Piece, (int, int)) attemptedMove) = _Search(curPlayer == Color.Black ? Color.White : Color.Black, -beta, -alpha, depth + 1, (piece, to));
+                // opponent's good evaluation = bad for currentPlayer, and viceversa
+                // i.e., opponent's bad evaluation = good for currentPlayer.
                 evaluation = -evaluation;
-                // put it back
+
+                // put it back (undo)
                 MovePiece(piece, oldPoint);
 
                 if (evaluation >= beta)
                 {
-                    return (beta, myMove);
+                    // Move was too good, opponent will avoid this position
+                    return (beta, attemptedMove); // Prun! (kill the kids)
                 }
-                alpha = alpha > evaluation ? alpha : evaluation;
-                myMove = (piece, to);
+
+                // pick whichever is the most terrible for opponent,
+                // which would be the best for currentPlayer
+                if (evaluation > alpha)
+                {
+                    alpha = evaluation;
+                    curMove = (piece, to);
+                }
             }
-            return (alpha, myMove);
+            return (alpha, curMove);
         }
 
 #region AI Method Helpers
-        public HashSet<(Piece, (int, int))> GenerateMovesFor(Color curPlayer)
+        public HashSet<(Piece piece, (int, int) to)> GenerateMovesFor(Color curPlayer)
         {
             HashSet<(Piece, (int, int))> moves = new();
             if (!IsGameOver())

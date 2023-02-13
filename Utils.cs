@@ -4,7 +4,7 @@ namespace HiveCore
     public static class Utils
     {
         public enum Color { Black, White }
-        public const int _MAX_DEPTH_TREE_SEARCH = 2;
+        public const int _MAX_DEPTH_TREE_SEARCH = 4;
         public enum Insect { QueenBee, Beetle, Grasshopper, Spider, Ant }
         public const int MANY_SIDES = 6;
         public const int _SPIDER_MAX_STEP_COUNT = 3;
