@@ -1,6 +1,7 @@
 #pragma warning disable IDE1006 // Private members naming style
 using static HiveCore.Utils;
 using System.Diagnostics;
+using System.Security.Cryptography;
 
 namespace HiveCore
 {
@@ -15,47 +16,44 @@ namespace HiveCore
         private const int MAX = -1000000;
 
         public Dictionary<(int, int), Stack<Piece>> Pieces;
-        public Dictionary<string, Piece> WhitePieces { get; set; }
-        public Dictionary<string, Piece> BlackPieces { get; set; }
-        public HashSet<string> WhitePiecesKeys { get; set; }
-        public HashSet<string> BlackPiecesKeys { get; set; }
+        public Piece[] WhitePieces =
+        {
+            new Piece(wA1),
+            new Piece(wA2),
+            new Piece(wA3),
+            new Piece(wG1),
+            new Piece(wG2),
+            new Piece(wG3),
+            new Piece(wB1),
+            new Piece(wB2),
+            new Piece(wS1),
+            new Piece(wS2),
+            new Piece(wQ1)
+        };
+        public Piece[] BlackPieces =
+        {
+            new Piece(bA1),
+            new Piece(bA2),
+            new Piece(bA3),
+            new Piece(bG1),
+            new Piece(bG2),
+            new Piece(bG3),
+            new Piece(bB1),
+            new Piece(bB2),
+            new Piece(bS1),
+            new Piece(bS2),
+            new Piece(bQ1)
+        };
+
+        // private Dictionary<int, HashSet<int>> _Zobrist_Keys { get; set; }
+        private Dictionary<int, string> _Zobrist_Keys { get; set; }
 
         public Board()
         {
             Pieces = new Dictionary<(int, int), Stack<Piece>>();
             Pieces.EnsureCapacity(22);
-
-            WhitePiecesKeys = new HashSet<string>() { "wQ1", "wA1", "wA2", "wA3", "wB1", "wB2", "wG1", "wG2", "wG3", "wS1", "wS2" };
-            WhitePieces = new Dictionary<string, Piece>()
-            {
-                {"wQ1", new Piece("wQ1")},
-                {"wA1", new Piece("wA1")},
-                {"wA2", new Piece("wA2")},
-                {"wA3", new Piece("wA3")},
-                {"wB1", new Piece("wB1")},
-                {"wB2", new Piece("wB2")},
-                {"wG1", new Piece("wG1")},
-                {"wG2", new Piece("wG2")},
-                {"wG3", new Piece("wG3")},
-                {"wS1", new Piece("wS1")},
-                {"wS2", new Piece("wS2")},
-            };
-
-            BlackPiecesKeys = new HashSet<string>() { "bQ1", "bA1", "bA2", "bA3", "bB1", "bB2", "bG1", "bG2", "bG3", "bS1", "bS2" };
-            BlackPieces = new Dictionary<string, Piece>()
-            {
-                {"bQ1", new Piece("bQ1")},
-                {"bA1", new Piece("bA1")},
-                {"bA2", new Piece("bA2")},
-                {"bA3", new Piece("bA3")},
-                {"bB1", new Piece("bB1")},
-                {"bB2", new Piece("bB2")},
-                {"bG1", new Piece("bG1")},
-                {"bG2", new Piece("bG2")},
-                {"bG3", new Piece("bG3")},
-                {"bS1", new Piece("bS1")},
-                {"bS2", new Piece("bS2")},
-            };
+            _Zobrist_Keys = new();
+            _Zobrist_Keys.EnsureCapacity(200);
         }
 
         /*************************************************************************
@@ -69,8 +67,9 @@ namespace HiveCore
             stopwatch.Start();
             moveCount = 0;
 
-            // (int eval, (Piece piece, (int, int) to)) = _Search(color, MAX, MIN, 0);
             (int eval, (Piece piece, (int, int) to)) = _Search(color, MAX, MIN, 0);
+
+            PrintRed($"Moving {piece} to {to}. Eval was: {eval}");
             MovePiece(piece, to);
             ++curMove;
 
@@ -82,8 +81,8 @@ namespace HiveCore
         private (int eval, (Piece, (int, int) move)) _Evaluate(Color curPlayer, (Piece, (int, int)) curMove)
         {
             // dummy heuristic that encourages to play more pieces around opponents queen
-            int manyPiecesAroundMyQueen = curPlayer == Color.Black ? BlackPieces["bQ1"].Neighbors.Count : WhitePieces["wQ1"].Neighbors.Count;
-            int manyPiecesAroundOpponentsQueen = curPlayer == Color.Black ? WhitePieces["wQ1"].Neighbors.Count : BlackPieces["bQ1"].Neighbors.Count;
+            int manyPiecesAroundMyQueen = curPlayer == Color.Black ? BlackPieces[Q1].Neighbors.Count : WhitePieces[Q1].Neighbors.Count;
+            int manyPiecesAroundOpponentsQueen = curPlayer == Color.Black ? WhitePieces[Q1].Neighbors.Count : BlackPieces[Q1].Neighbors.Count;
 
             // maybe the pieces around queen should have a weight?
             if (manyPiecesAroundMyQueen > manyPiecesAroundOpponentsQueen)
@@ -125,9 +124,9 @@ namespace HiveCore
             }
 
             // Generate opponents moves
-            // HashSet<(Piece, (int, int))> moves = GenerateMovesFor(curPlayer).ToHashSet();
-            var random = new Random();
-            HashSet<(Piece, (int, int))> moves = GenerateMovesFor(curPlayer).ToList().OrderBy(x => random.Next()).ToHashSet();
+            HashSet<(Piece, (int, int))> moves = GenerateMovesFor(curPlayer).ToHashSet();
+            // var random = new Random();
+            // HashSet<(Piece, (int, int))> moves = GenerateMovesFor(curPlayer).ToList().OrderBy(x => random.Next()).ToHashSet();
             moveCount += moves.Count;
 
             // has no more moves
@@ -139,7 +138,7 @@ namespace HiveCore
             foreach ((Piece curPiece, (int, int) to) in moves)
             {
                 (int, int) oldPoint = curPiece.Point;
-                Piece piece = curPiece.Color == Color.Black ? BlackPieces[curPiece.ToString()] : WhitePieces[curPiece.ToString()];
+                Piece piece = curPiece.Color == Color.Black ? BlackPieces[curPiece.Index] : WhitePieces[curPiece.Index];
 
                 // make move
                 MovePiece(piece, to);
@@ -175,10 +174,9 @@ namespace HiveCore
             HashSet<(Piece, (int, int))> moves = new();
             if (!IsGameOver())
             {
-                string playersQueen = $"{char.ToLower(curPlayer.ToString()[0])}Q1";
-                Piece playersQueenPiece = curPlayer == Color.Black ? BlackPieces[playersQueen] : WhitePieces[playersQueen];
+                Piece playersQueenPiece = curPlayer == Color.Black ? BlackPieces[Q1] : WhitePieces[Q1];
                 int manyPiecesPlayedByCurPlayer = _GetManyPiecesPlayedBy(curPlayer);
-                foreach (Piece piece in curPlayer == Color.Black ? BlackPieces.Values : WhitePieces.Values)
+                foreach (Piece piece in curPlayer == Color.Black ? BlackPieces : WhitePieces)
                 {
                     if (Pieces.Count > 0)
                     {
@@ -241,8 +239,41 @@ namespace HiveCore
 
         public bool IsGameOver()
         {
-            return BlackPieces["bQ1"].IsSurrounded || WhitePieces["wQ1"].IsSurrounded;
+            return BlackPieces[Q1].IsSurrounded || WhitePieces[Q1].IsSurrounded;
         }
+
+        // this is attempting to generate the hashing on the fly,
+        // but it really should just retrieve the value from the table
+        // however, would this really help?
+        private int GetCurrentHash()
+        {
+            int hash = 17;
+            foreach (KeyValuePair<(int, int), Stack<Piece>> stack in Pieces)
+            {
+                foreach (Piece piece in stack.Value)
+                {
+                    hash ^= _Hash(piece._bin_piece, piece.Point.x, piece.Point.y);
+                }
+            }
+
+            // if (!_Zobrist_Keys.ContainsKey(hash))
+            // {
+            //     _Zobrist_Keys.Add(hash, "idk");
+            // }
+            return hash;
+        }
+
+        private static int _Hash(int a, int b, int c)
+        {
+            int hash = 17;
+            hash ^= (31 * (hash << 7)) + a.GetHashCode();
+            hash ^= (31 * (hash << 7)) + b.GetHashCode();
+            hash ^= (31 * (hash << 7)) + c.GetHashCode();
+            return hash;
+        }
+
+
+
 #endregion
 
         public void MovePiece(Piece piece, (int, int) to)
@@ -271,9 +302,8 @@ namespace HiveCore
 
             // Maybe keep track of the visited ones with a hashmap and also pass it to the hasopponent neighbor?
             HashSet<(int, int)> positions = new();
-            foreach (string key in curPlayer == Color.Black ? BlackPiecesKeys : WhitePiecesKeys)
+            foreach (Piece piece in curPlayer == Color.Black ? BlackPieces : WhitePieces)
             {
-                Piece piece = curPlayer == Color.Black ? BlackPieces[key] : WhitePieces[key];
                 if (piece.IsOnBoard)
                 {
                     // iterate through this piece's available spots
@@ -408,9 +438,24 @@ namespace HiveCore
 
         private int _GetManyPiecesPlayedBy(Color color)
         {
-            return color == Color.Black
-                ? BlackPieces.Values.Count(piece => piece.IsOnBoard)
-                : WhitePieces.Values.Count(piece => piece.IsOnBoard);
+            int counter = 0;
+            if (color == Color.Black)
+            {
+                for (int p = 0; p < 11; ++p)
+                {
+                    if (BlackPieces[p].IsOnBoard)
+                        ++counter;
+                }
+            }
+            else
+            {
+                for (int p = 0; p < 11; ++p)
+                {
+                    if (WhitePieces[p].IsOnBoard)
+                        ++counter;
+                }
+            }
+            return counter;
         }
 #endregion
 
