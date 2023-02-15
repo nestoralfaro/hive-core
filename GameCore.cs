@@ -1,6 +1,8 @@
+using System;
+using System.Collections.Generic;
 using static HiveCore.Utils;
-using System.Diagnostics;
 #pragma warning disable IDE1006 // Private members naming style
+#nullable enable
 
 namespace HiveCore
 {
@@ -16,7 +18,7 @@ namespace HiveCore
             // _isFirstPlayersTurn = true;
             _player1 = Color.Black;
             _player2 = Color.White;
-            Board = new();
+            Board = new Board();
         }
 
         public void Play()
@@ -81,7 +83,7 @@ namespace HiveCore
         {
             Console.WriteLine("Enter move");
             string input = Console.ReadLine()!;
-            string p = input[..3];
+            string p = input.Substring(0, 3);
 
             Piece piece = color == Color.Black ? Board.BlackPieces[STRING_TO_INDEX[p]] : Board.WhitePieces[STRING_TO_INDEX[p]];
             (int, int) to = _GetNewPoint(input);
@@ -93,7 +95,7 @@ namespace HiveCore
             if (move.Length > 3)
             {
                 string direction = move.Substring(3, 2).ToUpper();
-                string referencePiece = move[5..];
+                string referencePiece = move.Substring(5);
                 // Grab reference's piece point
                 (int x, int y) = referencePiece[0] == 'b' ? Board.BlackPieces[STRING_TO_INDEX[referencePiece]].Point : Board.WhitePieces[STRING_TO_INDEX[referencePiece]].Point;
                 // Grab the offset point

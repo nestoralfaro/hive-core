@@ -1,4 +1,8 @@
+using System;
+using System.Collections.Generic;
 #pragma warning disable IDE1006 // Private members naming style
+#nullable enable
+
 namespace HiveCore
 {
     public static class Utils
@@ -61,18 +65,28 @@ namespace HiveCore
 
         public static Insect GetInsectFromBin(int piece)
         {
-            return (piece & INSECT_PARSER) switch
+            switch (piece & INSECT_PARSER)
             {
-                0 or 1 or 2 => Insect.Ant,
-                3 or 4 or 5 => Insect.Grasshopper,
-                6 or 7 => Insect.Beetle,
-                8 or 9 => Insect.Spider,
-                // case 10
-                _ => Insect.QueenBee,
+                case 0:
+                case 1:
+                case 2:
+                    return Insect.Ant;
+                case 3:
+                case 4:
+                case 5:
+                    return Insect.Grasshopper;
+                case 6:
+                case 7:
+                    return Insect.Beetle;
+                case 8:
+                case 9:
+                    return Insect.Spider;
+                default: // case 10
+                    return Insect.QueenBee;
             };
         }
 
-        public static readonly Dictionary<string, int> STRING_TO_BIN = new()
+        public static readonly Dictionary<string, int> STRING_TO_BIN = new Dictionary<string, int>
         {
             {"bA1", bA1},
             {"bA2", bA2},
@@ -100,7 +114,7 @@ namespace HiveCore
 
         public static readonly int[] PIECE_NUMBER = {1, 2, 3, 1, 2, 3, 1, 2, 1, 2, 1};
 
-        public static readonly Dictionary<string, int> STRING_TO_INDEX = new()
+        public static readonly Dictionary<string, int> STRING_TO_INDEX = new Dictionary<string, int>
         {
             {"bA1", A1},
             {"bA2", A2},
@@ -133,7 +147,7 @@ namespace HiveCore
         // public enum Insect { QueenBee, Beetle, Grasshopper, Spider, Ant }
         public const int MANY_SIDES = 6;
         public const int _SPIDER_MAX_STEP_COUNT = 3;
-        public static readonly Dictionary<string, (int x, int y)> SIDE_OFFSETS = new()
+        public static readonly Dictionary<string, (int x, int y)> SIDE_OFFSETS = new Dictionary<string, (int x, int y)>
         {
             // Notice how each side is only valid if it adds up to an even number
             { "NT", (1, 1) },    // [0] North
@@ -239,7 +253,7 @@ namespace HiveCore
         {
             if (board.Pieces.Count != 0)
             {
-                Dictionary<(int, int), bool> hasBeenPrinted = new();
+                Dictionary<(int, int), bool> hasBeenPrinted = new Dictionary<(int, int), bool>();
                 foreach (var entry in board.Pieces)
                 {
                     foreach (Piece piece in entry.Value)

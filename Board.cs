@@ -1,7 +1,11 @@
-#pragma warning disable IDE1006 // Private members naming style
+using System;
+using System.Linq;
+using System.Diagnostics;
+using System.Collections.Generic;
 using static HiveCore.Utils;
 using static HiveCore.Zobrist;
-using System.Diagnostics;
+#pragma warning disable IDE1006 // Private members naming style
+#nullable enable
 
 namespace HiveCore
 {
@@ -16,7 +20,7 @@ namespace HiveCore
         private const int MAX = -1000000;
 
         // This variable holds the string that will be written to our pre-calculated states value
-        // private string output = "namespace HiveCore {\n \tpublic static class Table {\n \t\tpublic static Dictionary<(int, int), Dictionary<int, int>> TABLE = new()\n \t\t{\n";
+        // private string output = "namespace HiveCore {\n \tpublic static class Table {\n \t\tpublic static Dictionary<(int, int), Dictionary<int, int>> TABLE = new Dictionary<(int, int), Dictionary<int, int>>\n \t\t{\n";
 
         private Dictionary<long, Dictionary<string, int>> _game_states;
         public Dictionary<(int, int), Stack<Piece>> Pieces;
@@ -51,10 +55,8 @@ namespace HiveCore
 
         public Board()
         {
-            Pieces = new();
-            Pieces.EnsureCapacity(22);
-            _game_states = new();
-            _game_states.EnsureCapacity(200);
+            Pieces = new Dictionary<(int, int), Stack<Piece>>(22);
+            _game_states = new Dictionary<long, Dictionary<string, int>>(200);
         }
 
         /*************************************************************************
@@ -64,7 +66,7 @@ namespace HiveCore
         *************************************************************************/
         public bool AIMove(Color color)
         {
-            Stopwatch stopwatch = new();
+            Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
             moveCount = 0;
 
@@ -138,7 +140,7 @@ namespace HiveCore
             int eval = manyPiecesAroundOpponentsQueen - manyPiecesAroundMyQueen;
 
             long curHash = GetCurrentHash();
-            _game_states[curHash] = new() { {"alpha", alpha}, {"beta", beta}, {"eval", eval} };
+            _game_states[curHash] = new Dictionary<string, int> { {"alpha", alpha}, {"beta", beta}, {"eval", eval} };
 
            return eval;
 
@@ -183,11 +185,11 @@ namespace HiveCore
             }
 
             // Generate opponents moves without shuffling
-            HashSet<(Piece, (int, int))> moves = GenerateMovesFor(curPlayer).ToHashSet();
+            HashSet<(Piece, (int, int))> moves = GenerateMovesFor(curPlayer);
 
             // Generate and shuffle opponents moves
             // var random = new Random();
-            // HashSet<(Piece, (int, int))> moves = GenerateMovesFor(curPlayer).ToList().OrderBy(x => random.Next()).ToHashSet();
+            // HashSet<(Piece, (int, int))> moves = HashSet<(Piece, (int, int))>(GenerateMovesFor(curPlayer).ToList().OrderBy(x => random.Next()));
             moveCount += moves.Count;
 
             // has no more moves
@@ -232,7 +234,7 @@ namespace HiveCore
 #region AI Method Helpers
         public HashSet<(Piece piece, (int, int) to)> GenerateMovesFor(Color curPlayer)
         {
-            HashSet<(Piece, (int, int))> moves = new();
+            HashSet<(Piece, (int, int))> moves = new HashSet<(Piece, (int, int))>();
             if (!IsGameOver())
             {
                 Piece playersQueenPiece = curPlayer == Color.Black ? BlackPieces[Q1] : WhitePieces[Q1];
@@ -342,11 +344,11 @@ namespace HiveCore
         }
         public HashSet<(int, int)> GetPlacingSpotsFor(Color curPlayer)
         {
-            // Stopwatch stopwatch = new();
+            // Stopwatch stopwatch = new Stopwatch();
             // stopwatch.Start();
 
             // Maybe keep track of the visited ones with a hashmap and also pass it to the hasopponent neighbor?
-            HashSet<(int, int)> positions = new();
+            HashSet<(int, int)> positions = new HashSet<(int, int)>();
             foreach (Piece piece in curPlayer == Color.Black ? BlackPieces : WhitePieces)
             {
                 if (piece.IsOnBoard)
@@ -507,9 +509,9 @@ namespace HiveCore
 #region Each Moving Spot Getter for `Piece`
         private HashSet<(int, int)> _GetAntMovingSpots(ref Piece piece)
         {
-            // Stopwatch stopwatch = new();
+            // Stopwatch stopwatch = new Stopwatch();
             // stopwatch.Start();
-            HashSet<(int x, int y)> positions = new();
+            HashSet<(int x, int y)> positions = new HashSet<(int x, int y)>();
             (int x, int y) oldAntPosition = piece.Point;
             _AntDFS(ref piece, ref positions, piece.Point);
 
@@ -544,9 +546,9 @@ namespace HiveCore
 
         private HashSet<(int, int)> _GetBeetleMovingSpots(ref Piece piece)
         {
-            // Stopwatch stopwatch = new();
+            // Stopwatch stopwatch = new Stopwatch();
             // stopwatch.Start();
-            HashSet<(int, int)> validMoves = new();
+            HashSet<(int, int)> validMoves = new HashSet<(int, int)>();
             foreach ((int, int) side in piece.Sides)
             {
                 // Because the beetle can only go around, and on top of other pieces
@@ -563,9 +565,9 @@ namespace HiveCore
 
         private HashSet<(int, int)> _GetGrasshopperMovingSpots(ref Piece piece)
         {
-            // Stopwatch stopwatch = new();
+            // Stopwatch stopwatch = new Stopwatch();
             // stopwatch.Start();
-            HashSet<(int x, int y)> positions = new();
+            HashSet<(int x, int y)> positions = new HashSet<(int x, int y)>();
             for (int s = 0; s < MANY_SIDES; ++s)
             {
                 (int x, int y) nextSpot = (piece.Point.x + SIDE_OFFSETS_ARRAY[s].x, piece.Point.y + SIDE_OFFSETS_ARRAY[s].y);
@@ -591,10 +593,10 @@ namespace HiveCore
 
         private HashSet<(int, int)> _GetSpiderMovingSpots(ref Piece piece)
         {
-            Stopwatch stopwatch = new();
+            Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
-            HashSet<(int x, int y)> positions = new();
-            HashSet<(int x, int y)> visited = new();
+            HashSet<(int x, int y)> positions = new HashSet<(int x, int y)>();
+            HashSet<(int x, int y)> visited = new HashSet<(int x, int y)>();
             (int, int) oldSpiderPosition = piece.Point;
             _SpiderDFS(ref piece, ref positions, ref visited, piece.Point, 0, _SPIDER_MAX_STEP_COUNT);
 
@@ -635,9 +637,9 @@ namespace HiveCore
 
         private HashSet<(int, int)> _GetQueenMovingSpots(ref Piece piece)
         {
-            // Stopwatch stopwatch = new();
+            // Stopwatch stopwatch = new Stopwatch();
             // stopwatch.Start();
-            HashSet<(int, int)> spots = new();
+            HashSet<(int, int)> spots = new HashSet<(int, int)>();
             foreach ((int, int) openSpot in piece.OpenSpotsAround)
             {
                 // Since the queen can only go around its open spots,
@@ -721,7 +723,7 @@ namespace HiveCore
         private bool _IsOneHive(ref Piece piece, (int x, int y) to, bool isGrasshopper = false, bool isBeetle = false)
         {
             (int, int) oldPoint = piece.Point;
-            HashSet<(int x, int y)> oldNeighbors = new(piece.Neighbors);
+            HashSet<(int x, int y)> oldNeighbors = new HashSet<(int x, int y)>(piece.Neighbors);
 
             _RemovePiece(ref piece);
             if (!IsAllConnected())

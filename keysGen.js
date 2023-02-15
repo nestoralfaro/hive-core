@@ -90,10 +90,11 @@ west.map(arr => arr.map(elem => board.push(elem)));
 east.map(arr => arr.map(elem => board.push(elem)));
 
 let output = "";
-output += "namespace HiveCore {\n \tpublic static class Zobrist {\n"
-output += "\t\tpublic static Dictionary<(int, int), Dictionary<int, long>> ZOBRIST_KEYS = new()\n";
+output += "using System.Collections.Generic;\nnamespace HiveCore {\n \tpublic static class Zobrist {\n"
+
+output += "\t\tpublic static Dictionary<(int, int), Dictionary<int, long>> ZOBRIST_KEYS = new Dictionary<(int, int), Dictionary<int, long>>\n";
 output += "\t\t{\n";
-board.map(pos => output += (`\t\t\t{ (${(pos[0].x)}, ${pos[0].y}), new() { ${Object.entries(pos[1]).map(([piece, hash]) => `{${piece}, ${hash}}`)} } }, \n`));
+board.map(pos => output += (`\t\t\t{ (${(pos[0].x)}, ${pos[0].y}), new Dictionary<int, long> { ${Object.entries(pos[1]).map(([piece, hash]) => `{${piece}, ${hash}}`)} } }, \n`));
 output += "\t\t};\n\t}\n}";
 
 fs.writeFileSync("./Zobrist.cs", output);

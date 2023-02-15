@@ -1,5 +1,9 @@
+using System.Linq;
+using System.Collections.Generic;
 using static HiveCore.Utils;
+
 #pragma warning disable IDE1006 // Private members naming style
+#nullable enable
 
 namespace HiveCore
 {
@@ -12,7 +16,7 @@ namespace HiveCore
         public Insect Insect { get; set; }
         public (int x, int y) Point { get; set; }
         public HashSet<(int, int)> Sides { get {
-            return new HashSet<(int, int)>()
+            return new HashSet<(int, int)>
                 {
                     (Point.x + SIDE_OFFSETS_ARRAY[0].x, Point.y + SIDE_OFFSETS_ARRAY[0].y), // [0] North
                     (Point.x + SIDE_OFFSETS_ARRAY[1].x, Point.y + SIDE_OFFSETS_ARRAY[1].y), // [1] Northwest
@@ -25,7 +29,7 @@ namespace HiveCore
         public HashSet<(int, int)> Neighbors { get; set; }
         public (int x, int y) GetSidePointByStringDir (string dir) => (SIDE_OFFSETS[dir].x + Point.x, SIDE_OFFSETS[dir].y + Point.y);
         public string GetSideStringByPoint ((int x, int y) sidePoint) => SIDE_OFFSETS.Keys.First(dir => (GetSidePointByStringDir(dir).x == sidePoint.x) && (GetSidePointByStringDir(dir).y == sidePoint.y));
-        public HashSet<(int, int)> OpenSpotsAround { get { return Sides.Except(Neighbors).ToHashSet(); } }
+        public HashSet<(int, int)> OpenSpotsAround { get { return new HashSet<(int, int)>(Sides.Except(Neighbors)); } }
         public override string ToString() { return $"{char.ToLower(Color.ToString()[0])}{Insect.ToString()[0]}{PIECE_NUMBER[Index]}"; }
         public bool IsSurrounded { get; set; }
         // When calling `GenerateMovesFor` (Board.cs:ln. 27) `IsPinned` should get updated
@@ -35,23 +39,11 @@ namespace HiveCore
         public bool IsTop { get; set; }
         public Piece(int piece)
         {
-            // _piece = piece;
-            // Color = piece[0] == 'b' ? Color.Black : Color.White;
-            // Insect = piece[1] == 'Q'
-            // ? Insect.QueenBee
-            // : piece[1] == 'B'
-            // ? Insect.Beetle
-            // : piece[1] == 'G'
-            // ? Insect.Grasshopper
-            // : piece[1] == 'S'
-            // ? Insect.Spider
-            // // piece[1] == 'A'
-            // : Insect.Ant;
-            // Number = piece[2] - '0';
             Color = GetColorFromBin(piece);
             Insect = GetInsectFromBin(piece);
+            // passing MANY_SIDES to the constructor should "ensure capacity"
+            // but Unity complains :/
             Neighbors = new HashSet<(int, int)>();
-            Neighbors.EnsureCapacity(MANY_SIDES);
             _bin_piece = piece;
             Index = piece & INSECT_PARSER;
             SetToDefault();
@@ -79,17 +71,6 @@ namespace HiveCore
             };
         }
 
-        // public override bool Equals(object? obj)
-        // {
-        //     return
-        //     // if they are the same type
-        //     obj is Piece p
-        //     // and both are either on or off the board
-        //     && p.IsOnBoard == IsOnBoard
-        //     // and have the same string form (which should validate their Color, Insect, and Number)
-        //     && _piece.Equals(p._piece);
-        // }
-
         public override bool Equals(object? obj)
         {
             return
@@ -97,12 +78,6 @@ namespace HiveCore
             obj is Piece p
             // and both have the same binary representation
             && _bin_piece == p._bin_piece;
-        }
-
-        // hashed by its string form
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(_bin_piece);
         }
     }
 }
