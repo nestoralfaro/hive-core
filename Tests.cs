@@ -955,7 +955,7 @@ namespace HiveCore
 
         private void _AssertPiecePoint(string piece, (int, int) point)
         {
-            var actualPoint = char.ToLower(piece[0]) == 'b' ? game.Board.BlackPieces[piece].Point : game.Board.WhitePieces[piece].Point;
+            var actualPoint = char.ToLower(piece[0]) == 'b' ? game.Board.BlackPieces[STRING_TO_INDEX[piece]].Point : game.Board.WhitePieces[STRING_TO_INDEX[piece]].Point;
             Console.WriteLine($"Actual {piece}'s point was {actualPoint}");
             Assert.True(actualPoint.x == point.Item1 && actualPoint.y == point.Item2);
         }
@@ -993,7 +993,7 @@ namespace HiveCore
 
         private void _AssertMovingSpots(string piece, HashSet<(int, int)> spots)
         {
-            Piece p = char.ToLower(piece[0]) == 'b' ? game.Board.BlackPieces[piece] : game.Board.WhitePieces[piece];
+            Piece p = char.ToLower(piece[0]) == 'b' ? game.Board.BlackPieces[STRING_TO_INDEX[piece]] : game.Board.WhitePieces[STRING_TO_INDEX[piece]];
             var returnedSpots = game.Board.GetMovingSpotsFor(p);
 
             Console.WriteLine($"////////////////Actual Moving Spots For {piece}////////////////");

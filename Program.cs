@@ -1,7 +1,4 @@
-﻿using System.Diagnostics;
-using static HiveCore.Utils;
-
-namespace HiveCore
+﻿namespace HiveCore
 {
     public static class Program
     {
@@ -10,11 +7,7 @@ namespace HiveCore
             GameCore game = new();
             while (!game.IsGameOver())
             {
-                Stopwatch stopwatch = new();
-                stopwatch.Start();
                 game.Play();
-                stopwatch.Stop();
-                PrintRed("Elapsed time: " + stopwatch.Elapsed.Milliseconds + "ms");
             }
         }
     }

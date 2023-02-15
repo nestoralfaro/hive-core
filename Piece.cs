@@ -5,9 +5,9 @@ namespace HiveCore
 {
     public class Piece
     {
-        private readonly string _piece;
+        public int _bin_piece { get; set; }
+        public int Index { get; set; }
         public Color Color { get; set; }
-        public int Number { get; set; }
         public bool IsOnBoard { get; set; }
         public Insect Insect { get; set; }
         public (int x, int y) Point { get; set; }
@@ -26,30 +26,34 @@ namespace HiveCore
         public (int x, int y) GetSidePointByStringDir (string dir) => (SIDE_OFFSETS[dir].x + Point.x, SIDE_OFFSETS[dir].y + Point.y);
         public string GetSideStringByPoint ((int x, int y) sidePoint) => SIDE_OFFSETS.Keys.First(dir => (GetSidePointByStringDir(dir).x == sidePoint.x) && (GetSidePointByStringDir(dir).y == sidePoint.y));
         public HashSet<(int, int)> OpenSpotsAround { get { return Sides.Except(Neighbors).ToHashSet(); } }
-        public override string ToString() { return _piece; }
+        public override string ToString() { return $"{char.ToLower(Color.ToString()[0])}{Insect.ToString()[0]}{PIECE_NUMBER[Index]}"; }
         public bool IsSurrounded { get; set; }
         // When calling `GenerateMovesFor` (Board.cs:ln. 27) `IsPinned` should get updated
         public bool IsPinned { get; set; }
 
         // When calling `_PlacePiece` and `_RemovePiece` from `Board`, `IsTop` property should get updated
         public bool IsTop { get; set; }
-        public Piece(string piece)
+        public Piece(int piece)
         {
-            _piece = piece;
-            Color = piece[0] == 'b' ? Color.Black : Color.White;
-            Insect = piece[1] == 'Q'
-            ? Insect.QueenBee
-            : piece[1] == 'B'
-            ? Insect.Beetle
-            : piece[1] == 'G'
-            ? Insect.Grasshopper
-            : piece[1] == 'S'
-            ? Insect.Spider
-            // piece[1] == 'A'
-            : Insect.Ant;
-            Number = piece[2] - '0';
+            // _piece = piece;
+            // Color = piece[0] == 'b' ? Color.Black : Color.White;
+            // Insect = piece[1] == 'Q'
+            // ? Insect.QueenBee
+            // : piece[1] == 'B'
+            // ? Insect.Beetle
+            // : piece[1] == 'G'
+            // ? Insect.Grasshopper
+            // : piece[1] == 'S'
+            // ? Insect.Spider
+            // // piece[1] == 'A'
+            // : Insect.Ant;
+            // Number = piece[2] - '0';
+            Color = GetColorFromBin(piece);
+            Insect = GetInsectFromBin(piece);
             Neighbors = new HashSet<(int, int)>();
             Neighbors.EnsureCapacity(MANY_SIDES);
+            _bin_piece = piece;
+            Index = piece & INSECT_PARSER;
             SetToDefault();
         }
 
@@ -64,31 +68,41 @@ namespace HiveCore
         }
         public Piece Clone()
         {
-            return new Piece(this._piece) {
+            return new Piece(this._bin_piece) {
                 Color = this.Color,
                 Insect = this.Insect,
-                Number = this.Number,
                 Point = this.Point,
                 IsOnBoard = this.IsOnBoard,
                 Neighbors = new HashSet<(int, int)>(this.Neighbors),
+                _bin_piece = this._bin_piece,
+                Index = this.Index,
             };
         }
+
+        // public override bool Equals(object? obj)
+        // {
+        //     return
+        //     // if they are the same type
+        //     obj is Piece p
+        //     // and both are either on or off the board
+        //     && p.IsOnBoard == IsOnBoard
+        //     // and have the same string form (which should validate their Color, Insect, and Number)
+        //     && _piece.Equals(p._piece);
+        // }
 
         public override bool Equals(object? obj)
         {
             return
             // if they are the same type
             obj is Piece p
-            // and both are either on or off the board
-            && p.IsOnBoard == IsOnBoard
-            // and have the same string form (which should validate their Color, Insect, and Number)
-            && _piece.Equals(p._piece);
+            // and both have the same binary representation
+            && _bin_piece == p._bin_piece;
         }
 
         // hashed by its string form
         public override int GetHashCode()
         {
-            return HashCode.Combine(_piece);
+            return HashCode.Combine(_bin_piece);
         }
     }
 }
