@@ -319,17 +319,6 @@ namespace HiveCore
             return hash;
         }
 
-        private static int _Hash(int a, int b, int c)
-        {
-            int hash = 17;
-            hash ^= (31 * (hash << 7)) + a.GetHashCode();
-            hash ^= (31 * (hash << 7)) + b.GetHashCode();
-            hash ^= (31 * (hash << 7)) + c.GetHashCode();
-            return hash;
-        }
-
-
-
 #endregion
 
         public void MovePiece(Piece piece, (int, int) to)
