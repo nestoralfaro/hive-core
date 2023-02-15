@@ -1,7 +1,7 @@
 #pragma warning disable IDE1006 // Private members naming style
 using static HiveCore.Utils;
+using static HiveCore.Zobrist;
 using System.Diagnostics;
-using System.Security.Cryptography;
 
 namespace HiveCore
 {
@@ -15,6 +15,10 @@ namespace HiveCore
         private const int MIN = 1000000;
         private const int MAX = -1000000;
 
+        // This variable holds the string that will be written to our pre-calculated states value
+        // private string output = "namespace HiveCore {\n \tpublic static class Table {\n \t\tpublic static Dictionary<(int, int), Dictionary<int, int>> TABLE = new()\n \t\t{\n";
+
+        private Dictionary<long, Dictionary<string, int>> _game_states;
         public Dictionary<(int, int), Stack<Piece>> Pieces;
         public Piece[] WhitePieces =
         {
@@ -45,15 +49,12 @@ namespace HiveCore
             new Piece(bQ1)
         };
 
-        // private Dictionary<int, HashSet<int>> _Zobrist_Keys { get; set; }
-        private Dictionary<int, string> _Zobrist_Keys { get; set; }
-
         public Board()
         {
-            Pieces = new Dictionary<(int, int), Stack<Piece>>();
+            Pieces = new();
             Pieces.EnsureCapacity(22);
-            _Zobrist_Keys = new();
-            _Zobrist_Keys.EnsureCapacity(200);
+            _game_states = new();
+            _game_states.EnsureCapacity(200);
         }
 
         /*************************************************************************
@@ -73,12 +74,14 @@ namespace HiveCore
             MovePiece(piece, to);
             ++curMove;
 
+            // output += "\t\t}\n\t}\n}";
+
             stopwatch.Stop();
             PrintGreen($"#{curMove} - {color}'s AI calculated {moveCount} moves with depth {_MAX_DEPTH_TREE_SEARCH} in {stopwatch.Elapsed.TotalSeconds} s.");
             return true;
         }
 
-        private int _Evaluate(Color curPlayer)
+        private int _Evaluate(Color curPlayer, int alpha, int beta)
         {
             // *** GOOD STATES ***
 
@@ -129,13 +132,15 @@ namespace HiveCore
 
             // Enemy queen can move
 
-
-
             //dummy heuristic that encourages to play more pieces around opponents queen
             int manyPiecesAroundMyQueen = curPlayer == Color.Black ? BlackPieces[Q1].Neighbors.Count : WhitePieces[Q1].Neighbors.Count;
             int manyPiecesAroundOpponentsQueen = curPlayer == Color.Black ? WhitePieces[Q1].Neighbors.Count : BlackPieces[Q1].Neighbors.Count;
+            int eval = manyPiecesAroundOpponentsQueen - manyPiecesAroundMyQueen;
 
-           return manyPiecesAroundOpponentsQueen - manyPiecesAroundMyQueen;
+            long curHash = GetCurrentHash();
+            _game_states[curHash] = new() { {"alpha", alpha}, {"beta", beta}, {"eval", eval} };
+
+           return eval;
 
             // // maybe the pieces around queen should have a weight?
             // if (manyPiecesAroundMyQueen > manyPiecesAroundOpponentsQueen)
@@ -174,11 +179,13 @@ namespace HiveCore
 
                 // curMove was made by !curPlayer–i.e., curPlayer's opponent
                 // We are evaluating curPlayer's board state, and seeing how much did curMove affected curPlayer
-                return (_Evaluate(curPlayer), curMove);
+                return (_Evaluate(curPlayer, alpha, beta), curMove);
             }
 
-            // Generate opponents moves
+            // Generate opponents moves without shuffling
             HashSet<(Piece, (int, int))> moves = GenerateMovesFor(curPlayer).ToHashSet();
+
+            // Generate and shuffle opponents moves
             // var random = new Random();
             // HashSet<(Piece, (int, int))> moves = GenerateMovesFor(curPlayer).ToList().OrderBy(x => random.Next()).ToHashSet();
             moveCount += moves.Count;
@@ -186,7 +193,7 @@ namespace HiveCore
             // has no more moves
             if (moves.Count == 0)
             {
-                return (_Evaluate(curPlayer), curMove);
+                return (_Evaluate(curPlayer, alpha, beta), curMove);
             }
 
             foreach ((Piece curPiece, (int, int) to) in moves)
@@ -299,21 +306,16 @@ namespace HiveCore
         // this is attempting to generate the hashing on the fly,
         // but it really should just retrieve the value from the table
         // however, would this really help?
-        private int GetCurrentHash()
+        private long GetCurrentHash()
         {
-            int hash = 17;
+            long hash = 0;
             foreach (KeyValuePair<(int, int), Stack<Piece>> stack in Pieces)
             {
                 foreach (Piece piece in stack.Value)
                 {
-                    hash ^= _Hash(piece._bin_piece, piece.Point.x, piece.Point.y);
+                    hash ^= ZOBRIST_KEYS[piece.Point][piece._bin_piece];
                 }
             }
-
-            // if (!_Zobrist_Keys.ContainsKey(hash))
-            // {
-            //     _Zobrist_Keys.Add(hash, "idk");
-            // }
             return hash;
         }
 

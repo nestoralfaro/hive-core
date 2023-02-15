@@ -1,4 +1,9 @@
 const fs = require('fs');
+
+// How much should it expand towards each possible direction
+const RADIUS = 5;
+
+// source: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random
 function getRandomInt() {
   const min = Math.ceil(Number.MIN_SAFE_INTEGER);
   const max = Math.floor(Number.MAX_SAFE_INTEGER);
@@ -30,6 +35,8 @@ const genPieces = () => ({
     0b101010: getRandomInt(), // wQ1
 });
 
+const board = [[{x: 0, y: 0}, genPieces()]];
+
 const OFFSETS = [
     // Notice how each side is only valid if it adds up to an even number
     {x: 1, y: 1},    // [0] North
@@ -40,13 +47,9 @@ const OFFSETS = [
     {x:  2, y: 0},   // [5] Northeast
 ];
 
-const RADIUS = 50;
-const board = [[{x: 0, y: 0}, genPieces()]];
-
 
 // expand south
 for (let i = 0; i < RADIUS; ++i) {
-    // @ts-ignore
     const newelem = [{x: board[board.length - 1][0].x + OFFSETS[3].x, y: board[board.length - 1][0].y + OFFSETS[3].y}, genPieces()];
     board.push(newelem);
 }
@@ -56,7 +59,6 @@ board.push(newelem);
 
 //expand north
 for (let i = 0; i < RADIUS; ++i) {
-    // @ts-ignore
     const newelem = [{x: board[board.length - 1][0].x + OFFSETS[0].x, y: board[board.length - 1][0].y + OFFSETS[0].y}, genPieces()];
     board.push(newelem);
 }
@@ -64,10 +66,8 @@ for (let i = 0; i < RADIUS; ++i) {
 // generate west
 const west = [];
 for (const pos of board) {
-    // @ts-ignore
     const westLine = [[{x: pos[0].x + OFFSETS[2].x, y: pos[0].y + OFFSETS[2].y}, genPieces()]];
     for (let i = 0; i < RADIUS; ++i) {
-        // @ts-ignore
         const newelem = [{x: westLine[westLine.length - 1][0].x + OFFSETS[2].x, y: westLine[westLine.length - 1][0].y + OFFSETS[2].y}, genPieces()];
         westLine.push(newelem);
     }
@@ -77,10 +77,8 @@ for (const pos of board) {
 // generate east
 const east = [];
 for (const pos of board) {
-    // @ts-ignore
     const eastLine = [[{x: pos[0].x + OFFSETS[5].x, y: pos[0].y + OFFSETS[5].y}, genPieces()]];
     for (let i = 0; i < RADIUS; ++i) {
-        // @ts-ignore
         const newelem = [{x: eastLine[eastLine.length - 1][0].x + OFFSETS[5].x, y: eastLine[eastLine.length - 1][0].y + OFFSETS[5].y}, genPieces()];
         eastLine.push(newelem);
     }
@@ -92,10 +90,10 @@ west.map(arr => arr.map(elem => board.push(elem)));
 east.map(arr => arr.map(elem => board.push(elem)));
 
 let output = "";
-output += "namespace HiveCore {\n \tpublic static class Table {\n"
-output += "\t\tpublic static Dictionary<(int, int), (int, int)[] > TABLE = new()\n";
+output += "namespace HiveCore {\n \tpublic static class Zobrist {\n"
+output += "\t\tpublic static Dictionary<(int, int), Dictionary<int, long>> ZOBRIST_KEYS = new()\n";
 output += "\t\t{\n";
-board.map(pos => output += (`\t\t\t{ (${(pos[0].x)}, ${pos[0].y}), new[] {${Object.entries(pos[1]).map(([piece, hash]) => `(${piece}, ${hash})`)}}}, \n`));
-output += "\t\t}\n\t}\n}";
+board.map(pos => output += (`\t\t\t{ (${(pos[0].x)}, ${pos[0].y}), new() { ${Object.entries(pos[1]).map(([piece, hash]) => `{${piece}, ${hash}}`)} } }, \n`));
+output += "\t\t};\n\t}\n}";
 
-fs.writeFileSync("./Table.cs", output);
+fs.writeFileSync("./Zobrist.cs", output);
