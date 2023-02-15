@@ -11,7 +11,8 @@ namespace HiveCore
         public Board Board { get; }
         public GameCore()
         {
-            _isFirstPlayersTurn = true;
+            _isFirstPlayersTurn = false;
+            // _isFirstPlayersTurn = true;
             _player1 = Color.Black;
             _player2 = Color.White;
             Board = new();
@@ -22,8 +23,8 @@ namespace HiveCore
             if (_isFirstPlayersTurn)
             {
                 PrintPlayerHeader(_player1, Board);
-                // if (HumanMove(_player1))
-                if (Board.AIMove(_player1))
+                if (HumanMove(_player1))
+                // if (Board.AIMove(_player1))
                     _isFirstPlayersTurn = false;
             }
             else

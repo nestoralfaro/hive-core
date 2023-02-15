@@ -79,21 +79,75 @@ namespace HiveCore
             return true;
         }
 
-        private (int eval, (Piece, (int, int) move)) _Evaluate(Color curPlayer, (Piece, (int, int)) curMove)
+        private int _Evaluate(Color curPlayer)
         {
-            // dummy heuristic that encourages to play more pieces around opponents queen
+            // *** GOOD STATES ***
+
+            // Enemy Queen Surrounded -> ∞
+            //int manyPiecesAroundOpponentsQueen = curPlayer == Color.Black ? WhitePieces["wQ1"].Neighbors.Count : BlackPieces["bQ1"].Neighbors.Count;
+
+            //if (manyPiecesAroundOpponentsQueen == 6)
+                //return (1000000, curMove);
+
+            // Enemy ant pinned (no available moves for ant) * how many pinned
+            // int antMoves;
+            // TODO: Implement function to check immediate moves as if it were a queen
+
+            // Enemy Queen pinned
+            // int enemyQueenMoves;
+
+            // Opponent has no available moves on the Queen
+
+            // Queen able to move?
+
+            // Beetle on top of enemy queen?
+
+            // Potential spawn points on enemy queen w/ pieces in reserve?
+
+            // More moves available the better
+
+            // Enemy can't spawn by your queen
+
+            // Pieces that have available moves and give the pieces a weight
+
+            // Defenders on the Queen?
+
+
+
+            // *** BAD STATES ***
+
+            // Queens are adjacent (leads to more ties)
+
+            // Queen is pinned, no available moves
+
+            // Ant(s) are pinned
+
+            // No possible moves or little possible moves
+
+            // Enemy beetle on queen
+
+            // Enemy beetle on queen w/ pieces in reserve for spawning
+
+            // Enemy queen can move
+
+
+
+            //dummy heuristic that encourages to play more pieces around opponents queen
             int manyPiecesAroundMyQueen = curPlayer == Color.Black ? BlackPieces["bQ1"].Neighbors.Count : WhitePieces["wQ1"].Neighbors.Count;
             int manyPiecesAroundOpponentsQueen = curPlayer == Color.Black ? WhitePieces["wQ1"].Neighbors.Count : BlackPieces["bQ1"].Neighbors.Count;
 
-            // maybe the pieces around queen should have a weight?
-            if (manyPiecesAroundMyQueen > manyPiecesAroundOpponentsQueen)
-            {
-                return (new Random().Next(1, 1000010), curMove);
-            }
-            else
-            {
-                return (new Random().Next(-1000010, -1), curMove);
-            }
+           return manyPiecesAroundOpponentsQueen - manyPiecesAroundMyQueen;
+
+            // // maybe the pieces around queen should have a weight?
+            // if (manyPiecesAroundMyQueen > manyPiecesAroundOpponentsQueen)
+            // {
+            //     // return (new Random().Next(1, 1000010), curMove);
+            //     return (-manyPiecesAroundMyQueen, curMove);
+            // }
+            // else
+            // {
+            //     return (new Random().Next(-1000010, -1), curMove);
+            // }
         }
 
         // Based on the original pseudocode and this guy's: https://www.youtube.com/watch?v=U4ogK0MIzqk&t=1005s
@@ -121,7 +175,7 @@ namespace HiveCore
 
                 // curMove was made by !curPlayer–i.e., curPlayer's opponent
                 // We are evaluating curPlayer's board state, and seeing how much did curMove affected curPlayer
-                return _Evaluate(curPlayer, curMove);
+                return (_Evaluate(curPlayer), curMove);
             }
 
             // Generate opponents moves
@@ -133,7 +187,7 @@ namespace HiveCore
             // has no more moves
             if (moves.Count == 0)
             {
-                return _Evaluate(curPlayer, curMove);
+                return (_Evaluate(curPlayer), curMove);
             }
 
             foreach ((Piece curPiece, (int, int) to) in moves)
