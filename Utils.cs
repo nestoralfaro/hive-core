@@ -169,15 +169,28 @@ namespace HiveCore
             (2, 0),    // [5] Northeast
         };
 
+        // For Unity
+        // public static readonly Dictionary<string, (int x, int y)> SIDE_OFFSETS = new Dictionary<string, (int x, int y)>
+        // {
+        //     // Notice how each side is only valid if it adds up to an even number
+        //     { "NT", (0, 55) },    // [0] North
+        //     { "NW", (-48, 28) },   // [1] Northwest
+        //     { "SW", (-48, -28) },   // [2] Southwest
+        //     { "ST", (0, -55) },  // [3] South
+        //     { "SE", (48, -28) },   // [4] Southeast
+        //     { "NE", (48, 28) },    // [5] Northeast
+        // };
 
-
-
-
-
-
-
-
-
+        // public static readonly (int x, int y)[] SIDE_OFFSETS_ARRAY =
+        // {
+        //     // Notice how each side is only valid if it adds up to an even number
+        //     (0, 55),    // [0] North
+        //     (-48, 28),   // [1] Northwest
+        //     (-48, -28),   // [2] Southwest
+        //     (0, -55),  // [3] South
+        //     (48, -28),   // [4] Southeast
+        //     (48, 28),    // [5] Northeast
+        // };
 
         public static void PrintYellow(string warning)
         {
