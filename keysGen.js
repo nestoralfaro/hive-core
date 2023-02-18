@@ -49,10 +49,10 @@ const OFFSETS = [
 
 // For Unity project
 // const OFFSETS = [
-//     {x: 0, y: 55},    // [0] North
+//     {x: 0, y: 56},    // [0] North
 //     {x: -48, y: 28},  // [1] Northwest
 //     {x: -48, y: -28}, // [2] Southwest
-//     {x: 0, y: -55},   // [3] South
+//     {x: 0, y: -56},   // [3] South
 //     {x: 48, y: -28},  // [4] Southeast
 //     {x: 48, y: 28},   // [5] Northeast
 // ]
