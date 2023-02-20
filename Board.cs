@@ -85,64 +85,317 @@ namespace HiveCore
 
         private int _Evaluate(Color curPlayer, int alpha, int beta)
         {
-            // *** GOOD STATES ***
+            int eval = 0;
 
-            // Enemy Queen Surrounded -> ∞
-            //int manyPiecesAroundOpponentsQueen = curPlayer == Color.Black ? WhitePieces["wQ1"].Neighbors.Count : BlackPieces["bQ1"].Neighbors.Count;
+            // ***************************************************************************************
+            // Enemy Queen Surrounded -> ∞ (+)
+            // Current Player's Queen surrounded -> -∞ (-)
+            int manyPiecesAroundOpponentsQueen = curPlayer == Color.Black ? WhitePieces[Q1].Neighbors.Count : BlackPieces[Q1].Neighbors.Count;
+            int manyPiecesAroundMyQueen = curPlayer == Color.Black ? BlackPieces[Q1].Neighbors.Count : WhitePieces[Q1].Neighbors.Count;
 
-            //if (manyPiecesAroundOpponentsQueen == 6)
-                //return (1000000, curMove);
+            if (manyPiecesAroundOpponentsQueen == 6)
+            {
+                eval += 1000000;
+            }
+            if (manyPiecesAroundMyQueen == 6)
+            {
+                eval -= 1000000;
+            }
+            // ***************************************************************************************
 
-            // Enemy ant pinned (no available moves for ant) * how many pinned
-            // int antMoves;
-            // TODO: Implement function to check immediate moves as if it were a queen
 
-            // Enemy Queen pinned
-            // int enemyQueenMoves;
+            // ***************************************************************************************
+            // Enemy ant pinned? (+)
+            // Current player's ants pinned? (-)
+
+            // If curPlayer is white, check Blacks moves
+            if (curPlayer == Color.White)
+            {
+                // Enemy ants pinned ? +20 if not, -20
+                eval += IsPinned(BlackPieces[A1], false, false) ? 20 : -20;
+                eval += IsPinned(BlackPieces[A2], false, false) ? 20 : -20;
+                eval += IsPinned(BlackPieces[A3], false, false) ? 20 : -20;
+
+                // Current player's ants pinned ? -20 if not, +20
+                eval += IsPinned(WhitePieces[A1], false, false) ? -20 : 20;
+                eval += IsPinned(WhitePieces[A2], false, false) ? -20 : 20;
+                eval += IsPinned(WhitePieces[A3], false, false) ? -20 : 20;
+            }
+
+            // Otherwise, check white's moves
+            else
+            {
+                // Enemy ants pinned ? +20 if not, -20
+                eval += IsPinned(WhitePieces[A1], false, false) ? 20 : -20;
+                eval += IsPinned(WhitePieces[A2], false, false) ? 20 : -20;
+                eval += IsPinned(WhitePieces[A3], false, false) ? 20 : -20;
+
+                // Current player's ants pinned ? -20 if not, +20
+                eval += IsPinned(BlackPieces[A1], false, false) ? -20 : 20;
+                eval += IsPinned(BlackPieces[A2], false, false) ? -20 : 20;
+                eval += IsPinned(BlackPieces[A3], false, false) ? -20 : 20;
+            }
+            // ***************************************************************************************
+
+
+            // ***************************************************************************************
+            // Enemy Queen pinned (+) or mobile (-)
+            // if curPlayer is White, check Black's moves
+            if (curPlayer == Color.White)
+            {
+                HashSet<(int, int)> queenMoves = new HashSet<(int, int)>();
+
+                if (BlackPieces[Q1].IsOnBoard)
+                {
+                    queenMoves = GetMovingSpotsFor(BlackPieces[Q1]);
+                    // If opponent's Queen is pinned (+), otherwise (-)
+                    eval += (queenMoves.Count() == 0) ? 30 : -30;
+                }
+            }
+            // Otherwise, check White's moves
+            else
+            {
+                HashSet<(int, int)> queenMoves = new HashSet<(int, int)>();
+
+                if (WhitePieces[Q1].IsOnBoard)
+                {
+                    queenMoves = GetMovingSpotsFor(WhitePieces[Q1]);
+                    // If opponent's Queen is pinned (+), otherwise (-)
+                    eval += (queenMoves.Count() == 0) ? 30 : -30;
+                }
+            }
+            // ***************************************************************************************
+
 
             // Opponent has no available moves on the Queen
 
-            // Queen able to move?
 
-            // Beetle on top of enemy queen?
+            // ***************************************************************************************
+            // Queen able to move? (+)
+            // Queen pinned? (-)
+            if (curPlayer == Color.Black)
+            {
+                HashSet<(int, int)> queenMoves = new HashSet<(int, int)>();
 
+                if (BlackPieces[Q1].IsOnBoard)
+                {
+                    queenMoves = GetMovingSpotsFor(BlackPieces[Q1]);
+                    // If Queen is pinned (-), otherwise (+)
+                    eval += (queenMoves.Count() == 0) ? -30 : 30;
+                }
+            }
+            else
+            {
+                HashSet<(int, int)> queenMoves = new HashSet<(int, int)>();
+
+                if (WhitePieces[Q1].IsOnBoard)
+                {
+                    queenMoves = GetMovingSpotsFor(WhitePieces[Q1]);
+                    // If Queen is pinned (-), otherwise (+)
+                    eval += (queenMoves.Count() == 0) ? -30 : 30;
+                }
+            }
+            // ***************************************************************************************
+
+
+            // ***************************************************************************************
+            // Beetle on top of opponent's Queen? (+)
+            // Opponent's Beetle on top of current player's Queen? (-)
+            if (curPlayer == Color.Black)
+            {
+                if (WhitePieces[Q1].Point == BlackPieces[B1].Point || WhitePieces[Q1].Point == BlackPieces[B2].Point)
+                {
+                    eval += 50;
+                }
+                if (BlackPieces[Q1].Point == WhitePieces[B1].Point || BlackPieces[Q1].Point == WhitePieces[B2].Point)
+                {
+                    eval -= 50;
+                }
+            }
+            else
+            {
+                if (BlackPieces[Q1].Point == WhitePieces[B1].Point || BlackPieces[Q1].Point == WhitePieces[B2].Point)
+                {
+                    eval += 50;
+                }
+                if (WhitePieces[Q1].Point == BlackPieces[B1].Point || WhitePieces[Q1].Point == BlackPieces[B2].Point)
+                {
+                    eval -= 50;
+                }
+            }
+            // ***************************************************************************************
+
+
+            // ***************************************************************************************
             // Potential spawn points on enemy queen w/ pieces in reserve?
+            HashSet<(int, int)> placingPositions = new HashSet<(int, int)>();
 
-            // More moves available the better
+            placingPositions = GetPlacingSpotsFor(curPlayer);
 
-            // Enemy can't spawn by your queen
+            // If there are potential spawn points
+            if (placingPositions.Count() > 0)
+            {
+                // If color is Black, check the open spots around white queen
+                if (curPlayer == Color.Black)
+                {
+                    // Loop through every open spot on the queen
+                    foreach ((int, int) openSpot in WhitePieces[Q1].OpenSpotsAround)
+                    {
+                        // Loop through every potential placing spot
+                        foreach ((int, int) placingSpot in placingPositions)
+                        {
+                            // If a placing spot is the same as an open spot, you can spawn on opponent's queen
+                            if (openSpot == placingSpot)
+                            {
+                                eval += 25;
+                            }
+                        }
+                    }
+                }
 
-            // Pieces that have available moves and give the pieces a weight
+                else
+                {
+                    // Loop through every open spot on the queen
+                    foreach ((int, int) openSpot in BlackPieces[Q1].OpenSpotsAround)
+                    {
+                        // Loop through every potential placing spot
+                        foreach ((int, int) placingSpot in placingPositions)
+                        {
+                            // If a placing spot is the same as an open spot, you can spawn on opponent's queen
+                            if (openSpot == placingSpot)
+                            {
+                                eval += 25;
+                            }
+                        }
+                    }
+                }
+            }
+            // ***************************************************************************************
 
-            // Defenders on the Queen?
+            // ***************************************************************************************
+            // More moves available (+)
+            // No moves available (-)
+            HashSet<(Piece, (int, int))> moves = GenerateMovesFor(curPlayer);
+
+            if (placingPositions.Count() > 0)
+            {
+                eval += placingPositions.Count();
+            }
+
+            if (moves.Count() > 0)
+            {
+                eval += 2 * moves.Count();
+            }
+            else
+            {
+                eval -= 2000;
+            }
+            // ***************************************************************************************
 
 
+            // ***************************************************************************************
+            // Enemy can spawn by your queen (-), if not (+)
+            HashSet<(int, int)> opponentPositions = new HashSet<(int, int)>();
 
-            // *** BAD STATES ***
+            // Get placing spots for opponent
+            opponentPositions = GetPlacingSpotsFor(curPlayer == Color.Black ? Color.White : Color.Black);
 
-            // Queens are adjacent (leads to more ties)
+            // If there are potential spawn points
+            if (opponentPositions.Count() > 0)
+            {
+                // If current player's color is Black, check the open spots around black queen
+                if (curPlayer == Color.Black)
+                {
+                    // Loop through every open spot on the queen
+                    foreach ((int, int) openSpot in BlackPieces[Q1].OpenSpotsAround)
+                    {
+                        // Loop through every potential placing spot
+                        foreach ((int, int) placingSpot in opponentPositions)
+                        {
+                            // If a placing spot is the same as an open spot, opponent can spawn on Queen
+                            if (openSpot == placingSpot)
+                            {
+                                eval -= 25;
+                            }
+                        }
+                    }
+                }
 
-            // Queen is pinned, no available moves
+                // Current player's color is white, check the open spots around white Queen
+                else
+                {
+                    // Loop through every open spot on the queen
+                    foreach ((int, int) openSpot in WhitePieces[Q1].OpenSpotsAround)
+                    {
+                        // Loop through every potential placing spot
+                        foreach ((int, int) placingSpot in opponentPositions)
+                        {
+                            // If a placing spot is the same as an open spot, opponent can spawn on Queen
+                            if (openSpot == placingSpot)
+                            {
+                                eval -= 25;
+                            }
+                        }
+                    }
+                }
+            }
+            // enemy cannot spawn by your Queen
+            else
+            {
+                eval += 15;
+            }
+            // ***************************************************************************************
 
-            // Ant(s) are pinned
+            // ***************************************************************************************
+            // Pieces that have available moves and give the pieces a weight (+)
 
-            // No possible moves or little possible moves
+            // ***************************************************************************************
 
-            // Enemy beetle on queen
 
-            // Enemy beetle on queen w/ pieces in reserve for spawning
+            // ***************************************************************************************
+            // Defenders on the Queen? (+)
+            // Opponent Queen on Queen? (-) -> leads to more ties
+            if (curPlayer == Color.Black)
+            {
+                foreach ((int, int) neighbor in BlackPieces[Q1].Neighbors)
+                {
+                    if (neighbor == BlackPieces[G1].Point || neighbor == BlackPieces[G2].Point
+                    || neighbor == BlackPieces[B1].Point || neighbor == BlackPieces[B2].Point)
+                    {
+                        eval += 10;
+                    }
+                    if (neighbor == WhitePieces[Q1].Point)
+                    {
+                        eval -= 15;
+                    }
+                }
+            }
+            else
+            {
+                foreach ((int, int) neighbor in WhitePieces[Q1].Neighbors)
+                {
+                    if (neighbor == WhitePieces[G1].Point || neighbor == WhitePieces[G2].Point
+                    || neighbor == WhitePieces[B1].Point || neighbor == WhitePieces[B2].Point)
+                    {
+                        eval += 10;
+                    }
+                    if (neighbor == BlackPieces[Q1].Point)
+                    {
+                        eval -= 15;
+                    }
+                }
+            }
+            // ***************************************************************************************
 
-            // Enemy queen can move
 
             //dummy heuristic that encourages to play more pieces around opponents queen
-            int manyPiecesAroundMyQueen = curPlayer == Color.Black ? BlackPieces[Q1].Neighbors.Count : WhitePieces[Q1].Neighbors.Count;
-            int manyPiecesAroundOpponentsQueen = curPlayer == Color.Black ? WhitePieces[Q1].Neighbors.Count : BlackPieces[Q1].Neighbors.Count;
-            int eval = manyPiecesAroundOpponentsQueen - manyPiecesAroundMyQueen;
+            // int manyPiecesAroundOpponentsQueen = curPlayer == Color.Black ? WhitePieces[Q1].Neighbors.Count : BlackPieces[Q1].Neighbors.Count;
+            // int eval = manyPiecesAroundOpponentsQueen - manyPiecesAroundMyQueen;
 
             long curHash = GetCurrentHash();
-            _game_states[curHash] = new Dictionary<string, int> { {"alpha", alpha}, {"beta", beta}, {"eval", eval} };
+            _game_states[curHash] = new Dictionary<string, int> { { "alpha", alpha }, { "beta", beta }, { "eval", eval } };
 
-           return eval;
+            return eval;
 
             // // maybe the pieces around queen should have a weight?
             // if (manyPiecesAroundMyQueen > manyPiecesAroundOpponentsQueen)
@@ -231,7 +484,7 @@ namespace HiveCore
             return (alpha, curMove);
         }
 
-#region AI Method Helpers
+        #region AI Method Helpers
         public HashSet<(Piece piece, (int, int) to)> GenerateMovesFor(Color curPlayer)
         {
             HashSet<(Piece, (int, int))> moves = new HashSet<(Piece, (int, int))>();
@@ -321,7 +574,7 @@ namespace HiveCore
             return hash;
         }
 
-#endregion
+        #endregion
 
         public void MovePiece(Piece piece, (int, int) to)
         {
@@ -347,7 +600,7 @@ namespace HiveCore
             // Stopwatch stopwatch = new Stopwatch();
             // stopwatch.Start();
 
-            // Maybe keep track of the visited ones with a hashmap and also pass it to the hasopponent neighbor?
+            // Maybe keep track of the visited ones with a hashmap and also pass it to the has opponent neighbor?
             HashSet<(int, int)> positions = new HashSet<(int, int)>();
             foreach (Piece piece in curPlayer == Color.Black ? BlackPieces : WhitePieces)
             {
@@ -383,7 +636,7 @@ namespace HiveCore
             };
         }
 
-#region Placing/Moving on the Board helper methods
+        #region Placing/Moving on the Board helper methods
         private void _PlacePiece(ref Piece piece, (int, int) to)
         {
             if (piece.Insect == Insect.Beetle && Pieces.ContainsKey(to))
@@ -432,6 +685,7 @@ namespace HiveCore
                 }
             }
         }
+
         private void _UpdateNeighborsAt((int x, int y) point)
         {
             // if this is a busy spot
@@ -504,9 +758,9 @@ namespace HiveCore
             }
             return counter;
         }
-#endregion
+        #endregion
 
-#region Each Moving Spot Getter for `Piece`
+        #region Each Moving Spot Getter for `Piece`
         private HashSet<(int, int)> _GetAntMovingSpots(ref Piece piece)
         {
             // Stopwatch stopwatch = new Stopwatch();
@@ -653,9 +907,9 @@ namespace HiveCore
             // PrintRed("Elapsed time: " + stopwatch.Elapsed.TotalMilliseconds + "ms");
             return spots;
         }
-#endregion
+        #endregion
 
-#region Helper Methods For Finding Valid Moves
+        #region Helper Methods For Finding Valid Moves
         private bool _HasOpponentNeighbor((int x, int y) point, Color color)
         {
             // foreach ((int, int) side in SIDE_OFFSETS.Values)
@@ -698,7 +952,8 @@ namespace HiveCore
             bool peripheralLeftIsNotItself = peripheralLeftSpot.x != piece.Point.x || peripheralLeftSpot.y != piece.Point.y;
             bool peripheralRightIsNotItself = peripheralRightSpot.x != piece.Point.x || peripheralRightSpot.y != piece.Point.y;
 
-            if(isBeetle){
+            if (isBeetle)
+            {
                 int LeftStackCount = Pieces.ContainsKey(peripheralLeftSpot) ? Pieces[peripheralLeftSpot].Count : 0;
                 int RightStackCount = Pieces.ContainsKey(peripheralRightSpot) ? Pieces[peripheralRightSpot].Count : 0;
                 int FromStackCount = Pieces.ContainsKey(from) ? Pieces[from].Count : 0;
@@ -708,10 +963,10 @@ namespace HiveCore
                 : !(LeftStackCount >= ToStackCount && RightStackCount >= ToStackCount);
             }
 
-             bool noneOfThePeripheralsIsItself = peripheralLeftIsNotItself && peripheralRightIsNotItself;
-             bool onlyOneSpotIsOpen = Pieces.ContainsKey(peripheralLeftSpot) ^ Pieces.ContainsKey(peripheralRightSpot);
-             //                                              Right is itself             Someone MUST be there on the left             OR    Left is itself                    Someone MUST be there on the right 
-             bool checkThatTheOppositePeripheralExists = (!peripheralRightIsNotItself && Pieces.ContainsKey(peripheralLeftSpot)) || (!peripheralLeftIsNotItself && Pieces.ContainsKey(peripheralRightSpot));
+            bool noneOfThePeripheralsIsItself = peripheralLeftIsNotItself && peripheralRightIsNotItself;
+            bool onlyOneSpotIsOpen = Pieces.ContainsKey(peripheralLeftSpot) ^ Pieces.ContainsKey(peripheralRightSpot);
+            //                                              Right is itself             Someone MUST be there on the left             OR    Left is itself                    Someone MUST be there on the right 
+            bool checkThatTheOppositePeripheralExists = (!peripheralRightIsNotItself && Pieces.ContainsKey(peripheralLeftSpot)) || (!peripheralLeftIsNotItself && Pieces.ContainsKey(peripheralRightSpot));
 
             return noneOfThePeripheralsIsItself
                     // If it is a beetle, check it can crawl on   OR get off of piece at to/from point   OR Treat it as a normal piece
@@ -780,7 +1035,8 @@ namespace HiveCore
         {
             foreach ((int, int) neighbor in Pieces[curPoint].Peek().Neighbors)
             {
-                if (!visited.Contains(neighbor)) {
+                if (!visited.Contains(neighbor))
+                {
                     visited.Add(neighbor);
                     if (Pieces.Count == visited.Count)
                     {
@@ -799,7 +1055,7 @@ namespace HiveCore
             if (piece.IsSurrounded)
                 return true;
 
-            foreach((int, int) side in piece.Sides)
+            foreach ((int, int) side in piece.Sides)
             {
                 // If there is at least one valid path
                 if (_IsValidMove(ref piece, piece.Point, side, isGrasshopper, isBeetle))
@@ -812,6 +1068,7 @@ namespace HiveCore
             // So this piece is pinned
             return true;
         }
-#endregion
+
+        #endregion
     }
 }
