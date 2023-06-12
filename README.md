@@ -1,8 +1,5 @@
 # First iteration of our Game Core for Hive
-Todo:
-- Create more tests.
-- Refactor–e.g., remove unnecessary variables, data types, etc. Just improve the overall implementation not only in speed, but also in readability.
-- Look into running `GetMovingPositions` and `GetAvailablePosition` concurrently (parallel programming).
+The following is the prototype used for the development of a digital version of the board game "Hive"
 
 If you have .NET on your machine, just run it with:
 ```
